@@ -1438,3 +1438,10 @@ interactiveElements.forEach((element) => {
   });
 
 });
+// ============================================
+// MYRLORE — BASIC COPY PROTECTION
+// ============================================
+
+document.addEventListener("contextmenu", (event) => {
+  event.preventDefault();
+});
