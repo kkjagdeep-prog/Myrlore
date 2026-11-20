@@ -739,6 +739,8 @@ let cursorTargetY = window.innerHeight / 2;
 let cursorCurrentX = cursorTargetX;
 let cursorCurrentY = cursorTargetY;
 
+let cursorAnimationFrame = null;
+
 function animateCursor() {
   if (
     !cursorGlow ||
@@ -746,6 +748,7 @@ function animateCursor() {
     reducedMotion ||
     !isPageVisible
   ) {
+    cursorAnimationFrame = null;
     return;
   }
 
@@ -755,7 +758,7 @@ function animateCursor() {
   cursorGlow.style.left = `${cursorCurrentX}px`;
   cursorGlow.style.top = `${cursorCurrentY}px`;
 
-  requestAnimationFrame(animateCursor);
+  cursorAnimationFrame = requestAnimationFrame(animateCursor);
 }
 
 if (cursorGlow && finePointer && !reducedMotion) {
@@ -829,7 +832,7 @@ window.addEventListener("resize", resizeScene);
 
 
 // ============================================
-// NAVIGATION
+// NAVIGATION MENU
 // ============================================
 
 const menuToggle = document.querySelector("#menuToggle");
@@ -985,23 +988,6 @@ if (yearElement) {
 
 
 // ============================================
-// PAGE INITIALIZATION
-// ============================================
-
-initThree();
-initAnimations();
-updateScrollProgress();
-
-window.addEventListener("load", () => {
-  document.body.classList.add("loaded");
-});
-
-setTimeout(() => {
-  document.body.classList.add("loaded");
-}, 4500);
-
-
-// ============================================
 // INTERACTIVE CASE STUDIES
 // ============================================
 
@@ -1091,6 +1077,22 @@ const caseStudies = {
 function populateCaseStudy(project) {
   if (!project) return;
 
+  if (
+    !caseIndex ||
+    !caseTitle ||
+    !caseCategory ||
+    !caseSummary ||
+    !caseOverview ||
+    !caseFeatures ||
+    !caseTech ||
+    !caseHeroArt ||
+    !caseSymbol ||
+    !caseArtCaption
+  ) {
+    console.warn("MYRLORE case study elements are incomplete.");
+    return;
+  }
+
   caseIndex.textContent = project.index;
   caseTitle.textContent = project.title;
   caseCategory.textContent = project.category;
@@ -1143,6 +1145,9 @@ function openCaseStudy(projectId, trigger) {
 
   caseModal.classList.add("is-open");
   caseModal.setAttribute("aria-hidden", "false");
+
+  // If the modal has inert in the HTML, remove it while open.
+  caseModal.removeAttribute("inert");
 
   document.body.classList.add("case-open");
 
@@ -1326,15 +1331,26 @@ function setTransitionState(active) {
 }
 
 function animateTransitionIn() {
-  if (!transitionLayer) return Promise.resolve();
+  if (!transitionLayer || !transitionCurtain) {
+    return Promise.resolve();
+  }
 
   setTransitionState(true);
 
-  if (reducedMotion || !window.gsap) {
-    return new Promise((resolve) => {
-      transitionCurtain.style.transform = "scaleY(1)";
+  if (
+    reducedMotion ||
+    !window.gsap ||
+    !transitionContent ||
+    !transitionProgress
+  ) {
+    transitionCurtain.style.transform = "scaleY(1)";
+
+    if (transitionContent) {
       transitionContent.style.opacity = "1";
-      setTimeout(resolve, 100);
+    }
+
+    return new Promise((resolve) => {
+      setTimeout(resolve, 150);
     });
   }
 
@@ -1349,51 +1365,59 @@ function animateTransitionIn() {
   ]);
 
   gsap.set(transitionCurtain, {
-    transformOrigin: "bottom",
+    transformOrigin: "bottom center",
     scaleY: 0
   });
 
   gsap.set(transitionContent, {
     opacity: 0,
-    y: 15
+    y: 18
   });
 
   gsap.set(transitionProgress, {
     scaleX: 0,
-    transformOrigin: "left"
+    transformOrigin: "left center"
   });
 
   return new Promise((resolve) => {
-    const timeline = gsap.timeline({
+    gsap.timeline({
       onComplete: resolve
-    });
-
-    timeline
+    })
       .to(transitionCurtain, {
         scaleY: 1,
-        duration: 0.65,
+        duration: 0.7,
         ease: "power4.inOut"
       })
       .to(transitionContent, {
         opacity: 1,
         y: 0,
-        duration: 0.45,
+        duration: 0.5,
         ease: "power3.out"
-      }, "-=0.12")
+      }, "-=0.15")
       .to(transitionProgress, {
         scaleX: 1,
-        duration: 0.45,
+        duration: 0.5,
         ease: "power2.inOut"
-      }, "-=0.15");
+      }, "-=0.2");
   });
 }
 
 function animateTransitionOut() {
-  if (!transitionLayer) return Promise.resolve();
+  if (!transitionLayer || !transitionCurtain) {
+    return Promise.resolve();
+  }
 
-  if (reducedMotion || !window.gsap) {
+  if (
+    reducedMotion ||
+    !window.gsap ||
+    !transitionContent
+  ) {
     transitionCurtain.style.transform = "scaleY(0)";
-    transitionContent.style.opacity = "0";
+
+    if (transitionContent) {
+      transitionContent.style.opacity = "0";
+    }
+
     setTransitionState(false);
 
     return Promise.resolve();
@@ -1402,24 +1426,22 @@ function animateTransitionOut() {
   const gsap = window.gsap;
 
   return new Promise((resolve) => {
-    const timeline = gsap.timeline({
+    gsap.timeline({
       onComplete: () => {
         setTransitionState(false);
         resolve();
       }
-    });
-
-    timeline
+    })
       .to(transitionContent, {
         opacity: 0,
-        y: -12,
-        duration: 0.25,
+        y: -14,
+        duration: 0.3,
         ease: "power2.in"
       })
       .to(transitionCurtain, {
         scaleY: 0,
-        transformOrigin: "top",
-        duration: 0.7,
+        transformOrigin: "top center",
+        duration: 0.75,
         ease: "power4.inOut"
       }, "-=0.05");
   });
@@ -1446,27 +1468,38 @@ async function navigateWithTransition(target, link) {
 
   closeMenu();
 
-  await animateTransitionIn();
+  try {
+    await animateTransitionIn();
 
-  target.scrollIntoView({
-    behavior: "instant",
-    block: "start"
-  });
+    // Scroll while the curtain covers the page.
+    window.scrollTo({
+      top: target.getBoundingClientRect().top + window.scrollY,
+      behavior: "auto"
+    });
 
-  if (window.history && targetId) {
-    window.history.replaceState(
-      null,
-      "",
-      `#${targetId}`
-    );
-  }
+    if (targetId) {
+      window.history.replaceState(
+        null,
+        "",
+        `#${targetId}`
+      );
+    }
 
-  await animateTransitionOut();
+    // Allow the browser to apply the new scroll position.
+    await new Promise((resolve) => {
+      requestAnimationFrame(() => {
+        requestAnimationFrame(resolve);
+      });
+    });
 
-  isTransitioning = false;
+    await animateTransitionOut();
 
-  if (link) {
-    link.blur();
+    link?.blur();
+  } catch (error) {
+    console.error("MYRLORE transition failed:", error);
+    setTransitionState(false);
+  } finally {
+    isTransitioning = false;
   }
 }
 
@@ -1481,15 +1514,17 @@ document.querySelectorAll('a[href^="#"]').forEach((link) => {
 
     if (!target) return;
 
-    // Case study cards have their own overlay.
+    // Project cards open their own case study overlay.
     if (link.hasAttribute("data-case-study")) return;
 
-    // Case study close and navigation controls
-    // are handled by their own event listeners.
+    // Don't intercept links inside the case study panel.
+    if (link.closest(".case-panel")) return;
+
+    // The case-study close controls have their own handlers.
     if (
-      link.closest(".case-panel") ||
-      link.closest(".menu-panel") === null &&
-      link.classList.contains("case-logo")
+      link.matches("[data-case-close]") ||
+      link.classList.contains("case-close") ||
+      link.classList.contains("case-bottom-close")
     ) {
       return;
     }
@@ -1506,9 +1541,40 @@ document.querySelectorAll('a[href^="#"]').forEach((link) => {
 // ============================================
 
 if (transitionLayer) {
-  if (reducedMotion) {
-    setTransitionState(false);
-  } else {
-    setTransitionState(false);
-  }
+  setTransitionState(false);
 }
+
+
+// ============================================
+// PAGE INITIALIZATION
+// ============================================
+
+initThree();
+initAnimations();
+updateScrollProgress();
+
+window.addEventListener("load", () => {
+  document.body.classList.add("loaded");
+});
+
+setTimeout(() => {
+  document.body.classList.add("loaded");
+}, 4500);
+
+
+// ============================================
+// CURSOR VISIBILITY HANDLING
+// ============================================
+
+document.addEventListener("visibilitychange", () => {
+  if (!cursorGlow || !finePointer || reducedMotion) return;
+
+  if (document.hidden) {
+    if (cursorAnimationFrame !== null) {
+      cancelAnimationFrame(cursorAnimationFrame);
+      cursorAnimationFrame = null;
+    }
+  } else if (cursorAnimationFrame === null) {
+    animateCursor();
+  }
+});
