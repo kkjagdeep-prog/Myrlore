@@ -67,10 +67,8 @@ function createEnvironment() {
 
   const envScene = new THREE.Scene();
 
-  // Dark studio background.
   envScene.background = new THREE.Color(0x08090b);
 
-  // Soft environmental fill.
   envScene.add(
     new THREE.HemisphereLight(
       0xffffff,
@@ -78,10 +76,6 @@ function createEnvironment() {
       0.8
     )
   );
-
-  // Large bright reflection panels.
-  // Their shapes create the long highlights
-  // associated with polished chrome.
 
   const panels = [
     {
@@ -130,7 +124,6 @@ function createEnvironment() {
     envScene.add(mesh);
   });
 
-  // Generate a filtered environment map.
   const environment = pmrem.fromScene(
     envScene,
     0.04
@@ -1055,6 +1048,7 @@ setTimeout(() => {
   document.body.classList.add("loaded");
 }, 4500);
 
+
 // ============================================
 // MYRLORE — INTERACTIVE CASE STUDIES
 // ============================================
@@ -1077,8 +1071,13 @@ const caseArtCaption = document.querySelector("#caseArtCaption");
 
 let lastCaseTrigger = null;
 
-// Project content
+
+// ============================================
+// CASE STUDY DATA
+// ============================================
+
 const caseStudies = {
+
   corroguard: {
     index: "PROJECT / 001",
     title: "CorroGuard",
@@ -1110,6 +1109,7 @@ const caseStudies = {
     ]
   },
 
+
   floodwatch: {
     index: "PROJECT / 002",
     title: "FloodWatch Chennai",
@@ -1140,41 +1140,15 @@ const caseStudies = {
       "Leaflet",
       "GeoJSON"
     ]
-  },
-
-  xtremetoy: {
-    index: "PROJECT / 003",
-    title: "XTREMETOY",
-    category: "IDENTITY · GAMING · DIGITAL CULTURE",
-    symbol: "XT",
-    caption: "DIGITAL CULTURE / GAMING",
-    theme: "xtreme",
-
-    summary:
-      "A personal digital identity and gaming portfolio built around a distinctive visual style and online community presence.",
-
-    overview:
-      "XTREMETOY is a gaming-focused digital identity project. The website brings together a personal introduction, gaming-related presence and community links through a visually expressive portfolio experience.",
-
-    features: [
-      "Distinctive purple neon visual direction",
-      "Animated introductory experience",
-      "Interactive portfolio sections",
-      "Discord community links",
-      "Roblox profile integration"
-    ],
-
-    technology: [
-      "Web Design",
-      "Digital Identity",
-      "Motion Design",
-      "Community Integration"
-    ]
   }
+
 };
 
 
-// Populate the case-study overlay
+// ============================================
+// POPULATE CASE STUDY
+// ============================================
+
 function populateCaseStudy(project) {
   if (!project) return;
 
@@ -1202,36 +1176,32 @@ function populateCaseStudy(project) {
     caseTech.appendChild(tag);
   });
 
-  // Match the artwork to the selected project.
   const backgrounds = {
     corro:
       "radial-gradient(circle at 50% 45%, #555a5d, #24282c 48%, #121417 100%)",
 
     flood:
-      "radial-gradient(ellipse at 50% 50%, #46565a, #1c272c 75%)",
-
-    xtreme:
-      "radial-gradient(circle at 50% 50%, #49434c, #1b1a20 70%)"
+      "radial-gradient(ellipse at 50% 50%, #46565a, #1c272c 75%)"
   };
 
   caseHeroArt.style.background =
     backgrounds[project.theme] || backgrounds.corro;
 
-  caseSymbol.style.color =
-    project.theme === "xtreme" ? "#e9e6df" : "#e8e5dc";
+  caseSymbol.style.color = "#e8e5dc";
 
   caseSymbol.style.textShadow =
-    project.theme === "xtreme"
-      ? "12px 12px 0 #5b555d"
-      : "0 12px 45px rgba(0,0,0,.45)";
+    "0 12px 45px rgba(0,0,0,.45)";
 }
 
 
-// Open overlay
+// ============================================
+// OPEN CASE STUDY
+// ============================================
+
 function openCaseStudy(projectId, trigger) {
   const project = caseStudies[projectId];
 
-  if (!project || !caseModal) return;
+  if (!project || !caseModal || !casePanel) return;
 
   lastCaseTrigger = trigger;
 
@@ -1242,17 +1212,18 @@ function openCaseStudy(projectId, trigger) {
 
   document.body.classList.add("case-open");
 
-  // Keep the selected project visible at the top.
   casePanel.scrollTop = 0;
 
-  // Focus the dialog after it opens.
   requestAnimationFrame(() => {
     casePanel.focus({ preventScroll: true });
   });
 }
 
 
-// Close overlay
+// ============================================
+// CLOSE CASE STUDY
+// ============================================
+
 function closeCaseStudy() {
   if (!caseModal || !caseModal.classList.contains("is-open")) {
     return;
@@ -1269,7 +1240,10 @@ function closeCaseStudy() {
 }
 
 
-// Project card click events
+// ============================================
+// PROJECT CARD EVENTS
+// ============================================
+
 document.querySelectorAll("[data-case-study]").forEach((card) => {
   card.addEventListener("click", (event) => {
     event.preventDefault();
@@ -1281,17 +1255,26 @@ document.querySelectorAll("[data-case-study]").forEach((card) => {
 });
 
 
-// Close button
+// ============================================
+// CLOSE BUTTON
+// ============================================
+
 caseClose?.addEventListener("click", closeCaseStudy);
 
 
-// Backdrop and bottom close button
+// ============================================
+// BACKDROP AND BOTTOM CLOSE BUTTON
+// ============================================
+
 caseModal?.querySelectorAll("[data-case-close]").forEach((element) => {
   element.addEventListener("click", closeCaseStudy);
 });
 
 
-// Keyboard controls
+// ============================================
+// KEYBOARD CONTROLS
+// ============================================
+
 document.addEventListener("keydown", (event) => {
   if (!caseModal?.classList.contains("is-open")) return;
 
@@ -1299,8 +1282,7 @@ document.addEventListener("keydown", (event) => {
     closeCaseStudy();
   }
 
-  // Keep keyboard focus inside the open dialog.
-  if (event.key === "Tab") {
+  if (event.key === "Tab" && casePanel) {
     const focusable = casePanel.querySelectorAll(
       'a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])'
     );
@@ -1313,10 +1295,12 @@ document.addEventListener("keydown", (event) => {
     if (event.shiftKey && document.activeElement === first) {
       event.preventDefault();
       last.focus();
-    } else if (!event.shiftKey && document.activeElement === last) {
+    } else if (
+      !event.shiftKey &&
+      document.activeElement === last
+    ) {
       event.preventDefault();
       first.focus();
     }
   }
 });
-
