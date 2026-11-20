@@ -1,12 +1,11 @@
 
 import * as THREE from "three";
-import { RoomEnvironment } from "three/addons/environments/RoomEnvironment.js";
 import { RectAreaLightUniformsLib } from "three/addons/lights/RectAreaLightUniformsLib.js";
 
 // ============================================
 // MYRLORE®
 // A2 — SHARP CHROME
-// ABSTRACT LIQUID-METAL SCULPTURE
+// LIQUID METAL STUDIO SCULPTURE
 // ============================================
 
 const canvas = document.querySelector("#webgl");
@@ -46,23 +45,116 @@ const lerp = (a, b, t) =>
 // ============================================
 
 function createMetalMaterial(
-  color = 0xe9edf2,
-  roughness = 0.055
+  color = 0xffffff,
+  roughness = 0.025
 ) {
-  return new THREE.MeshPhysicalMaterial({
+  return new THREE.MeshStandardMaterial({
     color,
     metalness: 1,
     roughness,
-    clearcoat: 1,
-    clearcoatRoughness: 0.025,
-    envMapIntensity: 2.8,
+    envMapIntensity: 3.5,
     side: THREE.DoubleSide
   });
 }
 
 
 // ============================================
-// TAPERED SCULPTURAL BLADE GEOMETRY
+// CUSTOM STUDIO REFLECTION ENVIRONMENT
+// ============================================
+
+function createEnvironment() {
+  const pmrem = new THREE.PMREMGenerator(renderer);
+
+  const envScene = new THREE.Scene();
+
+  // Dark studio background.
+  envScene.background = new THREE.Color(0x08090b);
+
+  // Soft environmental fill.
+  envScene.add(
+    new THREE.HemisphereLight(
+      0xffffff,
+      0x10131a,
+      0.8
+    )
+  );
+
+  // Large bright reflection panels.
+  // Their shapes create the long highlights
+  // associated with polished chrome.
+
+  const panels = [
+    {
+      position: [-3.5, 0.5, 2],
+      size: [0.8, 5, 0.12],
+      color: 0xffffff
+    },
+    {
+      position: [3.4, 0.2, 1.8],
+      size: [0.55, 4.5, 0.12],
+      color: 0xe5edff
+    },
+    {
+      position: [0, 3.4, 0],
+      size: [4.5, 0.55, 0.12],
+      color: 0xffffff
+    },
+    {
+      position: [-2.4, -2.5, 0.5],
+      size: [0.65, 3, 0.12],
+      color: 0xa8b8d2
+    },
+    {
+      position: [2.5, -2, -1],
+      size: [0.55, 2.5, 0.12],
+      color: 0xffffff
+    },
+    {
+      position: [0, 0, -4],
+      size: [3.5, 3.5, 0.12],
+      color: 0x333b4a
+    }
+  ];
+
+  panels.forEach((panel) => {
+    const mesh = new THREE.Mesh(
+      new THREE.BoxGeometry(1, 1, 1),
+      new THREE.MeshBasicMaterial({
+        color: panel.color
+      })
+    );
+
+    mesh.position.set(...panel.position);
+    mesh.scale.set(...panel.size);
+
+    envScene.add(mesh);
+  });
+
+  // Generate a filtered environment map.
+  const environment = pmrem.fromScene(
+    envScene,
+    0.04
+  ).texture;
+
+  scene.environment = environment;
+  scene.environmentIntensity = 1.4;
+
+  envScene.traverse((object) => {
+    if (object.geometry) {
+      object.geometry.dispose();
+    }
+
+    if (object.material) {
+      object.material.dispose();
+    }
+  });
+
+  pmrem.dispose();
+}
+
+
+// ============================================
+// SCULPTURAL BLADE GEOMETRY
 // ============================================
 
 function createBladeGeometry({
@@ -72,8 +164,8 @@ function createBladeGeometry({
   bend = new THREE.Vector3(0, 0, 0),
   twist = 0
 }) {
-  const segments = 72;
-  const radialSegments = 20;
+  const segments = 84;
+  const radialSegments = 24;
 
   const positions = [];
   const uvs = [];
@@ -86,7 +178,9 @@ function createBladeGeometry({
     : new THREE.Vector3(0, 1, 0);
 
   const pointAt = (t) => {
-    const primary = dir.clone().multiplyScalar(length * t);
+    const primary = dir.clone().multiplyScalar(
+      length * t
+    );
 
     const curved = bend.clone().multiplyScalar(
       Math.sin(Math.PI * t)
@@ -129,7 +223,6 @@ function createBladeGeometry({
     side.applyAxisAngle(tangent, twistAngle);
     normal.applyAxisAngle(tangent, twistAngle);
 
-    // Wide middle, narrow base and razor-like tip.
     const swell = Math.pow(
       Math.sin(Math.PI * t),
       0.62
@@ -201,7 +294,7 @@ function createBladeGeometry({
 
 
 // ============================================
-// CREATE ONE CHROME BLADE
+// CREATE CHROME BLADE
 // ============================================
 
 function createBlade(config, material) {
@@ -212,11 +305,7 @@ function createBlade(config, material) {
     material
   );
 
-  blade.position.set(
-    config.origin[0],
-    config.origin[1],
-    config.origin[2]
-  );
+  blade.position.set(...config.origin);
 
   blade.castShadow = true;
   blade.receiveShadow = true;
@@ -228,7 +317,7 @@ function createBlade(config, material) {
 
 
 // ============================================
-// CENTRAL METALLIC CORE
+// CENTRAL SCULPTURAL CORE
 // ============================================
 
 function createCore() {
@@ -236,17 +325,16 @@ function createCore() {
 
   const core = new THREE.Mesh(
     new THREE.SphereGeometry(0.31, 64, 48),
-    createMetalMaterial(0xe9edf2, 0.035)
+    createMetalMaterial(0xffffff, 0.018)
   );
 
   core.scale.set(0.85, 1.15, 0.72);
 
   coreGroup.add(core);
 
-  // Small offset metallic ridge.
   const innerForm = new THREE.Mesh(
     new THREE.SphereGeometry(0.19, 48, 32),
-    createMetalMaterial(0x9faab8, 0.045)
+    createMetalMaterial(0x9faab8, 0.035)
   );
 
   innerForm.scale.set(0.8, 1.45, 0.7);
@@ -259,7 +347,7 @@ function createCore() {
 
 
 // ============================================
-// THIN CHROME FILAMENTS
+// CHROME FILAMENTS
 // ============================================
 
 function createChromeCurve(points, radius, material) {
@@ -289,7 +377,7 @@ function createChromeCurve(points, radius, material) {
 
 
 // ============================================
-// BUILD THE A2 SCULPTURE
+// BUILD SCULPTURE
 // ============================================
 
 function createSculpture() {
@@ -297,29 +385,26 @@ function createSculpture() {
   scene.add(sculpture);
 
   const silver = createMetalMaterial(
-    0xf0f3f7,
-    0.035
+    0xffffff,
+    0.022
   );
 
   const platinum = createMetalMaterial(
-    0xb9c5d2,
-    0.055
+    0xcbd4df,
+    0.035
   );
 
   const darkChrome = createMetalMaterial(
-    0x727f91,
-    0.075
+    0x788596,
+    0.045
   );
 
   const brightChrome = createMetalMaterial(
     0xffffff,
-    0.025
+    0.012
   );
 
   createCore();
-
-  // Each blade has its own direction, curve and length.
-  // The arrangement is deliberately irregular.
 
   const blades = [
     {
@@ -410,9 +495,6 @@ function createSculpture() {
     createBlade(bladeConfig, material);
   });
 
-  // A few fine extensions give the sculpture a more
-  // organic, engineered silhouette.
-
   createChromeCurve(
     [
       [-0.08, -0.12, 0.05],
@@ -456,29 +538,7 @@ function createSculpture() {
 
 
 // ============================================
-// REFLECTION ENVIRONMENT
-// ============================================
-
-function createEnvironment() {
-  const pmrem = new THREE.PMREMGenerator(renderer);
-
-  const environmentScene = new RoomEnvironment();
-
-  const environment = pmrem.fromScene(
-    environmentScene,
-    0.04
-  ).texture;
-
-  scene.environment = environment;
-  scene.environmentIntensity = 1.25;
-
-  environmentScene.dispose();
-  pmrem.dispose();
-}
-
-
-// ============================================
-// CINEMATIC REFLECTION LIGHTING
+// CINEMATIC LIGHTING
 // ============================================
 
 function createLighting() {
@@ -487,21 +547,21 @@ function createLighting() {
   const lightConfigs = [
     {
       color: 0xffffff,
-      intensity: 18,
+      intensity: 20,
       width: 0.55,
       height: 5,
       position: [-3.2, 1.5, 3.5]
     },
     {
       color: 0xe7efff,
-      intensity: 22,
+      intensity: 24,
       width: 0.42,
       height: 4.5,
       position: [3.2, 0.5, 2.8]
     },
     {
       color: 0xffffff,
-      intensity: 15,
+      intensity: 16,
       width: 4.5,
       height: 0.45,
       position: [0, 3.5, 1.5]
@@ -515,7 +575,7 @@ function createLighting() {
     },
     {
       color: 0xc9b99f,
-      intensity: 5,
+      intensity: 6,
       width: 0.4,
       height: 2.8,
       position: [2, -2, -2]
@@ -538,7 +598,7 @@ function createLighting() {
 
   const key = new THREE.DirectionalLight(
     0xffffff,
-    2
+    1.8
   );
 
   key.position.set(3, 5, 5);
@@ -546,7 +606,7 @@ function createLighting() {
 
   const rim = new THREE.DirectionalLight(
     0xb8c8df,
-    2.5
+    2.2
   );
 
   rim.position.set(-4, 1, -3);
@@ -600,7 +660,7 @@ function createParticles() {
 
 
 // ============================================
-// THREE.JS INITIALIZATION
+// INITIALIZATION
 // ============================================
 
 function initThree() {
@@ -636,7 +696,7 @@ function initThree() {
 
     renderer.outputColorSpace = THREE.SRGBColorSpace;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 1.3;
+    renderer.toneMappingExposure = 1.15;
 
     createEnvironment();
     createLighting();
@@ -667,7 +727,7 @@ function initThree() {
 
 
 // ============================================
-// SUBTLE 3D MOTION
+// SUBTLE 3D ANIMATION
 // ============================================
 
 function animate() {
@@ -683,7 +743,6 @@ function animate() {
   targetY = lerp(targetY, pointerY, 0.035);
 
   if (sculpture) {
-    // Cursor-responsive rotation.
     sculpture.rotation.y =
       -0.12 +
       targetX * 0.22 +
