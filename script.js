@@ -4,7 +4,7 @@ import { RoomEnvironment } from "three/addons/environments/RoomEnvironment.js";
 
 // ============================================
 // MYRLORE®
-// LIQUID METAL — SCULPTURAL INSTALLATION
+// CHROME BLOOM — CUSTOM 3D SCULPTURE
 // ============================================
 
 const canvas = document.querySelector("#webgl");
@@ -18,11 +18,11 @@ let scene;
 let camera;
 let renderer;
 let sculpture;
-let strands = [];
+let flowerCore;
+let flowerPetals = [];
 let particles;
-let fragmentGroup;
 let resizeObserver;
-let environmentTexture;
+let animationFrame = null;
 
 let scrollProgress = 0;
 
@@ -31,7 +31,6 @@ let pointerY = 0;
 let targetX = 0;
 let targetY = 0;
 
-let animationFrame = null;
 let isPageVisible = !document.hidden;
 
 const clock = new THREE.Clock();
@@ -42,262 +41,342 @@ const clamp = (value, min, max) =>
 const lerp = (a, b, amount) =>
   a + (b - a) * amount;
 
-
-// ============================================
-// SCULPTURE PATHS
-// Three independent flowing forms
-// ============================================
-
-const sculpturePaths = [
-  {
-    radius: 0.105,
-    color: 0xe5e5e0,
-    roughness: 0.105,
-    points: [
-      [-1.75, -0.75, 0.15],
-      [-1.65, 0.05, 0.55],
-      [-1.05, 0.95, 0.35],
-      [-0.25, 1.12, -0.35],
-      [0.55, 0.48, -0.75],
-      [1.45, 0.85, -0.2],
-      [1.65, 0.05, 0.5],
-      [1.05, -0.85, 0.45],
-      [0.15, -1.12, -0.25],
-      [-0.7, -0.5, -0.55],
-      [-1.35, -0.15, 0.2]
-    ]
-  },
-  {
-    radius: 0.082,
-    color: 0xaeb3ba,
-    roughness: 0.145,
-    points: [
-      [-1.65, 0.8, -0.45],
-      [-1.1, 1.15, 0.15],
-      [-0.35, 0.55, 0.75],
-      [0.4, -0.1, 0.55],
-      [1.2, -0.55, -0.2],
-      [1.55, -1.0, -0.5],
-      [0.75, -1.2, 0.1],
-      [-0.05, -0.65, 0.7],
-      [-0.75, 0.15, 0.45],
-      [-1.25, 0.6, -0.25]
-    ]
-  },
-  {
-    radius: 0.065,
-    color: 0xc6b69a,
-    roughness: 0.17,
-    points: [
-      [-1.25, -1.05, -0.65],
-      [-0.75, -0.25, -0.75],
-      [-0.15, 0.45, -0.35],
-      [0.45, 1.15, 0.15],
-      [1.15, 0.9, 0.65],
-      [1.55, 0.15, 0.45],
-      [0.95, -0.35, -0.35],
-      [0.2, -0.85, -0.65],
-      [-0.65, -0.95, -0.15],
-      [-1.35, -0.35, 0.45]
-    ]
-  }
-];
+const smoothstep = (value) =>
+  value * value * (3 - 2 * value);
 
 
 // ============================================
 // METALLIC MATERIALS
 // ============================================
 
-function createMetalMaterial(color, roughness) {
+function createMetalMaterial(
+  color,
+  roughness = 0.14,
+  metalness = 1
+) {
   return new THREE.MeshPhysicalMaterial({
     color,
-    metalness: 1,
+    metalness,
     roughness,
     clearcoat: 1,
-    clearcoatRoughness: 0.065,
-    envMapIntensity: 2.1,
+    clearcoatRoughness: 0.055,
+    envMapIntensity: 2.2,
     side: THREE.DoubleSide
   });
 }
 
 
 // ============================================
-// CREATE FLOWING METAL STRANDS
+// CUSTOM CURVED PETAL GEOMETRY
 // ============================================
 
-function createSculpture() {
-  sculpture = new THREE.Group();
-  scene.add(sculpture);
+function createPetalGeometry(
+  length = 1.5,
+  width = 0.43,
+  detail = 36
+) {
+  const rows = detail;
+  const columns = 20;
 
-  sculpturePaths.forEach((config, index) => {
-    const strandGroup = new THREE.Group();
+  const positions = [];
+  const uvs = [];
+  const indices = [];
 
-    const points = config.points.map(
-      ([x, y, z]) => new THREE.Vector3(x, y, z)
-    );
+  for (let i = 0; i <= rows; i++) {
+    const t = i / rows;
 
-    const curve = new THREE.CatmullRomCurve3(
-      points,
-      false,
-      "centripetal",
-      0.5
-    );
+    // Taper at the base and tip
+    const shape =
+      Math.pow(Math.sin(Math.PI * t), 0.78) *
+      (0.82 + 0.18 * t);
 
-    const geometry = new THREE.TubeGeometry(
-      curve,
-      260,
-      config.radius,
-      20,
-      false
-    );
+    const currentWidth = width * shape;
 
-    const material = createMetalMaterial(
-      config.color,
-      config.roughness
-    );
+    for (let j = 0; j <= columns; j++) {
+      const across = (j / columns) * 2 - 1;
 
-    const tube = new THREE.Mesh(geometry, material);
+      const x = across * currentWidth;
 
-    tube.castShadow = false;
-    tube.receiveShadow = false;
+      const y = t * length;
 
-    strandGroup.add(tube);
+      // Curved, slightly cupped metallic surface
+      const arch =
+        Math.sin(Math.PI * t) * 0.17 +
+        t * t * 0.08;
 
-    // Smooth polished endpoints
-    const capGeometry = new THREE.SphereGeometry(
-      config.radius,
-      20,
-      14
-    );
+      const cup =
+        -across * across *
+        Math.sin(Math.PI * t) * 0.13;
 
-    const startCap = new THREE.Mesh(
-      capGeometry,
-      material
-    );
+      const z = arch + cup;
 
-    const endCap = new THREE.Mesh(
-      capGeometry,
-      material
-    );
+      positions.push(x, y, z);
+      uvs.push(j / columns, t);
 
-    startCap.position.copy(points[0]);
-    endCap.position.copy(points[points.length - 1]);
+      if (i < rows && j < columns) {
+        const a = i * (columns + 1) + j;
+        const b = a + columns + 1;
 
-    strandGroup.add(startCap, endCap);
-
-    strandGroup.userData.phase = index * 2.1;
-    strandGroup.userData.speed = 0.12 + index * 0.035;
-
-    sculpture.add(strandGroup);
-    strands.push(strandGroup);
-  });
-
-  // Small sculptural accents
-  createFragments();
-
-  sculpture.position.set(0.35, 0, 0);
-
-  sculpture.scale.setScalar(
-    window.innerWidth < 600 ? 0.78 : 1
-  );
-}
-
-
-// ============================================
-// METALLIC FRAGMENTS
-// ============================================
-
-function createFragments() {
-  fragmentGroup = new THREE.Group();
-  sculpture.add(fragmentGroup);
-
-  const materials = [
-    createMetalMaterial(0xd8d9d6, 0.13),
-    createMetalMaterial(0x737780, 0.19),
-    createMetalMaterial(0xc6b69a, 0.2)
-  ];
-
-  for (let i = 0; i < 12; i++) {
-    const size = 0.025 + Math.random() * 0.045;
-
-    const geometry = new THREE.IcosahedronGeometry(
-      size,
-      1
-    );
-
-    const fragment = new THREE.Mesh(
-      geometry,
-      materials[i % materials.length]
-    );
-
-    const angle = (i / 12) * Math.PI * 2;
-
-    fragment.position.set(
-      Math.cos(angle) * (1.65 + Math.random() * 0.3),
-      Math.sin(angle * 1.7) * 1.25,
-      Math.sin(angle * 1.2) * 0.8
-    );
-
-    fragment.rotation.set(
-      Math.random() * Math.PI,
-      Math.random() * Math.PI,
-      Math.random() * Math.PI
-    );
-
-    fragment.userData.basePosition =
-      fragment.position.clone();
-
-    fragment.userData.phase =
-      Math.random() * Math.PI * 2;
-
-    fragmentGroup.add(fragment);
-  }
-}
-
-
-// ============================================
-// PARTICLE FIELD
-// ============================================
-
-function createParticles() {
-  const count = window.innerWidth < 600 ? 100 : 220;
-
-  const positions = new Float32Array(count * 3);
-
-  for (let i = 0; i < count; i++) {
-    positions[i * 3] =
-      (Math.random() - 0.5) * 10;
-
-    positions[i * 3 + 1] =
-      (Math.random() - 0.5) * 8;
-
-    positions[i * 3 + 2] =
-      (Math.random() - 0.5) * 6;
+        indices.push(
+          a, b, a + 1,
+          b, b + 1, a + 1
+        );
+      }
+    }
   }
 
   const geometry = new THREE.BufferGeometry();
 
   geometry.setAttribute(
     "position",
-    new THREE.BufferAttribute(positions, 3)
+    new THREE.Float32BufferAttribute(positions, 3)
   );
 
-  const material = new THREE.PointsMaterial({
-    color: 0xc9c4ba,
-    size: 0.014,
-    transparent: true,
-    opacity: 0.34,
-    sizeAttenuation: true,
-    depthWrite: false
-  });
+  geometry.setAttribute(
+    "uv",
+    new THREE.Float32BufferAttribute(uvs, 2)
+  );
 
-  particles = new THREE.Points(geometry, material);
-  scene.add(particles);
+  geometry.setIndex(indices);
+  geometry.computeVertexNormals();
+  geometry.computeBoundingSphere();
+
+  return geometry;
 }
 
 
 // ============================================
-// CINEMATIC LIGHTING
+// PETAL LAYERS
+// ============================================
+
+function createPetalLayer({
+  count,
+  length,
+  width,
+  radius,
+  z,
+  scale,
+  material,
+  layer,
+  tilt
+}) {
+  const geometry = createPetalGeometry(
+    length,
+    width,
+    40
+  );
+
+  for (let i = 0; i < count; i++) {
+    const angle =
+      (i / count) * Math.PI * 2 +
+      (layer === 1 ? Math.PI / count : 0);
+
+    const group = new THREE.Group();
+
+    const petal = new THREE.Mesh(
+      geometry,
+      material
+    );
+
+    petal.castShadow = false;
+    petal.receiveShadow = false;
+
+    group.add(petal);
+
+    // Position the petal around the flower centre
+    group.position.set(
+      Math.cos(angle) * radius,
+      Math.sin(angle) * radius,
+      z
+    );
+
+    // Point the petal outwards
+    group.rotation.z = angle - Math.PI / 2;
+
+    // Initial opening angle
+    group.rotation.x = tilt;
+
+    group.scale.set(
+      scale,
+      scale * 0.42,
+      scale
+    );
+
+    group.userData = {
+      angle,
+      layer,
+      initialTilt: tilt,
+      baseScale: scale,
+      phase: angle,
+      length
+    };
+
+    sculpture.add(group);
+    flowerPetals.push(group);
+  }
+
+  // Shared geometry is intentionally reused within each layer.
+}
+
+
+// ============================================
+// FLOWER CENTRE
+// ============================================
+
+function createFlowerCore() {
+  const coreGroup = new THREE.Group();
+
+  const coreMaterial = createMetalMaterial(
+    0xd6c6a9,
+    0.12
+  );
+
+  const core = new THREE.Mesh(
+    new THREE.SphereGeometry(0.25, 48, 32),
+    coreMaterial
+  );
+
+  core.scale.set(1, 1, 0.68);
+  core.position.z = 0.18;
+
+  coreGroup.add(core);
+
+  // Small polished details around the core
+  const beadMaterial = createMetalMaterial(
+    0xf0eee8,
+    0.095
+  );
+
+  const beadGeometry = new THREE.SphereGeometry(
+    0.035,
+    20,
+    16
+  );
+
+  for (let i = 0; i < 11; i++) {
+    const angle = (i / 11) * Math.PI * 2;
+
+    const bead = new THREE.Mesh(
+      beadGeometry,
+      beadMaterial
+    );
+
+    bead.position.set(
+      Math.cos(angle) * 0.19,
+      Math.sin(angle) * 0.19,
+      0.32
+    );
+
+    coreGroup.add(bead);
+  }
+
+  // Centre jewel
+  const jewel = new THREE.Mesh(
+    new THREE.SphereGeometry(0.095, 32, 24),
+    createMetalMaterial(0xe8e4dc, 0.075)
+  );
+
+  jewel.position.z = 0.37;
+  jewel.scale.set(1, 1, 0.7);
+
+  coreGroup.add(jewel);
+
+  sculpture.add(coreGroup);
+  flowerCore = coreGroup;
+}
+
+
+// ============================================
+// BUILD THE CHROME FLOWER
+// ============================================
+
+function createSculpture() {
+  sculpture = new THREE.Group();
+  scene.add(sculpture);
+
+  flowerPetals = [];
+
+  const silver = createMetalMaterial(
+    0xdfe2e5,
+    0.105
+  );
+
+  const platinum = createMetalMaterial(
+    0xaeb7c2,
+    0.135
+  );
+
+  const champagne = createMetalMaterial(
+    0xc6b69a,
+    0.16
+  );
+
+  const pearl = createMetalMaterial(
+    0xf0efea,
+    0.11
+  );
+
+  // Outer layer: eight broad petals
+  createPetalLayer({
+    count: 8,
+    length: 1.55,
+    width: 0.43,
+    radius: 0.04,
+    z: -0.12,
+    scale: 1,
+    material: silver,
+    layer: 0,
+    tilt: 0.7
+  });
+
+  // Middle layer: seven overlapping petals
+  createPetalLayer({
+    count: 7,
+    length: 1.12,
+    width: 0.37,
+    radius: 0.035,
+    z: 0.015,
+    scale: 0.84,
+    material: platinum,
+    layer: 1,
+    tilt: 0.85
+  });
+
+  // Inner layer: five compact petals
+  createPetalLayer({
+    count: 5,
+    length: 0.73,
+    width: 0.29,
+    radius: 0.025,
+    z: 0.12,
+    scale: 0.7,
+    material: i => i,
+    layer: 2,
+    tilt: 1.05
+  });
+
+  // The inner layer gets its own pearl material
+  // Reassign the inner petal materials
+  const innerLayer = flowerPetals.filter(
+    petal => petal.userData.layer === 2
+  );
+
+  innerLayer.forEach(group => {
+    group.children[0].material = pearl;
+  });
+
+  createFlowerCore();
+
+  sculpture.position.set(0.35, 0, 0);
+
+  sculpture.scale.setScalar(
+    window.innerWidth < 600 ? 0.76 : 0.92
+  );
+}
+
+
+// ============================================
+// LIGHTING
 // ============================================
 
 function createLighting() {
@@ -329,23 +408,127 @@ function createLighting() {
   top.position.set(0, 5, -2);
   scene.add(top);
 
-  const champagne = new THREE.PointLight(
+  const champagneLight = new THREE.PointLight(
     0xc6b69a,
     18,
     10
   );
 
-  champagne.position.set(-3, 2, 3);
-  scene.add(champagne);
+  champagneLight.position.set(-3, 2, 3);
+  scene.add(champagneLight);
 
-  const cool = new THREE.PointLight(
+  const coolLight = new THREE.PointLight(
     0x9da9c0,
     14,
     10
   );
 
-  cool.position.set(3, -3, 2);
-  scene.add(cool);
+  coolLight.position.set(3, -3, 2);
+  scene.add(coolLight);
+}
+
+
+// ============================================
+// PARTICLE FIELD
+// ============================================
+
+function createParticles() {
+  const count = window.innerWidth < 600 ? 90 : 190;
+
+  const positions = new Float32Array(count * 3);
+
+  for (let i = 0; i < count; i++) {
+    positions[i * 3] =
+      (Math.random() - 0.5) * 10;
+
+    positions[i * 3 + 1] =
+      (Math.random() - 0.5) * 8;
+
+    positions[i * 3 + 2] =
+      (Math.random() - 0.5) * 6;
+  }
+
+  const geometry = new THREE.BufferGeometry();
+
+  geometry.setAttribute(
+    "position",
+    new THREE.BufferAttribute(positions, 3)
+  );
+
+  const material = new THREE.PointsMaterial({
+    color: 0xc9c4ba,
+    size: 0.014,
+    transparent: true,
+    opacity: 0.3,
+    sizeAttenuation: true,
+    depthWrite: false
+  });
+
+  particles = new THREE.Points(
+    geometry,
+    material
+  );
+
+  scene.add(particles);
+}
+
+
+// ============================================
+// FLOWER ANIMATION
+// ============================================
+
+function updateFlower(time) {
+  if (!sculpture) return;
+
+  // Gradually unfold the flower
+  const opening = smoothstep(
+    clamp(time / 2.8, 0, 1)
+  );
+
+  const breathing =
+    1 + Math.sin(time * 0.55) * 0.009;
+
+  flowerPetals.forEach((petal) => {
+    const layer = petal.userData.layer;
+    const phase = petal.userData.phase;
+
+    const closedTilt =
+      layer === 0 ? 0.7 :
+      layer === 1 ? 0.85 : 1.05;
+
+    const openTilt =
+      layer === 0 ? 0.1 :
+      layer === 1 ? 0.2 : 0.3;
+
+    const tilt = lerp(
+      closedTilt,
+      openTilt,
+      opening
+    );
+
+    petal.rotation.x =
+      tilt +
+      Math.sin(time * 0.35 + phase) * 0.018;
+
+    const baseScale = petal.userData.baseScale;
+
+    const openScale = lerp(
+      0.42,
+      1,
+      opening
+    );
+
+    petal.scale.y =
+      baseScale * openScale * breathing;
+  });
+
+  if (flowerCore) {
+    flowerCore.rotation.z = time * 0.045;
+
+    flowerCore.scale.setScalar(
+      1 + Math.sin(time * 0.8) * 0.008
+    );
+  }
 }
 
 
@@ -378,11 +561,11 @@ function initThree() {
       powerPreference: "high-performance"
     });
 
-    renderer.setSize(width, height);
-
     renderer.setPixelRatio(
       Math.min(window.devicePixelRatio || 1, 1.5)
     );
+
+    renderer.setSize(width, height);
 
     renderer.outputColorSpace = THREE.SRGBColorSpace;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
@@ -393,12 +576,12 @@ function initThree() {
 
     const environmentScene = new RoomEnvironment();
 
-    environmentTexture = pmrem.fromScene(
+    const environment = pmrem.fromScene(
       environmentScene,
       0.04
     ).texture;
 
-    scene.environment = environmentTexture;
+    scene.environment = environment;
 
     environmentScene.dispose();
     pmrem.dispose();
@@ -408,8 +591,10 @@ function initThree() {
     createParticles();
 
     if (reducedMotion) {
+      updateFlower(3.5);
       renderer.render(scene, camera);
     } else {
+      clock.start();
       animate();
     }
 
@@ -430,7 +615,7 @@ function initThree() {
 
 
 // ============================================
-// ANIMATION
+// MAIN ANIMATION LOOP
 // ============================================
 
 function animate() {
@@ -442,78 +627,44 @@ function animate() {
 
   const time = clock.getElapsedTime();
 
+  // Smooth pointer following
   targetX = lerp(targetX, pointerX, 0.035);
   targetY = lerp(targetY, pointerY, 0.035);
 
+  updateFlower(time);
+
   if (sculpture) {
-    // Overall movement
     sculpture.rotation.y =
-      targetX * 0.35 +
-      Math.sin(time * 0.17) * 0.045;
+      targetX * 0.28 +
+      Math.sin(time * 0.16) * 0.035;
 
     sculpture.rotation.x =
-      targetY * 0.22 +
-      Math.cos(time * 0.14) * 0.035;
+      targetY * 0.2 +
+      Math.cos(time * 0.13) * 0.025;
 
     sculpture.rotation.z =
-      Math.sin(time * 0.11) * 0.025;
+      Math.sin(time * 0.1) * 0.018;
 
-    // Scroll transformation
     const baseScale =
-      window.innerWidth < 600 ? 0.78 : 1;
+      window.innerWidth < 600 ? 0.76 : 0.92;
 
     const finalScale =
-      window.innerWidth < 600 ? 0.62 : 0.76;
+      window.innerWidth < 600 ? 0.63 : 0.76;
 
-    const scale = lerp(
-      baseScale,
-      finalScale,
-      scrollProgress
+    sculpture.scale.setScalar(
+      lerp(baseScale, finalScale, scrollProgress)
     );
 
-    sculpture.scale.setScalar(scale);
-
     sculpture.position.y =
-      -scrollProgress * 0.35 +
-      Math.sin(time * 0.3) * 0.045;
-  }
-
-  // Independent strand movement
-  strands.forEach((strand) => {
-    const phase = strand.userData.phase;
-    const speed = strand.userData.speed;
-
-    strand.rotation.y =
-      Math.sin(time * speed + phase) * 0.075;
-
-    strand.rotation.x =
-      Math.cos(time * speed * 0.8 + phase) * 0.045;
-
-    strand.rotation.z =
-      Math.sin(time * speed * 0.6 + phase) * 0.025;
-  });
-
-  // Floating fragments
-  if (fragmentGroup) {
-    fragmentGroup.children.forEach((fragment) => {
-      const phase = fragment.userData.phase;
-      const base = fragment.userData.basePosition;
-
-      fragment.position.y =
-        base.y + Math.sin(time * 0.55 + phase) * 0.045;
-
-      fragment.position.x =
-        base.x + Math.cos(time * 0.35 + phase) * 0.025;
-
-      fragment.rotation.y += 0.0015;
-      fragment.rotation.x += 0.001;
-    });
+      -scrollProgress * 0.3 +
+      Math.sin(time * 0.32) * 0.035;
   }
 
   if (particles) {
-    particles.rotation.y = time * 0.008;
+    particles.rotation.y = time * 0.007;
+
     particles.rotation.x =
-      Math.sin(time * 0.07) * 0.025;
+      Math.sin(time * 0.07) * 0.02;
   }
 
   renderer.render(scene, camera);
@@ -527,11 +678,14 @@ function animate() {
 document.addEventListener("visibilitychange", () => {
   isPageVisible = !document.hidden;
 
-  if (!renderer) return;
+  if (!renderer || reducedMotion) return;
 
-  if (isPageVisible && !reducedMotion) {
+  if (isPageVisible) {
     clock.start();
-    animate();
+
+    if (animationFrame === null) {
+      animate();
+    }
   } else if (animationFrame !== null) {
     cancelAnimationFrame(animationFrame);
     animationFrame = null;
@@ -601,11 +755,11 @@ function resizeScene() {
   camera.aspect = width / height;
   camera.updateProjectionMatrix();
 
-  renderer.setSize(width, height);
-
   renderer.setPixelRatio(
     Math.min(window.devicePixelRatio || 1, 1.5)
   );
+
+  renderer.setSize(width, height);
 
   if (reducedMotion) {
     renderer.render(scene, camera);
@@ -649,7 +803,9 @@ document.querySelectorAll(".menu-panel a").forEach((link) => {
 });
 
 document.addEventListener("keydown", (event) => {
-  if (event.key === "Escape") closeMenu();
+  if (event.key === "Escape") {
+    closeMenu();
+  }
 });
 
 
