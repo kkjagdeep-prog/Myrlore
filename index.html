@@ -11,15 +11,15 @@
 
   <title>MYRLORE® — Independent Creative Studio</title>
 
-  <!-- Fonts -->
+  <!-- FONTS -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
-  <!-- Stylesheet -->
+  <!-- STYLESHEET -->
   <link rel="stylesheet" href="style.css">
 
-  <!-- Three.js Import Map -->
+  <!-- THREE.JS IMPORT MAP -->
   <script type="importmap">
   {
     "imports": {
@@ -36,19 +36,31 @@
 
 <body>
 
-  <!-- PAGE LOADER -->
+  <!-- ======================================
+       PAGE LOADER
+  ======================================= -->
+
   <div class="page-loader" id="pageLoader">
     <div class="loader-word">MYRLORE<span>®</span></div>
     <div class="loader-line"><span></span></div>
     <p>CREATING SOMETHING DIFFERENT</p>
   </div>
 
-  <!-- BACKGROUND EFFECTS -->
+
+  <!-- ======================================
+       BACKGROUND EFFECTS
+  ======================================= -->
+
   <div class="noise" aria-hidden="true"></div>
   <div class="cursor-glow" id="cursorGlow" aria-hidden="true"></div>
 
-  <!-- HEADER -->
+
+  <!-- ======================================
+       HEADER
+  ======================================= -->
+
   <header class="site-header">
+
     <a class="logo" href="#home" aria-label="MYRLORE home">
       MYRLORE<span>®</span>
     </a>
@@ -70,10 +82,16 @@
       <i></i>
       <i></i>
     </button>
+
   </header>
 
-  <!-- NAVIGATION -->
+
+  <!-- ======================================
+       NAVIGATION
+  ======================================= -->
+
   <nav class="menu-panel" id="menuPanel" aria-label="Main navigation">
+
     <button class="menu-close" id="menuClose" type="button">
       CLOSE ×
     </button>
@@ -88,11 +106,16 @@
     <div class="menu-bottom">
       INDEPENDENT BY NATURE. CREATIVE BY DESIGN.
     </div>
+
   </nav>
+
 
   <main>
 
-    <!-- HERO -->
+    <!-- ======================================
+         HERO
+    ======================================= -->
+
     <section class="hero" id="home">
 
       <div class="hero-meta">
@@ -116,6 +139,7 @@
           </h1>
 
           <div class="hero-bottom">
+
             <p>
               We shape brands, build digital experiences and turn
               ambitious ideas into something extraordinary.
@@ -128,11 +152,14 @@
             >
               <span>↘</span>
             </a>
+
           </div>
 
         </div>
 
+
         <!-- THREE.JS VISUAL -->
+
         <div class="hero-visual">
 
           <div class="visual-caption caption-top">
@@ -157,29 +184,44 @@
 
       </div>
 
+
       <div class="hero-footer">
+
         <span>
           SCROLL TO EXPLORE
           <span class="scroll-arrow">↓</span>
         </span>
 
         <span>DESIGN WITH INTENTION.</span>
+
       </div>
 
     </section>
 
-    <!-- INTRO MARQUEE -->
+
+    <!-- ======================================
+         INTRO MARQUEE
+    ======================================= -->
+
     <section class="intro-band" aria-label="Studio principles">
+
       <div class="intro-track">
+
         <span>IDEAS INTO IMPACT</span><b>✳</b>
         <span>DESIGN WITHOUT LIMITS</span><b>✳</b>
         <span>BUILT TO BE DIFFERENT</span><b>✳</b>
         <span>IDEAS INTO IMPACT</span><b>✳</b>
         <span>DESIGN WITHOUT LIMITS</span><b>✳</b>
+
       </div>
+
     </section>
 
-    <!-- STUDIO -->
+
+    <!-- ======================================
+         STUDIO
+    ======================================= -->
+
     <section class="studio section-pad" id="studio">
 
       <div class="section-top">
@@ -222,7 +264,11 @@
 
     </section>
 
-    <!-- SERVICES -->
+
+    <!-- ======================================
+         SERVICES
+    ======================================= -->
+
     <section class="services section-pad" id="services">
 
       <div class="section-top">
@@ -269,7 +315,11 @@
 
     </section>
 
-    <!-- SELECTED WORK -->
+
+    <!-- ======================================
+         SELECTED WORK
+    ======================================= -->
+
     <section class="work section-pad" id="work">
 
       <div class="section-top">
@@ -290,31 +340,61 @@
 
       </div>
 
+
       <div class="work-grid">
 
         <!-- CORROGUARD -->
-        <a class="work-card work-large" href="#contact">
+
+        <a
+          class="work-card work-large"
+          href="#case-study"
+          data-case-study="corroguard"
+          aria-label="Explore CorroGuard case study"
+        >
 
           <div class="work-art art-corro">
+
             <div class="art-orbit"></div>
-            <div class="art-core">CG<span>®</span></div>
-            <span class="art-label">MATERIAL INTELLIGENCE</span>
+
+            <div class="art-core">
+              CG<span>®</span>
+            </div>
+
+            <span class="art-label">
+              MATERIAL INTELLIGENCE
+            </span>
+
+            <span class="work-view-label">
+              EXPLORE PROJECT ↗
+            </span>
+
           </div>
 
           <div class="work-info">
+
             <div>
               <h3>CorroGuard</h3>
               <p>Engineering · Digital platform</p>
             </div>
+
             <span>↗</span>
+
           </div>
 
         </a>
 
-        <!-- FLOODWATCH -->
-        <a class="work-card work-small" href="#contact">
+
+        <!-- FLOODWATCH CHENNAI -->
+
+        <a
+          class="work-card work-small"
+          href="#case-study"
+          data-case-study="floodwatch"
+          aria-label="Explore FloodWatch Chennai case study"
+        >
 
           <div class="work-art art-flood">
+
             <div class="flood-lines"></div>
 
             <div class="flood-title">
@@ -322,53 +402,91 @@
               WATCH<span>.</span>
             </div>
 
-            <span class="art-label">CHENNAI / INDIA</span>
+            <span class="art-label">
+              CHENNAI / INDIA
+            </span>
+
+            <span class="work-view-label">
+              EXPLORE PROJECT ↗
+            </span>
+
           </div>
 
           <div class="work-info">
+
             <div>
               <h3>FloodWatch Chennai</h3>
               <p>Data · Mapping · Web platform</p>
             </div>
+
             <span>↗</span>
+
           </div>
 
         </a>
 
+
         <!-- XTREMETOY -->
-        <a class="work-card work-small" href="#contact">
+
+        <a
+          class="work-card work-small"
+          href="#case-study"
+          data-case-study="xtremetoy"
+          aria-label="Explore XTREMETOY case study"
+        >
 
           <div class="work-art art-xtreme">
+
             <div class="xtreme-symbol">
               X<span>T</span>
             </div>
 
-            <span class="art-label">DIGITAL CULTURE / GAMING</span>
+            <span class="art-label">
+              DIGITAL CULTURE / GAMING
+            </span>
+
+            <span class="work-view-label">
+              EXPLORE PROJECT ↗
+            </span>
+
           </div>
 
           <div class="work-info">
+
             <div>
               <h3>XTREMETOY</h3>
               <p>Identity · Digital experience</p>
             </div>
+
             <span>↗</span>
+
           </div>
 
         </a>
 
+
+        <!-- WORK NOTE -->
+
         <div class="work-note">
+
           <span>MORE TO COME</span>
+
           <p>
             Good work takes curiosity.<br>
             We're just getting started.
           </p>
+
         </div>
 
       </div>
 
     </section>
 
-    <!-- MANIFESTO -->
+
+    <!-- ======================================
+         MANIFESTO
+    ======================================= -->
+
     <section class="manifesto section-pad">
 
       <span class="section-number">04 / THE BELIEF</span>
@@ -380,18 +498,26 @@
       </h2>
 
       <div class="manifesto-bottom">
+
         <span>STAY CURIOUS. MAKE MEANING.</span>
         <span>MYRLORE® — 2026</span>
+
       </div>
 
     </section>
 
-    <!-- CONTACT -->
+
+    <!-- ======================================
+         CONTACT
+    ======================================= -->
+
     <section class="contact section-pad" id="contact">
 
       <div class="section-top">
+
         <span class="section-number">05 / START SOMETHING</span>
         <span class="section-aside">HAVE AN IDEA? LET'S EXPLORE IT.</span>
+
       </div>
 
       <p class="contact-kicker">
@@ -404,15 +530,193 @@
       </h2>
 
       <a class="contact-link" href="mailto:hello@myrlore.com">
+
         <span>hello@myrlore.com</span>
         <span>↗</span>
+
       </a>
 
     </section>
 
   </main>
 
-  <!-- FOOTER -->
+
+  <!-- ======================================
+       INTERACTIVE CASE STUDY OVERLAY
+  ======================================= -->
+
+  <div
+    class="case-modal"
+    id="caseStudyModal"
+    aria-hidden="true"
+  >
+
+    <!-- BACKDROP -->
+
+    <div
+      class="case-backdrop"
+      data-case-close
+    ></div>
+
+
+    <!-- CASE STUDY PANEL -->
+
+    <section
+      class="case-panel"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="caseTitle"
+      tabindex="-1"
+    >
+
+      <!-- TOP BAR -->
+
+      <div class="case-topbar">
+
+        <a class="case-logo" href="#home">
+          MYRLORE<span>®</span>
+        </a>
+
+        <button
+          class="case-close"
+          id="caseClose"
+          type="button"
+          aria-label="Close case study"
+        >
+          CLOSE <span>×</span>
+        </button>
+
+      </div>
+
+
+      <!-- CONTENT -->
+
+      <div class="case-content">
+
+
+        <!-- PROJECT ARTWORK -->
+
+        <div class="case-hero-art" id="caseHeroArt">
+
+          <span class="case-art-index" id="caseIndex">
+            PROJECT / 001
+          </span>
+
+          <div class="case-art-symbol" id="caseSymbol">
+            CG
+          </div>
+
+          <span class="case-art-caption" id="caseArtCaption">
+            MATERIAL INTELLIGENCE
+          </span>
+
+        </div>
+
+
+        <!-- PROJECT INTRODUCTION -->
+
+        <div class="case-intro">
+
+          <div class="case-eyebrow">
+
+            <span class="status-dot"></span>
+
+            <span id="caseCategory">
+              ENGINEERING · DIGITAL PLATFORM
+            </span>
+
+          </div>
+
+          <h2 id="caseTitle">
+            CorroGuard
+          </h2>
+
+          <p id="caseSummary">
+            An interactive engineering chemistry platform
+            exploring corrosion analysis and prevention.
+          </p>
+
+        </div>
+
+
+        <!-- PROJECT DETAILS -->
+
+        <div class="case-details">
+
+
+          <!-- OVERVIEW -->
+
+          <div class="case-detail-block">
+
+            <span class="case-label">
+              01 / OVERVIEW
+            </span>
+
+            <p id="caseOverview"></p>
+
+          </div>
+
+
+          <!-- FEATURES -->
+
+          <div class="case-detail-block">
+
+            <span class="case-label">
+              02 / KEY FEATURES
+            </span>
+
+            <ul id="caseFeatures"></ul>
+
+          </div>
+
+
+          <!-- TECHNOLOGY -->
+
+          <div class="case-detail-block">
+
+            <span class="case-label">
+              03 / TECHNOLOGY
+            </span>
+
+            <div
+              class="case-tech-list"
+              id="caseTech"
+            ></div>
+
+          </div>
+
+        </div>
+
+
+        <!-- BOTTOM BAR -->
+
+        <div class="case-bottom">
+
+          <span>
+            INDEPENDENT PROJECT / MYRLORE®
+          </span>
+
+          <button
+            class="case-bottom-close"
+            type="button"
+            data-case-close
+          >
+            BACK TO SELECTED WORK ↑
+          </button>
+
+        </div>
+
+      </div>
+
+    </section>
+
+  </div>
+
+
+  <!-- ======================================
+       FOOTER
+  ======================================= -->
+
   <footer class="footer">
 
     <a class="logo" href="#home">
@@ -429,10 +733,16 @@
 
   </footer>
 
-  <!-- LOADER FALLBACK -->
+
+  <!-- ======================================
+       LOADER FALLBACK
+  ======================================= -->
+
   <script>
     (() => {
+
       const hideLoader = () => {
+
         document.body.classList.add("loaded");
 
         const loader = document.getElementById("pageLoader");
@@ -440,19 +750,23 @@
         if (loader) {
           loader.style.display = "none";
         }
+
       };
 
       window.addEventListener("load", () => {
         setTimeout(hideLoader, 500);
       });
 
-      // Prevent the loader from remaining visible if an external
-      // resource takes too long to load.
       setTimeout(hideLoader, 5000);
+
     })();
   </script>
 
-  <!-- MAIN THREE.JS / GSAP SCRIPT -->
+
+  <!-- ======================================
+       MAIN THREE.JS / GSAP SCRIPT
+  ======================================= -->
+
   <script type="module" src="script.js"></script>
 
 </body>
