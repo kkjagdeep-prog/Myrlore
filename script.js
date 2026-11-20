@@ -5,7 +5,7 @@ import { RectAreaLightUniformsLib } from "three/addons/lights/RectAreaLightUnifo
 
 // ============================================
 // MYRLORE®
-// CHROME BLOOM — LIQUID CHROME EDITION
+// CHROME BLOOM — ASYMMETRIC LIQUID ORCHID
 // ============================================
 
 const canvas = document.querySelector("#webgl");
@@ -22,9 +22,7 @@ let sculpture;
 let flowerCore;
 let flowerPetals = [];
 let particles;
-let resizeObserver;
 let animationFrame = null;
-
 let scrollProgress = 0;
 
 let pointerX = 0;
@@ -36,50 +34,44 @@ let isPageVisible = !document.hidden;
 
 const clock = new THREE.Clock();
 
-const clamp = (value, min, max) =>
-  Math.max(min, Math.min(max, value));
+const clamp = (v, min, max) =>
+  Math.max(min, Math.min(max, v));
 
-const lerp = (a, b, amount) =>
-  a + (b - a) * amount;
+const lerp = (a, b, t) =>
+  a + (b - a) * t;
 
-const smoothstep = (value) =>
-  value * value * (3 - 2 * value);
+const smoothstep = (t) =>
+  t * t * (3 - 2 * t);
 
 
 // ============================================
-// POLISHED LIQUID CHROME MATERIALS
+// CHROME MATERIALS
 // ============================================
 
 function createMetalMaterial(
-  color = 0xf2f4f6,
-  roughness = 0.065
+  color = 0xf0f3f6,
+  roughness = 0.055
 ) {
   return new THREE.MeshPhysicalMaterial({
     color,
     metalness: 1,
     roughness,
-
     clearcoat: 1,
     clearcoatRoughness: 0.035,
-
     envMapIntensity: 3.2,
-
-    reflectivity: 1,
-    ior: 1.5,
-
     side: THREE.DoubleSide
   });
 }
 
 
 // ============================================
-// CUSTOM CURVED PETAL GEOMETRY
+// SLENDER SCULPTURAL PETAL GEOMETRY
 // ============================================
 
 function createPetalGeometry(
-  length = 1.5,
-  width = 0.43,
-  detail = 40
+  length = 1.7,
+  width = 0.2,
+  detail = 48
 ) {
   const rows = detail;
   const columns = 24;
@@ -91,11 +83,16 @@ function createPetalGeometry(
   for (let i = 0; i <= rows; i++) {
     const t = i / rows;
 
-    const shape =
-      Math.pow(Math.sin(Math.PI * t), 0.78) *
-      (0.82 + 0.18 * t);
+    // Narrow base, elegant shoulders, pointed tip
+    const base = Math.pow(
+      Math.sin(Math.PI * Math.pow(t, 0.88)),
+      0.72
+    );
 
-    const currentWidth = width * shape;
+    const shoulder =
+      0.72 + 0.28 * Math.sin(Math.PI * t);
+
+    const currentWidth = width * base * shoulder;
 
     for (let j = 0; j <= columns; j++) {
       const across = (j / columns) * 2 - 1;
@@ -103,21 +100,27 @@ function createPetalGeometry(
       const x = across * currentWidth;
       const y = t * length;
 
-      // Sculpted petal curvature
+      // Long flowing curvature
       const arch =
-        Math.sin(Math.PI * t) * 0.19 +
-        t * t * 0.08;
+        Math.sin(Math.PI * t) * 0.16 +
+        t * t * 0.11;
 
+      // Concave surface
       const cup =
         -across * across *
-        Math.sin(Math.PI * t) * 0.15;
+        Math.sin(Math.PI * t) * 0.12;
 
-      // Subtle central ridge
+      // Raised central ridge
       const ridge =
-        Math.exp(-across * across * 8) *
-        Math.sin(Math.PI * t) * 0.035;
+        Math.exp(-across * across * 9) *
+        Math.sin(Math.PI * t) * 0.045;
 
-      const z = arch + cup + ridge;
+      // Slightly irregular organic bend
+      const twist =
+        Math.sin(t * Math.PI * 1.35) *
+        across * 0.025;
+
+      const z = arch + cup + ridge + twist;
 
       positions.push(x, y, z);
       uvs.push(j / columns, t);
@@ -155,70 +158,97 @@ function createPetalGeometry(
 
 
 // ============================================
-// PETAL LAYERS
+// INDIVIDUAL PETAL
 // ============================================
 
-function createPetalLayer({
-  count,
+function createPetal({
   length,
   width,
-  radius,
+  x,
+  y,
   z,
-  scale,
+  closedAngle,
+  openAngle,
+  tilt,
   material,
-  layer,
-  tilt
+  index
 }) {
+  const group = new THREE.Group();
+
   const geometry = createPetalGeometry(
     length,
     width,
-    42
+    48
   );
 
-  for (let i = 0; i < count; i++) {
-    const angle =
-      (i / count) * Math.PI * 2 +
-      (layer === 1 ? Math.PI / count : 0);
+  const mesh = new THREE.Mesh(
+    geometry,
+    material
+  );
 
-    const group = new THREE.Group();
+  group.add(mesh);
 
-    const petal = new THREE.Mesh(
-      geometry,
-      material
-    );
+  group.position.set(x, y, z);
 
-    petal.castShadow = false;
-    petal.receiveShadow = false;
+  group.rotation.z = closedAngle;
+  group.rotation.x = tilt;
 
-    group.add(petal);
+  group.scale.set(1, 0.55, 1);
 
-    group.position.set(
-      Math.cos(angle) * radius,
-      Math.sin(angle) * radius,
-      z
-    );
+  group.userData = {
+    closedAngle,
+    openAngle,
+    initialTilt: tilt,
+    phase: index * 0.8,
+    baseScale: 1,
+    length
+  };
 
-    group.rotation.z = angle - Math.PI / 2;
-    group.rotation.x = tilt;
+  sculpture.add(group);
+  flowerPetals.push(group);
+}
 
-    group.scale.set(
-      scale,
-      scale * 0.42,
-      scale
-    );
 
-    group.userData = {
-      angle,
-      layer,
-      initialTilt: tilt,
-      baseScale: scale,
-      phase: angle,
-      length
-    };
+// ============================================
+// CURVED METALLIC STEM
+// ============================================
 
-    sculpture.add(group);
-    flowerPetals.push(group);
-  }
+function createStem() {
+  const points = [
+    new THREE.Vector3(0.05, -1.9, -0.12),
+    new THREE.Vector3(-0.02, -1.35, -0.06),
+    new THREE.Vector3(0.08, -0.8, 0.02),
+    new THREE.Vector3(0.02, -0.3, 0.03),
+    new THREE.Vector3(0, 0.05, 0.02)
+  ];
+
+  const curve = new THREE.CatmullRomCurve3(points);
+
+  const geometry = new THREE.TubeGeometry(
+    curve,
+    80,
+    0.027,
+    12,
+    false
+  );
+
+  const stem = new THREE.Mesh(
+    geometry,
+    createMetalMaterial(0xb8c2ce, 0.065)
+  );
+
+  sculpture.add(stem);
+
+  // A small sculptural transition at the base of the bloom
+  const collar = new THREE.Mesh(
+    new THREE.SphereGeometry(0.075, 32, 24),
+    createMetalMaterial(0xe4e7eb, 0.045)
+  );
+
+  collar.position.set(0, 0.015, 0.02);
+  collar.scale.set(0.8, 1.25, 0.8);
+
+  sculpture.add(collar);
 }
 
 
@@ -227,63 +257,66 @@ function createPetalLayer({
 // ============================================
 
 function createFlowerCore() {
-  const coreGroup = new THREE.Group();
+  flowerCore = new THREE.Group();
 
+  // An elongated chrome centre, not a round daisy centre
   const core = new THREE.Mesh(
-    new THREE.SphereGeometry(0.25, 48, 32),
-    createMetalMaterial(0xc8cbd0, 0.075)
+    new THREE.SphereGeometry(0.105, 40, 32),
+    createMetalMaterial(0xf2f3f4, 0.045)
   );
 
-  core.scale.set(1, 1, 0.68);
-  core.position.z = 0.18;
+  core.scale.set(0.72, 1.8, 0.68);
+  core.position.set(0, 0.13, 0.12);
 
-  coreGroup.add(core);
+  flowerCore.add(core);
 
-  const beadGeometry = new THREE.SphereGeometry(
-    0.035,
-    24,
-    18
+  // Fine metallic filaments
+  const filamentMaterial = createMetalMaterial(
+    0xc7b99f,
+    0.075
   );
 
-  const beadMaterial = createMetalMaterial(
-    0xf6f7f8,
-    0.045
-  );
-
-  for (let i = 0; i < 11; i++) {
-    const angle = (i / 11) * Math.PI * 2;
-
-    const bead = new THREE.Mesh(
-      beadGeometry,
-      beadMaterial
+  for (let i = 0; i < 3; i++) {
+    const filament = new THREE.Mesh(
+      new THREE.CylinderGeometry(
+        0.008,
+        0.014,
+        0.22,
+        12
+      ),
+      filamentMaterial
     );
 
-    bead.position.set(
-      Math.cos(angle) * 0.19,
-      Math.sin(angle) * 0.19,
-      0.32
+    filament.position.set(
+      0.045 + i * 0.035,
+      0.27 + i * 0.025,
+      0.15
     );
 
-    coreGroup.add(bead);
+    filament.rotation.z = -0.25 - i * 0.12;
+
+    flowerCore.add(filament);
+
+    const tip = new THREE.Mesh(
+      new THREE.SphereGeometry(0.025, 20, 16),
+      createMetalMaterial(0xf4f1e9, 0.04)
+    );
+
+    tip.position.set(
+      filament.position.x - 0.025,
+      filament.position.y + 0.11,
+      0.15
+    );
+
+    flowerCore.add(tip);
   }
 
-  const jewel = new THREE.Mesh(
-    new THREE.SphereGeometry(0.095, 36, 28),
-    createMetalMaterial(0xf4f2eb, 0.04)
-  );
-
-  jewel.position.z = 0.37;
-  jewel.scale.set(1, 1, 0.7);
-
-  coreGroup.add(jewel);
-
-  sculpture.add(coreGroup);
-  flowerCore = coreGroup;
+  sculpture.add(flowerCore);
 }
 
 
 // ============================================
-// BUILD THE CHROME FLOWER
+// ASYMMETRIC CHROME BLOOM
 // ============================================
 
 function createSculpture() {
@@ -293,171 +326,136 @@ function createSculpture() {
   flowerPetals = [];
 
   const silver = createMetalMaterial(
-    0xf0f3f6,
-    0.055
+    0xf2f4f6,
+    0.045
   );
 
   const platinum = createMetalMaterial(
-    0xbac4cf,
-    0.075
+    0xb9c4d0,
+    0.065
   );
 
-  const pearl = createMetalMaterial(
-    0xf4f3ef,
-    0.05
+  const paleSilver = createMetalMaterial(
+    0xdfe3e8,
+    0.055
   );
 
-  // Outer layer
-  createPetalLayer({
-    count: 8,
-    length: 1.55,
-    width: 0.43,
-    radius: 0.04,
-    z: -0.12,
-    scale: 1,
-    material: silver,
-    layer: 0,
-    tilt: 0.7
-  });
+  const champagne = createMetalMaterial(
+    0xc9b99d,
+    0.085
+  );
 
-  // Middle layer
-  createPetalLayer({
-    count: 7,
-    length: 1.12,
-    width: 0.37,
-    radius: 0.035,
-    z: 0.015,
-    scale: 0.84,
-    material: platinum,
-    layer: 1,
-    tilt: 0.85
-  });
+  // Petal arrangement:
+  // Each petal has its own length and opening direction.
+  // Negative angles lean towards the right side.
 
-  // Inner layer — fixed material assignment
-  createPetalLayer({
-    count: 5,
-    length: 0.73,
-    width: 0.29,
-    radius: 0.025,
-    z: 0.12,
-    scale: 0.7,
-    material: pearl,
-    layer: 2,
-    tilt: 1.05
+  const petals = [
+    {
+      length: 1.72,
+      width: 0.19,
+      x: -0.015,
+      y: 0.02,
+      z: -0.10,
+      closedAngle: -0.12,
+      openAngle: -0.68,
+      tilt: 0.48,
+      material: silver
+    },
+    {
+      length: 1.88,
+      width: 0.205,
+      x: 0.015,
+      y: 0.015,
+      z: -0.035,
+      closedAngle: 0.08,
+      openAngle: -0.42,
+      tilt: 0.38,
+      material: paleSilver
+    },
+    {
+      length: 1.58,
+      width: 0.18,
+      x: 0.035,
+      y: 0.02,
+      z: 0.015,
+      closedAngle: 0.20,
+      openAngle: -0.18,
+      tilt: 0.58,
+      material: platinum
+    },
+    {
+      length: 1.45,
+      width: 0.17,
+      x: -0.025,
+      y: 0.025,
+      z: -0.13,
+      closedAngle: -0.30,
+      openAngle: -0.92,
+      tilt: 0.34,
+      material: silver
+    },
+    {
+      length: 1.65,
+      width: 0.18,
+      x: 0.045,
+      y: 0.015,
+      z: 0.08,
+      closedAngle: 0.34,
+      openAngle: 0.42,
+      tilt: 0.72,
+      material: paleSilver
+    },
+    {
+      length: 1.30,
+      width: 0.16,
+      x: 0.015,
+      y: 0.02,
+      z: -0.18,
+      closedAngle: -0.18,
+      openAngle: -1.12,
+      tilt: 0.42,
+      material: platinum
+    },
+    {
+      length: 1.12,
+      width: 0.145,
+      x: 0.025,
+      y: 0.035,
+      z: 0.12,
+      closedAngle: 0.12,
+      openAngle: 0.58,
+      tilt: 0.78,
+      material: champagne
+    }
+  ];
+
+  petals.forEach((petal, index) => {
+    createPetal({
+      ...petal,
+      index
+    });
   });
 
   createFlowerCore();
+  createStem();
 
-  sculpture.position.set(0.35, 0, 0);
+  sculpture.position.set(0.28, 0.05, 0);
 
   sculpture.scale.setScalar(
-    window.innerWidth < 600 ? 0.76 : 0.92
+    window.innerWidth < 600 ? 0.88 : 1
   );
+
+  // Slight permanent sideways lean
+  sculpture.rotation.z = -0.055;
 }
 
 
 // ============================================
-// CINEMATIC REFLECTION LIGHTING
-// ============================================
-
-function createLighting() {
-  RectAreaLightUniformsLib.init();
-
-  // Broad front reflection
-  const frontSoftbox = new THREE.RectAreaLight(
-    0xffffff,
-    13,
-    3.8,
-    5.2
-  );
-
-  frontSoftbox.position.set(-3, 2, 4);
-  frontSoftbox.lookAt(0, 0, 0);
-  scene.add(frontSoftbox);
-
-  // Narrow vertical chrome highlight
-  const verticalStrip = new THREE.RectAreaLight(
-    0xffffff,
-    17,
-    0.55,
-    4.5
-  );
-
-  verticalStrip.position.set(3.2, 0.5, 2.8);
-  verticalStrip.lookAt(0, 0, 0);
-  scene.add(verticalStrip);
-
-  // Top reflection
-  const topSoftbox = new THREE.RectAreaLight(
-    0xe9edf4,
-    14,
-    4.5,
-    0.65
-  );
-
-  topSoftbox.position.set(0, 4, 1);
-  topSoftbox.lookAt(0, 0, 0);
-  scene.add(topSoftbox);
-
-  // Cool rear rim reflection
-  const rearStrip = new THREE.RectAreaLight(
-    0x9aabc5,
-    18,
-    0.7,
-    4
-  );
-
-  rearStrip.position.set(-3, 0, -3);
-  rearStrip.lookAt(0, 0, 0);
-  scene.add(rearStrip);
-
-  // Subtle warm reflection
-  const warmStrip = new THREE.RectAreaLight(
-    0xc6b69a,
-    5,
-    0.45,
-    3
-  );
-
-  warmStrip.position.set(2, -2, -2);
-  warmStrip.lookAt(0, 0, 0);
-  scene.add(warmStrip);
-
-  // Directional accents
-  const key = new THREE.DirectionalLight(
-    0xffffff,
-    2.2
-  );
-
-  key.position.set(3, 5, 5);
-  scene.add(key);
-
-  const rim = new THREE.DirectionalLight(
-    0xb8c8df,
-    2.8
-  );
-
-  rim.position.set(-4, 1, -3);
-  scene.add(rim);
-
-  const lower = new THREE.DirectionalLight(
-    0xffffff,
-    1.1
-  );
-
-  lower.position.set(0, -4, 3);
-  scene.add(lower);
-}
-
-
-// ============================================
-// REFLECTION ENVIRONMENT
+// CHROME REFLECTION ENVIRONMENT
 // ============================================
 
 function createEnvironment() {
   const pmrem = new THREE.PMREMGenerator(renderer);
-
-  pmrem.compileEquirectangularShader();
 
   const environmentScene = new RoomEnvironment();
 
@@ -467,7 +465,7 @@ function createEnvironment() {
   ).texture;
 
   scene.environment = environment;
-  scene.environmentIntensity = 1.25;
+  scene.environmentIntensity = 1.3;
 
   environmentScene.dispose();
   pmrem.dispose();
@@ -475,11 +473,88 @@ function createEnvironment() {
 
 
 // ============================================
-// PARTICLE FIELD
+// CINEMATIC LIGHTING
+// ============================================
+
+function createLighting() {
+  RectAreaLightUniformsLib.init();
+
+  const lights = [
+    {
+      color: 0xffffff,
+      intensity: 16,
+      width: 0.65,
+      height: 5,
+      position: [-3.2, 1.4, 3.5]
+    },
+    {
+      color: 0xf3f6ff,
+      intensity: 19,
+      width: 0.42,
+      height: 4.5,
+      position: [3.1, 0.6, 2.8]
+    },
+    {
+      color: 0xdce5f2,
+      intensity: 13,
+      width: 4.5,
+      height: 0.55,
+      position: [0, 3.5, 1.5]
+    },
+    {
+      color: 0x9eacc4,
+      intensity: 17,
+      width: 0.6,
+      height: 4,
+      position: [-3, 0.2, -3]
+    },
+    {
+      color: 0xc9b99f,
+      intensity: 5,
+      width: 0.4,
+      height: 2.8,
+      position: [2, -2, -2]
+    }
+  ];
+
+  lights.forEach((config) => {
+    const light = new THREE.RectAreaLight(
+      config.color,
+      config.intensity,
+      config.width,
+      config.height
+    );
+
+    light.position.set(...config.position);
+    light.lookAt(0, 0, 0);
+
+    scene.add(light);
+  });
+
+  const key = new THREE.DirectionalLight(
+    0xffffff,
+    2.1
+  );
+
+  key.position.set(3, 5, 5);
+  scene.add(key);
+
+  const rim = new THREE.DirectionalLight(
+    0xb8c8df,
+    2.5
+  );
+
+  rim.position.set(-4, 1, -3);
+  scene.add(rim);
+}
+
+
+// ============================================
+// PARTICLES
 // ============================================
 
 function createParticles() {
-  const count = window.innerWidth < 600 ? 90 : 190;
+  const count = window.innerWidth < 600 ? 75 : 150;
 
   const positions = new Float32Array(count * 3);
 
@@ -505,7 +580,7 @@ function createParticles() {
     color: 0xc9cbd0,
     size: 0.014,
     transparent: true,
-    opacity: 0.3,
+    opacity: 0.28,
     sizeAttenuation: true,
     depthWrite: false
   });
@@ -520,66 +595,53 @@ function createParticles() {
 
 
 // ============================================
-// FLOWER ANIMATION
+// ORGANIC OPENING ANIMATION
 // ============================================
 
 function updateFlower(time) {
   if (!sculpture) return;
 
+  // Slower, more deliberate unfurling
   const opening = smoothstep(
-    clamp(time / 2.8, 0, 1)
+    clamp(time / 4.2, 0, 1)
   );
 
-  const breathing =
-    1 + Math.sin(time * 0.55) * 0.009;
-
   flowerPetals.forEach((petal) => {
-    const layer = petal.userData.layer;
-    const phase = petal.userData.phase;
+    const data = petal.userData;
 
-    const closedTilt =
-      layer === 0 ? 0.7 :
-      layer === 1 ? 0.85 : 1.05;
+    const movement =
+      Math.sin(time * 0.38 + data.phase) * 0.012;
 
-    const openTilt =
-      layer === 0 ? 0.1 :
-      layer === 1 ? 0.2 : 0.3;
-
-    const tilt = lerp(
-      closedTilt,
-      openTilt,
+    petal.rotation.z = lerp(
+      data.closedAngle,
+      data.openAngle,
       opening
-    );
+    ) + movement;
 
-    petal.rotation.x =
-      tilt +
-      Math.sin(time * 0.35 + phase) * 0.018;
-
-    const baseScale = petal.userData.baseScale;
-
-    const openScale = lerp(
-      0.42,
+    // Petals lift at different rates
+    const lift = lerp(
+      0.55,
       1,
       opening
     );
 
     petal.scale.y =
-      baseScale * openScale * breathing;
+      data.baseScale * lift;
+
+    petal.rotation.x =
+      data.initialTilt +
+      Math.sin(time * 0.32 + data.phase) * 0.012;
   });
 
   if (flowerCore) {
-    flowerCore.rotation.z = time * 0.045;
-
-    const pulse =
-      1 + Math.sin(time * 0.8) * 0.008;
-
-    flowerCore.scale.setScalar(pulse);
+    flowerCore.rotation.z =
+      Math.sin(time * 0.2) * 0.035;
   }
 }
 
 
 // ============================================
-// INITIALIZE THREE.JS
+// THREE.JS INITIALIZATION
 // ============================================
 
 function initThree() {
@@ -615,7 +677,7 @@ function initThree() {
 
     renderer.outputColorSpace = THREE.SRGBColorSpace;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 1.35;
+    renderer.toneMappingExposure = 1.3;
 
     createEnvironment();
     createLighting();
@@ -623,7 +685,7 @@ function initThree() {
     createParticles();
 
     if (reducedMotion) {
-      updateFlower(3.5);
+      updateFlower(5);
       renderer.render(scene, camera);
     } else {
       clock.start();
@@ -631,8 +693,8 @@ function initThree() {
     }
 
     if ("ResizeObserver" in window) {
-      resizeObserver = new ResizeObserver(resizeScene);
-      resizeObserver.observe(canvas);
+      const observer = new ResizeObserver(resizeScene);
+      observer.observe(canvas);
     }
 
   } catch (error) {
@@ -647,7 +709,7 @@ function initThree() {
 
 
 // ============================================
-// MAIN ANIMATION LOOP
+// ANIMATION LOOP
 // ============================================
 
 function animate() {
@@ -666,36 +728,36 @@ function animate() {
 
   if (sculpture) {
     sculpture.rotation.y =
-      targetX * 0.28 +
-      Math.sin(time * 0.16) * 0.035;
+      targetX * 0.24 +
+      Math.sin(time * 0.15) * 0.025;
 
     sculpture.rotation.x =
-      targetY * 0.2 +
-      Math.cos(time * 0.13) * 0.025;
+      targetY * 0.16 +
+      Math.cos(time * 0.13) * 0.018;
 
     sculpture.rotation.z =
-      Math.sin(time * 0.1) * 0.018;
+      -0.055 +
+      Math.sin(time * 0.12) * 0.012;
 
     const baseScale =
-      window.innerWidth < 600 ? 0.76 : 0.92;
+      window.innerWidth < 600 ? 0.88 : 1;
 
     const finalScale =
-      window.innerWidth < 600 ? 0.63 : 0.76;
+      window.innerWidth < 600 ? 0.73 : 0.84;
 
     sculpture.scale.setScalar(
       lerp(baseScale, finalScale, scrollProgress)
     );
 
     sculpture.position.y =
-      -scrollProgress * 0.3 +
-      Math.sin(time * 0.32) * 0.035;
+      0.05 -
+      scrollProgress * 0.25 +
+      Math.sin(time * 0.3) * 0.025;
   }
 
   if (particles) {
     particles.rotation.y = time * 0.007;
-
-    particles.rotation.x =
-      Math.sin(time * 0.07) * 0.02;
+    particles.rotation.x = Math.sin(time * 0.07) * 0.02;
   }
 
   renderer.render(scene, camera);
@@ -813,7 +875,6 @@ function openMenu() {
 
   menuPanel.classList.add("open");
   menuToggle?.setAttribute("aria-expanded", "true");
-
   document.body.classList.add("menu-open");
 }
 
@@ -822,7 +883,6 @@ function closeMenu() {
 
   menuPanel.classList.remove("open");
   menuToggle?.setAttribute("aria-expanded", "false");
-
   document.body.classList.remove("menu-open");
 }
 
@@ -834,9 +894,7 @@ document.querySelectorAll(".menu-panel a").forEach((link) => {
 });
 
 document.addEventListener("keydown", (event) => {
-  if (event.key === "Escape") {
-    closeMenu();
-  }
+  if (event.key === "Escape") closeMenu();
 });
 
 
