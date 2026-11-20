@@ -4,8 +4,7 @@ import { RoomEnvironment } from "three/addons/environments/RoomEnvironment.js";
 
 // ============================================
 // MYRLORE®
-// DARK FUTURISTIC LUXURY
-// IMMERSIVE 3D EXPERIENCE
+// LIQUID METAL — SCULPTURAL INSTALLATION
 // ============================================
 
 const canvas = document.querySelector("#webgl");
@@ -19,11 +18,11 @@ let scene;
 let camera;
 let renderer;
 let sculpture;
-let ribbonGeometry;
+let strands = [];
 let particles;
-let particleGeometry;
 let fragmentGroup;
 let resizeObserver;
+let environmentTexture;
 
 let scrollProgress = 0;
 
@@ -32,8 +31,8 @@ let pointerY = 0;
 let targetX = 0;
 let targetY = 0;
 
-let ribbonSegments = window.innerWidth < 600 ? 120 : 170;
-let ribbonSides = window.innerWidth < 600 ? 16 : 22;
+let animationFrame = null;
+let isPageVisible = !document.hidden;
 
 const clock = new THREE.Clock();
 
@@ -45,188 +44,223 @@ const lerp = (a, b, amount) =>
 
 
 // ============================================
-// ORGANIC RIBBON GEOMETRY
+// SCULPTURE PATHS
+// Three independent flowing forms
 // ============================================
 
-function createRibbonGeometry() {
-  const positions = new Float32Array(
-    (ribbonSegments + 1) * (ribbonSides + 1) * 3
-  );
-
-  const uvs = new Float32Array(
-    (ribbonSegments + 1) * (ribbonSides + 1) * 2
-  );
-
-  const indices = [];
-
-  for (let i = 0; i <= ribbonSegments; i++) {
-    const u = i / ribbonSegments;
-
-    for (let j = 0; j <= ribbonSides; j++) {
-      const v = j / ribbonSides;
-
-      const vertex = i * (ribbonSides + 1) + j;
-
-      uvs[vertex * 2] = u;
-      uvs[vertex * 2 + 1] = v;
-
-      if (i < ribbonSegments && j < ribbonSides) {
-        const a = vertex;
-        const b = vertex + ribbonSides + 1;
-
-        indices.push(
-          a, b, a + 1,
-          b, b + 1, a + 1
-        );
-      }
-    }
+const sculpturePaths = [
+  {
+    radius: 0.105,
+    color: 0xe5e5e0,
+    roughness: 0.105,
+    points: [
+      [-1.75, -0.75, 0.15],
+      [-1.65, 0.05, 0.55],
+      [-1.05, 0.95, 0.35],
+      [-0.25, 1.12, -0.35],
+      [0.55, 0.48, -0.75],
+      [1.45, 0.85, -0.2],
+      [1.65, 0.05, 0.5],
+      [1.05, -0.85, 0.45],
+      [0.15, -1.12, -0.25],
+      [-0.7, -0.5, -0.55],
+      [-1.35, -0.15, 0.2]
+    ]
+  },
+  {
+    radius: 0.082,
+    color: 0xaeb3ba,
+    roughness: 0.145,
+    points: [
+      [-1.65, 0.8, -0.45],
+      [-1.1, 1.15, 0.15],
+      [-0.35, 0.55, 0.75],
+      [0.4, -0.1, 0.55],
+      [1.2, -0.55, -0.2],
+      [1.55, -1.0, -0.5],
+      [0.75, -1.2, 0.1],
+      [-0.05, -0.65, 0.7],
+      [-0.75, 0.15, 0.45],
+      [-1.25, 0.6, -0.25]
+    ]
+  },
+  {
+    radius: 0.065,
+    color: 0xc6b69a,
+    roughness: 0.17,
+    points: [
+      [-1.25, -1.05, -0.65],
+      [-0.75, -0.25, -0.75],
+      [-0.15, 0.45, -0.35],
+      [0.45, 1.15, 0.15],
+      [1.15, 0.9, 0.65],
+      [1.55, 0.15, 0.45],
+      [0.95, -0.35, -0.35],
+      [0.2, -0.85, -0.65],
+      [-0.65, -0.95, -0.15],
+      [-1.35, -0.35, 0.45]
+    ]
   }
+];
 
-  const geometry = new THREE.BufferGeometry();
 
-  geometry.setAttribute(
-    "position",
-    new THREE.BufferAttribute(positions, 3)
-  );
+// ============================================
+// METALLIC MATERIALS
+// ============================================
 
-  geometry.setAttribute(
-    "uv",
-    new THREE.BufferAttribute(uvs, 2)
-  );
-
-  geometry.setIndex(indices);
-
-  return geometry;
+function createMetalMaterial(color, roughness) {
+  return new THREE.MeshPhysicalMaterial({
+    color,
+    metalness: 1,
+    roughness,
+    clearcoat: 1,
+    clearcoatRoughness: 0.065,
+    envMapIntensity: 2.1,
+    side: THREE.DoubleSide
+  });
 }
 
 
 // ============================================
-// ANIMATED SCULPTURE SURFACE
+// CREATE FLOWING METAL STRANDS
 // ============================================
 
-function updateRibbon(time) {
-  if (!ribbonGeometry) return;
+function createSculpture() {
+  sculpture = new THREE.Group();
+  scene.add(sculpture);
 
-  const position = ribbonGeometry.attributes.position;
-  const array = position.array;
+  sculpturePaths.forEach((config, index) => {
+    const strandGroup = new THREE.Group();
 
-  for (let i = 0; i <= ribbonSegments; i++) {
-    const u = (i / ribbonSegments) * Math.PI * 2;
-
-    // Organic centerline
-    const phase = u + time * 0.11;
-
-    const cx =
-      Math.sin(phase) * 1.05 +
-      Math.sin(phase * 2) * 0.25;
-
-    const cy =
-      Math.cos(phase * 1.0) * 0.95 +
-      Math.sin(phase * 3) * 0.16;
-
-    const cz =
-      Math.sin(phase * 2 + 0.5) * 0.53 +
-      Math.cos(phase * 3) * 0.13;
-
-    // Approximate tangent
-    let tx =
-      Math.cos(phase) * 1.05 +
-      Math.cos(phase * 2) * 0.5;
-
-    let ty =
-      -Math.sin(phase) * 0.95 +
-      Math.cos(phase * 3) * 0.48;
-
-    let tz =
-      Math.cos(phase * 2 + 0.5) * 1.06 -
-      Math.sin(phase * 3) * 0.39;
-
-    const tangentLength = Math.sqrt(
-      tx * tx + ty * ty + tz * tz
-    ) || 1;
-
-    tx /= tangentLength;
-    ty /= tangentLength;
-    tz /= tangentLength;
-
-    // Stable perpendicular direction
-    let sx = ty;
-    let sy = -tx;
-    let sz = 0;
-
-    let sideLength = Math.sqrt(
-      sx * sx + sy * sy + sz * sz
+    const points = config.points.map(
+      ([x, y, z]) => new THREE.Vector3(x, y, z)
     );
 
-    if (sideLength < 0.001) {
-      sx = 1;
-      sy = 0;
-      sz = 0;
-      sideLength = 1;
-    }
+    const curve = new THREE.CatmullRomCurve3(
+      points,
+      false,
+      "centripetal",
+      0.5
+    );
 
-    sx /= sideLength;
-    sy /= sideLength;
+    const geometry = new THREE.TubeGeometry(
+      curve,
+      260,
+      config.radius,
+      20,
+      false
+    );
 
-    // Surface normal
-    const nx = ty * sz - tz * sy;
-    const ny = tz * sx - tx * sz;
-    const nz = tx * sy - ty * sx;
+    const material = createMetalMaterial(
+      config.color,
+      config.roughness
+    );
 
-    const width =
-      0.19 +
-      Math.sin(u * 2 + time * 0.25) * 0.055 +
-      Math.cos(u * 3) * 0.018;
+    const tube = new THREE.Mesh(geometry, material);
 
-    for (let j = 0; j <= ribbonSides; j++) {
-      const v = j / ribbonSides;
-      const across = (v - 0.5) * 2;
+    tube.castShadow = false;
+    tube.receiveShadow = false;
 
-      const wave =
-        Math.sin(u * 3 + v * 5 + time * 0.4) * 0.045 +
-        Math.sin(u * 2 - time * 0.3) * 0.065;
+    strandGroup.add(tube);
 
-      const edgeCurve =
-        Math.sin(v * Math.PI) * 0.025;
+    // Smooth polished endpoints
+    const capGeometry = new THREE.SphereGeometry(
+      config.radius,
+      20,
+      14
+    );
 
-      const offset = wave + edgeCurve;
+    const startCap = new THREE.Mesh(
+      capGeometry,
+      material
+    );
 
-      const x =
-        cx +
-        sx * across * width +
-        nx * offset;
+    const endCap = new THREE.Mesh(
+      capGeometry,
+      material
+    );
 
-      const y =
-        cy +
-        sy * across * width +
-        ny * offset;
+    startCap.position.copy(points[0]);
+    endCap.position.copy(points[points.length - 1]);
 
-      const z =
-        cz +
-        sz * across * width +
-        nz * offset;
+    strandGroup.add(startCap, endCap);
 
-      const index =
-        (i * (ribbonSides + 1) + j) * 3;
+    strandGroup.userData.phase = index * 2.1;
+    strandGroup.userData.speed = 0.12 + index * 0.035;
 
-      array[index] = x;
-      array[index + 1] = y;
-      array[index + 2] = z;
-    }
-  }
+    sculpture.add(strandGroup);
+    strands.push(strandGroup);
+  });
 
-  position.needsUpdate = true;
-  ribbonGeometry.computeVertexNormals();
-  ribbonGeometry.computeBoundingSphere();
+  // Small sculptural accents
+  createFragments();
+
+  sculpture.position.set(0.35, 0, 0);
+
+  sculpture.scale.setScalar(
+    window.innerWidth < 600 ? 0.78 : 1
+  );
 }
 
 
 // ============================================
-// PARTICLES
+// METALLIC FRAGMENTS
+// ============================================
+
+function createFragments() {
+  fragmentGroup = new THREE.Group();
+  sculpture.add(fragmentGroup);
+
+  const materials = [
+    createMetalMaterial(0xd8d9d6, 0.13),
+    createMetalMaterial(0x737780, 0.19),
+    createMetalMaterial(0xc6b69a, 0.2)
+  ];
+
+  for (let i = 0; i < 12; i++) {
+    const size = 0.025 + Math.random() * 0.045;
+
+    const geometry = new THREE.IcosahedronGeometry(
+      size,
+      1
+    );
+
+    const fragment = new THREE.Mesh(
+      geometry,
+      materials[i % materials.length]
+    );
+
+    const angle = (i / 12) * Math.PI * 2;
+
+    fragment.position.set(
+      Math.cos(angle) * (1.65 + Math.random() * 0.3),
+      Math.sin(angle * 1.7) * 1.25,
+      Math.sin(angle * 1.2) * 0.8
+    );
+
+    fragment.rotation.set(
+      Math.random() * Math.PI,
+      Math.random() * Math.PI,
+      Math.random() * Math.PI
+    );
+
+    fragment.userData.basePosition =
+      fragment.position.clone();
+
+    fragment.userData.phase =
+      Math.random() * Math.PI * 2;
+
+    fragmentGroup.add(fragment);
+  }
+}
+
+
+// ============================================
+// PARTICLE FIELD
 // ============================================
 
 function createParticles() {
-  const count = window.innerWidth < 600 ? 110 : 260;
+  const count = window.innerWidth < 600 ? 100 : 220;
 
   const positions = new Float32Array(count * 3);
 
@@ -241,9 +275,9 @@ function createParticles() {
       (Math.random() - 0.5) * 6;
   }
 
-  particleGeometry = new THREE.BufferGeometry();
+  const geometry = new THREE.BufferGeometry();
 
-  particleGeometry.setAttribute(
+  geometry.setAttribute(
     "position",
     new THREE.BufferAttribute(positions, 3)
   );
@@ -252,138 +286,71 @@ function createParticles() {
     color: 0xc9c4ba,
     size: 0.014,
     transparent: true,
-    opacity: 0.38,
+    opacity: 0.34,
     sizeAttenuation: true,
     depthWrite: false
   });
 
-  particles = new THREE.Points(
-    particleGeometry,
-    material
-  );
-
+  particles = new THREE.Points(geometry, material);
   scene.add(particles);
 }
 
 
 // ============================================
-// LIGHTING
+// CINEMATIC LIGHTING
 // ============================================
 
 function createLighting() {
-  const ambient = new THREE.AmbientLight(
-    0xffffff,
-    0.65
+  scene.add(
+    new THREE.AmbientLight(0xffffff, 0.42)
   );
-
-  scene.add(ambient);
 
   const key = new THREE.DirectionalLight(
     0xffffff,
-    4.5
+    4.2
   );
 
   key.position.set(3, 4, 5);
   scene.add(key);
 
-  const rim = new THREE.DirectionalLight(
-    0xc6b69a,
-    4.2
+  const silverRim = new THREE.DirectionalLight(
+    0xb8c3d4,
+    4.5
   );
 
-  rim.position.set(-4, 1, -3);
-  scene.add(rim);
+  silverRim.position.set(-4, 1, -3);
+  scene.add(silverRim);
 
   const top = new THREE.DirectionalLight(
     0xffffff,
-    2.4
+    2.6
   );
 
   top.position.set(0, 5, -2);
   scene.add(top);
 
-  const warm = new THREE.PointLight(
+  const champagne = new THREE.PointLight(
     0xc6b69a,
-    22,
-    9
-  );
-
-  warm.position.set(-3, 2, 2);
-  scene.add(warm);
-
-  const cool = new THREE.PointLight(
-    0x9da9c0,
-    16,
+    18,
     10
   );
 
-  cool.position.set(2, -3, 3);
+  champagne.position.set(-3, 2, 3);
+  scene.add(champagne);
+
+  const cool = new THREE.PointLight(
+    0x9da9c0,
+    14,
+    10
+  );
+
+  cool.position.set(3, -3, 2);
   scene.add(cool);
 }
 
 
 // ============================================
-// METALLIC FRAGMENTS
-// ============================================
-
-function createFragments() {
-  fragmentGroup = new THREE.Group();
-  sculpture.add(fragmentGroup);
-
-  const silver = new THREE.MeshPhysicalMaterial({
-    color: 0xe0e0dc,
-    metalness: 1,
-    roughness: 0.17,
-    clearcoat: 1,
-    clearcoatRoughness: 0.08,
-    envMapIntensity: 1.7
-  });
-
-  const graphite = new THREE.MeshPhysicalMaterial({
-    color: 0x55565b,
-    metalness: 1,
-    roughness: 0.22,
-    clearcoat: 1,
-    envMapIntensity: 1.5
-  });
-
-  for (let i = 0; i < 8; i++) {
-    const size = 0.035 + Math.random() * 0.065;
-
-    const geometry = new THREE.IcosahedronGeometry(
-      size,
-      1
-    );
-
-    const fragment = new THREE.Mesh(
-      geometry,
-      i % 3 === 0 ? graphite : silver
-    );
-
-    const angle = (i / 8) * Math.PI * 2;
-
-    fragment.position.set(
-      Math.cos(angle) * (1.35 + Math.random() * 0.4),
-      Math.sin(angle * 1.4) * 1.15,
-      Math.sin(angle) * 0.65
-    );
-
-    fragment.rotation.set(
-      Math.random() * Math.PI,
-      Math.random() * Math.PI,
-      Math.random() * Math.PI
-    );
-
-    fragment.userData.baseY = fragment.position.y;
-    fragment.userData.phase = Math.random() * Math.PI * 2;
-
-    fragmentGroup.add(fragment);
-  }
-}
-
-
-// ============================================
-// THREE.JS INITIALIZATION
+// INITIALIZE THREE.JS
 // ============================================
 
 function initThree() {
@@ -418,74 +385,34 @@ function initThree() {
     );
 
     renderer.outputColorSpace = THREE.SRGBColorSpace;
-
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 1.35;
+    renderer.toneMappingExposure = 1.2;
 
     // Environment reflections
     const pmrem = new THREE.PMREMGenerator(renderer);
 
     const environmentScene = new RoomEnvironment();
 
-    const environment = pmrem.fromScene(
+    environmentTexture = pmrem.fromScene(
       environmentScene,
       0.04
     ).texture;
 
-    scene.environment = environment;
+    scene.environment = environmentTexture;
 
     environmentScene.dispose();
     pmrem.dispose();
 
-    // Lighting
     createLighting();
-
-    // Main sculpture
-    sculpture = new THREE.Group();
-    scene.add(sculpture);
-
-    const metal = new THREE.MeshPhysicalMaterial({
-      color: 0xd9d9d5,
-      metalness: 1,
-      roughness: 0.115,
-      clearcoat: 1,
-      clearcoatRoughness: 0.07,
-      envMapIntensity: 2.0,
-      side: THREE.DoubleSide
-    });
-
-    // Ribbon
-    ribbonGeometry = createRibbonGeometry();
-
-    updateRibbon(0);
-
-    const ribbon = new THREE.Mesh(
-      ribbonGeometry,
-      metal
-    );
-
-    sculpture.add(ribbon);
-
-    // Additional fragments
-    createFragments();
-
-    // Ambient particles
+    createSculpture();
     createParticles();
 
-    sculpture.position.set(0.35, 0, 0);
-
-    sculpture.scale.setScalar(
-      window.innerWidth < 600 ? 0.78 : 1
-    );
-
-    // Static first frame for reduced-motion users
     if (reducedMotion) {
       renderer.render(scene, camera);
     } else {
       animate();
     }
 
-    // Observe canvas dimensions
     if ("ResizeObserver" in window) {
       resizeObserver = new ResizeObserver(resizeScene);
       resizeObserver.observe(canvas);
@@ -503,71 +430,113 @@ function initThree() {
 
 
 // ============================================
-// ANIMATION LOOP
+// ANIMATION
 // ============================================
 
 function animate() {
-  requestAnimationFrame(animate);
+  if (reducedMotion || !isPageVisible) return;
+
+  animationFrame = requestAnimationFrame(animate);
 
   if (!renderer || !scene || !camera) return;
 
   const time = clock.getElapsedTime();
 
-  if (!reducedMotion) {
-    updateRibbon(time);
+  targetX = lerp(targetX, pointerX, 0.035);
+  targetY = lerp(targetY, pointerY, 0.035);
 
-    // Smooth pointer interpolation
-    targetX = lerp(targetX, pointerX, 0.035);
-    targetY = lerp(targetY, pointerY, 0.035);
+  if (sculpture) {
+    // Overall movement
+    sculpture.rotation.y =
+      targetX * 0.35 +
+      Math.sin(time * 0.17) * 0.045;
 
-    if (sculpture) {
-      sculpture.rotation.y =
-        targetX * 0.42 +
-        Math.sin(time * 0.18) * 0.065;
+    sculpture.rotation.x =
+      targetY * 0.22 +
+      Math.cos(time * 0.14) * 0.035;
 
-      sculpture.rotation.x =
-        targetY * 0.28 +
-        Math.cos(time * 0.15) * 0.04;
+    sculpture.rotation.z =
+      Math.sin(time * 0.11) * 0.025;
 
-      sculpture.rotation.z =
-        Math.sin(time * 0.12) * 0.025;
+    // Scroll transformation
+    const baseScale =
+      window.innerWidth < 600 ? 0.78 : 1;
 
-      // Scroll-reactive position and scale
-      const scale = lerp(
-        window.innerWidth < 600 ? 0.78 : 1,
-        window.innerWidth < 600 ? 0.62 : 0.76,
-        scrollProgress
-      );
+    const finalScale =
+      window.innerWidth < 600 ? 0.62 : 0.76;
 
-      sculpture.scale.setScalar(scale);
+    const scale = lerp(
+      baseScale,
+      finalScale,
+      scrollProgress
+    );
 
-      sculpture.position.y =
-        -scrollProgress * 0.35 +
-        Math.sin(time * 0.35) * 0.065;
-    }
+    sculpture.scale.setScalar(scale);
 
-    // Floating metallic details
-    if (fragmentGroup) {
-      fragmentGroup.children.forEach((fragment) => {
-        fragment.position.y =
-          fragment.userData.baseY +
-          Math.sin(
-            time * 0.6 + fragment.userData.phase
-          ) * 0.035;
+    sculpture.position.y =
+      -scrollProgress * 0.35 +
+      Math.sin(time * 0.3) * 0.045;
+  }
 
-        fragment.rotation.y += 0.002;
-        fragment.rotation.x += 0.001;
-      });
-    }
+  // Independent strand movement
+  strands.forEach((strand) => {
+    const phase = strand.userData.phase;
+    const speed = strand.userData.speed;
 
-    if (particles) {
-      particles.rotation.y = time * 0.009;
-      particles.rotation.x = Math.sin(time * 0.08) * 0.025;
-    }
+    strand.rotation.y =
+      Math.sin(time * speed + phase) * 0.075;
+
+    strand.rotation.x =
+      Math.cos(time * speed * 0.8 + phase) * 0.045;
+
+    strand.rotation.z =
+      Math.sin(time * speed * 0.6 + phase) * 0.025;
+  });
+
+  // Floating fragments
+  if (fragmentGroup) {
+    fragmentGroup.children.forEach((fragment) => {
+      const phase = fragment.userData.phase;
+      const base = fragment.userData.basePosition;
+
+      fragment.position.y =
+        base.y + Math.sin(time * 0.55 + phase) * 0.045;
+
+      fragment.position.x =
+        base.x + Math.cos(time * 0.35 + phase) * 0.025;
+
+      fragment.rotation.y += 0.0015;
+      fragment.rotation.x += 0.001;
+    });
+  }
+
+  if (particles) {
+    particles.rotation.y = time * 0.008;
+    particles.rotation.x =
+      Math.sin(time * 0.07) * 0.025;
   }
 
   renderer.render(scene, camera);
 }
+
+
+// ============================================
+// PAGE VISIBILITY
+// ============================================
+
+document.addEventListener("visibilitychange", () => {
+  isPageVisible = !document.hidden;
+
+  if (!renderer) return;
+
+  if (isPageVisible && !reducedMotion) {
+    clock.start();
+    animate();
+  } else if (animationFrame !== null) {
+    cancelAnimationFrame(animationFrame);
+    animationFrame = null;
+  }
+});
 
 
 // ============================================
@@ -638,9 +607,8 @@ function resizeScene() {
     Math.min(window.devicePixelRatio || 1, 1.5)
   );
 
-  if (sculpture) {
-    const scale = window.innerWidth < 600 ? 0.78 : 1;
-    sculpture.scale.setScalar(scale);
+  if (reducedMotion) {
+    renderer.render(scene, camera);
   }
 }
 
@@ -660,6 +628,7 @@ function openMenu() {
 
   menuPanel.classList.add("open");
   menuToggle?.setAttribute("aria-expanded", "true");
+
   document.body.classList.add("menu-open");
 }
 
@@ -668,6 +637,7 @@ function closeMenu() {
 
   menuPanel.classList.remove("open");
   menuToggle?.setAttribute("aria-expanded", "false");
+
   document.body.classList.remove("menu-open");
 }
 
@@ -679,9 +649,7 @@ document.querySelectorAll(".menu-panel a").forEach((link) => {
 });
 
 document.addEventListener("keydown", (event) => {
-  if (event.key === "Escape") {
-    closeMenu();
-  }
+  if (event.key === "Escape") closeMenu();
 });
 
 
@@ -710,7 +678,6 @@ function initAnimations() {
 
   gsap.registerPlugin(ScrollTrigger);
 
-  // Hero entrance
   const heroTimeline = gsap.timeline({
     delay: 0.25
   });
@@ -738,14 +705,10 @@ function initAnimations() {
       duration: 0.8
     }, "-=0.6");
 
-  // Section reveals
   gsap.utils.toArray(".reveal").forEach((element) => {
     gsap.fromTo(
       element,
-      {
-        opacity: 0,
-        y: 35
-      },
+      { opacity: 0, y: 35 },
       {
         opacity: 1,
         y: 0,
@@ -760,7 +723,6 @@ function initAnimations() {
     );
   });
 
-  // Services
   gsap.utils.toArray(".service-item").forEach((item, index) => {
     gsap.from(item, {
       opacity: 0,
@@ -776,7 +738,6 @@ function initAnimations() {
     });
   });
 
-  // Project cards
   gsap.utils.toArray(".work-card").forEach((card) => {
     gsap.from(card, {
       opacity: 0,
@@ -791,7 +752,6 @@ function initAnimations() {
     });
   });
 
-  // Marquee entrance
   gsap.from(".intro-track", {
     opacity: 0.4,
     scrollTrigger: {
@@ -816,14 +776,13 @@ if (yearElement) {
 
 
 // ============================================
-// INITIALIZE
+// PAGE INITIALIZATION
 // ============================================
 
 initThree();
 initAnimations();
 updateScrollProgress();
 
-// Ensure the page loader never blocks the website
 window.addEventListener("load", () => {
   document.body.classList.add("loaded");
 });
