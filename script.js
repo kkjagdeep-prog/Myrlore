@@ -1054,3 +1054,269 @@ window.addEventListener("load", () => {
 setTimeout(() => {
   document.body.classList.add("loaded");
 }, 4500);
+
+// ============================================
+// MYRLORE — INTERACTIVE CASE STUDIES
+// ============================================
+
+const caseModal = document.querySelector("#caseStudyModal");
+const casePanel = document.querySelector(".case-panel");
+const caseClose = document.querySelector("#caseClose");
+
+const caseTitle = document.querySelector("#caseTitle");
+const caseCategory = document.querySelector("#caseCategory");
+const caseSummary = document.querySelector("#caseSummary");
+const caseOverview = document.querySelector("#caseOverview");
+const caseFeatures = document.querySelector("#caseFeatures");
+const caseTech = document.querySelector("#caseTech");
+
+const caseHeroArt = document.querySelector("#caseHeroArt");
+const caseSymbol = document.querySelector("#caseSymbol");
+const caseIndex = document.querySelector("#caseIndex");
+const caseArtCaption = document.querySelector("#caseArtCaption");
+
+let lastCaseTrigger = null;
+
+// Project content
+const caseStudies = {
+  corroguard: {
+    index: "PROJECT / 001",
+    title: "CorroGuard",
+    category: "ENGINEERING · DIGITAL PLATFORM",
+    symbol: "CG",
+    caption: "MATERIAL INTELLIGENCE",
+    theme: "corro",
+
+    summary:
+      "An interactive engineering chemistry platform exploring corrosion analysis, material behaviour and prevention strategies.",
+
+    overview:
+      "CorroGuard is an educational digital platform designed to make corrosion concepts easier to explore. It brings together an illustrative risk calculator, material information and interactive engineering tools in one experience.",
+
+    features: [
+      "Interactive corrosion risk calculator",
+      "Metal material information and comparisons",
+      "Metal compatibility checker",
+      "Corrosion types and engineering explanations",
+      "Prevention methods and case studies"
+    ],
+
+    technology: [
+      "HTML",
+      "CSS",
+      "JavaScript",
+      "Chart.js",
+      "Engineering Chemistry"
+    ]
+  },
+
+  floodwatch: {
+    index: "PROJECT / 002",
+    title: "FloodWatch Chennai",
+    category: "DATA · MAPPING · WEB PLATFORM",
+    symbol: "FW",
+    caption: "RAINFALL / DRAINAGE / INSIGHTS",
+    theme: "flood",
+
+    summary:
+      "A web-based flood awareness and analysis platform focused on rainfall patterns, drainage infrastructure and flood-risk information in Chennai.",
+
+    overview:
+      "FloodWatch Chennai brings environmental and infrastructure information into a single interactive platform. It combines rainfall analysis with drainage mapping and location-based exploration to make flood-related information easier to understand.",
+
+    features: [
+      "Rainfall statistics and interactive graphs",
+      "Annual rainfall comparisons",
+      "Interactive drainage infrastructure map",
+      "Zone and ward search with map highlighting",
+      "Drainage condition details and flood-risk insights"
+    ],
+
+    technology: [
+      "HTML",
+      "CSS",
+      "JavaScript",
+      "Chart.js",
+      "Leaflet",
+      "GeoJSON"
+    ]
+  },
+
+  xtremetoy: {
+    index: "PROJECT / 003",
+    title: "XTREMETOY",
+    category: "IDENTITY · GAMING · DIGITAL CULTURE",
+    symbol: "XT",
+    caption: "DIGITAL CULTURE / GAMING",
+    theme: "xtreme",
+
+    summary:
+      "A personal digital identity and gaming portfolio built around a distinctive visual style and online community presence.",
+
+    overview:
+      "XTREMETOY is a gaming-focused digital identity project. The website brings together a personal introduction, gaming-related presence and community links through a visually expressive portfolio experience.",
+
+    features: [
+      "Distinctive purple neon visual direction",
+      "Animated introductory experience",
+      "Interactive portfolio sections",
+      "Discord community links",
+      "Roblox profile integration"
+    ],
+
+    technology: [
+      "Web Design",
+      "Digital Identity",
+      "Motion Design",
+      "Community Integration"
+    ]
+  }
+};
+
+
+// Populate the case-study overlay
+function populateCaseStudy(project) {
+  if (!project) return;
+
+  caseIndex.textContent = project.index;
+  caseTitle.textContent = project.title;
+  caseCategory.textContent = project.category;
+  caseSummary.textContent = project.summary;
+  caseOverview.textContent = project.overview;
+  caseSymbol.textContent = project.symbol;
+  caseArtCaption.textContent = project.caption;
+
+  caseFeatures.replaceChildren();
+
+  project.features.forEach((feature) => {
+    const item = document.createElement("li");
+    item.textContent = feature;
+    caseFeatures.appendChild(item);
+  });
+
+  caseTech.replaceChildren();
+
+  project.technology.forEach((technology) => {
+    const tag = document.createElement("span");
+    tag.textContent = technology;
+    caseTech.appendChild(tag);
+  });
+
+  // Match the artwork to the selected project.
+  const backgrounds = {
+    corro:
+      "radial-gradient(circle at 50% 45%, #555a5d, #24282c 48%, #121417 100%)",
+
+    flood:
+      "radial-gradient(ellipse at 50% 50%, #46565a, #1c272c 75%)",
+
+    xtreme:
+      "radial-gradient(circle at 50% 50%, #49434c, #1b1a20 70%)"
+  };
+
+  caseHeroArt.style.background =
+    backgrounds[project.theme] || backgrounds.corro;
+
+  caseSymbol.style.color =
+    project.theme === "xtreme" ? "#e9e6df" : "#e8e5dc";
+
+  caseSymbol.style.textShadow =
+    project.theme === "xtreme"
+      ? "12px 12px 0 #5b555d"
+      : "0 12px 45px rgba(0,0,0,.45)";
+}
+
+
+// Open overlay
+function openCaseStudy(projectId, trigger) {
+  const project = caseStudies[projectId];
+
+  if (!project || !caseModal) return;
+
+  lastCaseTrigger = trigger;
+
+  populateCaseStudy(project);
+
+  caseModal.classList.add("is-open");
+  caseModal.setAttribute("aria-hidden", "false");
+
+  document.body.classList.add("case-open");
+
+  // Keep the selected project visible at the top.
+  casePanel.scrollTop = 0;
+
+  // Focus the dialog after it opens.
+  requestAnimationFrame(() => {
+    casePanel.focus({ preventScroll: true });
+  });
+}
+
+
+// Close overlay
+function closeCaseStudy() {
+  if (!caseModal || !caseModal.classList.contains("is-open")) {
+    return;
+  }
+
+  caseModal.classList.remove("is-open");
+  caseModal.setAttribute("aria-hidden", "true");
+
+  document.body.classList.remove("case-open");
+
+  if (lastCaseTrigger) {
+    lastCaseTrigger.focus({ preventScroll: true });
+  }
+}
+
+
+// Project card click events
+document.querySelectorAll("[data-case-study]").forEach((card) => {
+  card.addEventListener("click", (event) => {
+    event.preventDefault();
+
+    const projectId = card.dataset.caseStudy;
+
+    openCaseStudy(projectId, card);
+  });
+});
+
+
+// Close button
+caseClose?.addEventListener("click", closeCaseStudy);
+
+
+// Backdrop and bottom close button
+caseModal?.querySelectorAll("[data-case-close]").forEach((element) => {
+  element.addEventListener("click", closeCaseStudy);
+});
+
+
+// Keyboard controls
+document.addEventListener("keydown", (event) => {
+  if (!caseModal?.classList.contains("is-open")) return;
+
+  if (event.key === "Escape") {
+    closeCaseStudy();
+  }
+
+  // Keep keyboard focus inside the open dialog.
+  if (event.key === "Tab") {
+    const focusable = casePanel.querySelectorAll(
+      'a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])'
+    );
+
+    if (!focusable.length) return;
+
+    const first = focusable[0];
+    const last = focusable[focusable.length - 1];
+
+    if (event.shiftKey && document.activeElement === first) {
+      event.preventDefault();
+      last.focus();
+    } else if (!event.shiftKey && document.activeElement === last) {
+      event.preventDefault();
+      first.focus();
+    }
+  }
+});
+
