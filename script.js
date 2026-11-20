@@ -4,7 +4,7 @@ import { RectAreaLightUniformsLib } from "three/addons/lights/RectAreaLightUnifo
 
 // ============================================
 // MYRLORE®
-// A2 — POLISHED PLATINUM
+// A2 — SHARP CHROME
 // LIQUID METAL STUDIO SCULPTURE
 // ============================================
 
@@ -41,80 +41,78 @@ const lerp = (a, b, t) =>
 
 
 // ============================================
-// POLISHED SILVER MATERIALS
+// CHROME MATERIALS
 // ============================================
 
 function createMetalMaterial(
-  color = 0xf4f6fa,
-  roughness = 0.035
+  color = 0xffffff,
+  roughness = 0.025
 ) {
-  return new THREE.MeshPhysicalMaterial({
+  return new THREE.MeshStandardMaterial({
     color,
     metalness: 1,
     roughness,
-    envMapIntensity: 2.8,
-    clearcoat: 1,
-    clearcoatRoughness: 0.025,
+    envMapIntensity: 3.5,
     side: THREE.DoubleSide
   });
 }
 
 
 // ============================================
-// BRIGHT STUDIO REFLECTION ENVIRONMENT
+// CUSTOM STUDIO REFLECTION ENVIRONMENT
 // ============================================
 
 function createEnvironment() {
   const pmrem = new THREE.PMREMGenerator(renderer);
 
   const envScene = new THREE.Scene();
-  envScene.background = new THREE.Color(0x30343c);
 
-  // Neutral studio illumination.
+  // Dark studio background.
+  envScene.background = new THREE.Color(0x08090b);
+
+  // Soft environmental fill.
   envScene.add(
     new THREE.HemisphereLight(
       0xffffff,
-      0x777f8c,
-      1.2
+      0x10131a,
+      0.8
     )
   );
 
-  // Bright white reflection panels.
+  // Large bright reflection panels.
+  // Their shapes create the long highlights
+  // associated with polished chrome.
+
   const panels = [
     {
       position: [-3.5, 0.5, 2],
-      size: [0.9, 5.5, 0.15],
+      size: [0.8, 5, 0.12],
       color: 0xffffff
     },
     {
       position: [3.4, 0.2, 1.8],
-      size: [0.8, 5, 0.15],
-      color: 0xffffff
+      size: [0.55, 4.5, 0.12],
+      color: 0xe5edff
     },
     {
       position: [0, 3.4, 0],
-      size: [5.5, 0.8, 0.15],
+      size: [4.5, 0.55, 0.12],
       color: 0xffffff
     },
     {
       position: [-2.4, -2.5, 0.5],
-      size: [0.85, 3.5, 0.15],
-      color: 0xe8edf5
+      size: [0.65, 3, 0.12],
+      color: 0xa8b8d2
     },
     {
       position: [2.5, -2, -1],
-      size: [0.8, 3.5, 0.15],
+      size: [0.55, 2.5, 0.12],
       color: 0xffffff
     },
     {
       position: [0, 0, -4],
-      size: [4.5, 4.5, 0.15],
-      color: 0x929eaf
-    },
-    {
-      position: [0, -3.5, 1],
-      size: [4.5, 0.45, 0.15],
-      color: 0xffffff
+      size: [3.5, 3.5, 0.12],
+      color: 0x333b4a
     }
   ];
 
@@ -132,13 +130,14 @@ function createEnvironment() {
     envScene.add(mesh);
   });
 
+  // Generate a filtered environment map.
   const environment = pmrem.fromScene(
     envScene,
     0.04
   ).texture;
 
   scene.environment = environment;
-  scene.environmentIntensity = 1.5;
+  scene.environmentIntensity = 1.4;
 
   envScene.traverse((object) => {
     if (object.geometry) {
@@ -335,7 +334,7 @@ function createCore() {
 
   const innerForm = new THREE.Mesh(
     new THREE.SphereGeometry(0.19, 48, 32),
-    createMetalMaterial(0xdce3ed, 0.035)
+    createMetalMaterial(0x9faab8, 0.035)
   );
 
   innerForm.scale.set(0.8, 1.45, 0.7);
@@ -386,17 +385,17 @@ function createSculpture() {
   scene.add(sculpture);
 
   const silver = createMetalMaterial(
-    0xf4f6fa,
+    0xffffff,
     0.022
   );
 
   const platinum = createMetalMaterial(
-    0xdce4ef,
+    0xcbd4df,
     0.035
   );
 
   const darkChrome = createMetalMaterial(
-    0xaeb9c8,
+    0x788596,
     0.045
   );
 
@@ -526,7 +525,7 @@ function createSculpture() {
       [-1.12, 0.30, 0.38]
     ],
     0.012,
-    silver
+    darkChrome
   );
 
   sculpture.position.set(0.28, 0.05, 0);
@@ -548,37 +547,37 @@ function createLighting() {
   const lightConfigs = [
     {
       color: 0xffffff,
-      intensity: 24,
-      width: 0.7,
-      height: 5.5,
+      intensity: 20,
+      width: 0.55,
+      height: 5,
       position: [-3.2, 1.5, 3.5]
     },
     {
-      color: 0xffffff,
-      intensity: 26,
-      width: 0.6,
-      height: 5,
+      color: 0xe7efff,
+      intensity: 24,
+      width: 0.42,
+      height: 4.5,
       position: [3.2, 0.5, 2.8]
     },
     {
       color: 0xffffff,
-      intensity: 20,
-      width: 5,
-      height: 0.6,
+      intensity: 16,
+      width: 4.5,
+      height: 0.45,
       position: [0, 3.5, 1.5]
     },
     {
-      color: 0xdce7f7,
+      color: 0xa9bad2,
       intensity: 18,
-      width: 0.7,
+      width: 0.55,
       height: 4,
       position: [-3, 0.2, -3]
     },
     {
-      color: 0xe6eaf1,
-      intensity: 10,
-      width: 0.5,
-      height: 3,
+      color: 0xc9b99f,
+      intensity: 6,
+      width: 0.4,
+      height: 2.8,
       position: [2, -2, -2]
     }
   ];
@@ -599,15 +598,15 @@ function createLighting() {
 
   const key = new THREE.DirectionalLight(
     0xffffff,
-    2
+    1.8
   );
 
   key.position.set(3, 5, 5);
   scene.add(key);
 
   const rim = new THREE.DirectionalLight(
-    0xdce7f7,
-    2
+    0xb8c8df,
+    2.2
   );
 
   rim.position.set(-4, 1, -3);
@@ -643,7 +642,7 @@ function createParticles() {
   );
 
   const material = new THREE.PointsMaterial({
-    color: 0xdce1e9,
+    color: 0xc9cbd0,
     size: 0.014,
     transparent: true,
     opacity: 0.25,
@@ -697,7 +696,7 @@ function initThree() {
 
     renderer.outputColorSpace = THREE.SRGBColorSpace;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 1.3;
+    renderer.toneMappingExposure = 1.15;
 
     createEnvironment();
     createLighting();
