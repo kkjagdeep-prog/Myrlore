@@ -1,10 +1,11 @@
 
 import * as THREE from "three";
 import { RoomEnvironment } from "three/addons/environments/RoomEnvironment.js";
+import { RectAreaLightUniformsLib } from "three/addons/lights/RectAreaLightUniformsLib.js";
 
 // ============================================
 // MYRLORE®
-// CHROME BLOOM — CUSTOM 3D SCULPTURE
+// CHROME BLOOM — LIQUID CHROME EDITION
 // ============================================
 
 const canvas = document.querySelector("#webgl");
@@ -46,21 +47,26 @@ const smoothstep = (value) =>
 
 
 // ============================================
-// METALLIC MATERIALS
+// POLISHED LIQUID CHROME MATERIALS
 // ============================================
 
 function createMetalMaterial(
-  color,
-  roughness = 0.14,
-  metalness = 1
+  color = 0xf2f4f6,
+  roughness = 0.065
 ) {
   return new THREE.MeshPhysicalMaterial({
     color,
-    metalness,
+    metalness: 1,
     roughness,
+
     clearcoat: 1,
-    clearcoatRoughness: 0.055,
-    envMapIntensity: 2.2,
+    clearcoatRoughness: 0.035,
+
+    envMapIntensity: 3.2,
+
+    reflectivity: 1,
+    ior: 1.5,
+
     side: THREE.DoubleSide
   });
 }
@@ -73,10 +79,10 @@ function createMetalMaterial(
 function createPetalGeometry(
   length = 1.5,
   width = 0.43,
-  detail = 36
+  detail = 40
 ) {
   const rows = detail;
-  const columns = 20;
+  const columns = 24;
 
   const positions = [];
   const uvs = [];
@@ -85,7 +91,6 @@ function createPetalGeometry(
   for (let i = 0; i <= rows; i++) {
     const t = i / rows;
 
-    // Taper at the base and tip
     const shape =
       Math.pow(Math.sin(Math.PI * t), 0.78) *
       (0.82 + 0.18 * t);
@@ -96,19 +101,23 @@ function createPetalGeometry(
       const across = (j / columns) * 2 - 1;
 
       const x = across * currentWidth;
-
       const y = t * length;
 
-      // Curved, slightly cupped metallic surface
+      // Sculpted petal curvature
       const arch =
-        Math.sin(Math.PI * t) * 0.17 +
+        Math.sin(Math.PI * t) * 0.19 +
         t * t * 0.08;
 
       const cup =
         -across * across *
-        Math.sin(Math.PI * t) * 0.13;
+        Math.sin(Math.PI * t) * 0.15;
 
-      const z = arch + cup;
+      // Subtle central ridge
+      const ridge =
+        Math.exp(-across * across * 8) *
+        Math.sin(Math.PI * t) * 0.035;
+
+      const z = arch + cup + ridge;
 
       positions.push(x, y, z);
       uvs.push(j / columns, t);
@@ -163,7 +172,7 @@ function createPetalLayer({
   const geometry = createPetalGeometry(
     length,
     width,
-    40
+    42
   );
 
   for (let i = 0; i < count; i++) {
@@ -183,17 +192,13 @@ function createPetalLayer({
 
     group.add(petal);
 
-    // Position the petal around the flower centre
     group.position.set(
       Math.cos(angle) * radius,
       Math.sin(angle) * radius,
       z
     );
 
-    // Point the petal outwards
     group.rotation.z = angle - Math.PI / 2;
-
-    // Initial opening angle
     group.rotation.x = tilt;
 
     group.scale.set(
@@ -214,8 +219,6 @@ function createPetalLayer({
     sculpture.add(group);
     flowerPetals.push(group);
   }
-
-  // Shared geometry is intentionally reused within each layer.
 }
 
 
@@ -226,14 +229,9 @@ function createPetalLayer({
 function createFlowerCore() {
   const coreGroup = new THREE.Group();
 
-  const coreMaterial = createMetalMaterial(
-    0xd6c6a9,
-    0.12
-  );
-
   const core = new THREE.Mesh(
     new THREE.SphereGeometry(0.25, 48, 32),
-    coreMaterial
+    createMetalMaterial(0xc8cbd0, 0.075)
   );
 
   core.scale.set(1, 1, 0.68);
@@ -241,16 +239,15 @@ function createFlowerCore() {
 
   coreGroup.add(core);
 
-  // Small polished details around the core
-  const beadMaterial = createMetalMaterial(
-    0xf0eee8,
-    0.095
-  );
-
   const beadGeometry = new THREE.SphereGeometry(
     0.035,
-    20,
-    16
+    24,
+    18
+  );
+
+  const beadMaterial = createMetalMaterial(
+    0xf6f7f8,
+    0.045
   );
 
   for (let i = 0; i < 11; i++) {
@@ -270,10 +267,9 @@ function createFlowerCore() {
     coreGroup.add(bead);
   }
 
-  // Centre jewel
   const jewel = new THREE.Mesh(
-    new THREE.SphereGeometry(0.095, 32, 24),
-    createMetalMaterial(0xe8e4dc, 0.075)
+    new THREE.SphereGeometry(0.095, 36, 28),
+    createMetalMaterial(0xf4f2eb, 0.04)
   );
 
   jewel.position.z = 0.37;
@@ -297,26 +293,21 @@ function createSculpture() {
   flowerPetals = [];
 
   const silver = createMetalMaterial(
-    0xdfe2e5,
-    0.105
+    0xf0f3f6,
+    0.055
   );
 
   const platinum = createMetalMaterial(
-    0xaeb7c2,
-    0.135
-  );
-
-  const champagne = createMetalMaterial(
-    0xc6b69a,
-    0.16
+    0xbac4cf,
+    0.075
   );
 
   const pearl = createMetalMaterial(
-    0xf0efea,
-    0.11
+    0xf4f3ef,
+    0.05
   );
 
-  // Outer layer: eight broad petals
+  // Outer layer
   createPetalLayer({
     count: 8,
     length: 1.55,
@@ -329,7 +320,7 @@ function createSculpture() {
     tilt: 0.7
   });
 
-  // Middle layer: seven overlapping petals
+  // Middle layer
   createPetalLayer({
     count: 7,
     length: 1.12,
@@ -342,7 +333,7 @@ function createSculpture() {
     tilt: 0.85
   });
 
-  // Inner layer: five compact petals
+  // Inner layer — fixed material assignment
   createPetalLayer({
     count: 5,
     length: 0.73,
@@ -350,19 +341,9 @@ function createSculpture() {
     radius: 0.025,
     z: 0.12,
     scale: 0.7,
-    material: i => i,
+    material: pearl,
     layer: 2,
     tilt: 1.05
-  });
-
-  // The inner layer gets its own pearl material
-  // Reassign the inner petal materials
-  const innerLayer = flowerPetals.filter(
-    petal => petal.userData.layer === 2
-  );
-
-  innerLayer.forEach(group => {
-    group.children[0].material = pearl;
   });
 
   createFlowerCore();
@@ -376,55 +357,120 @@ function createSculpture() {
 
 
 // ============================================
-// LIGHTING
+// CINEMATIC REFLECTION LIGHTING
 // ============================================
 
 function createLighting() {
-  scene.add(
-    new THREE.AmbientLight(0xffffff, 0.42)
-  );
+  RectAreaLightUniformsLib.init();
 
-  const key = new THREE.DirectionalLight(
+  // Broad front reflection
+  const frontSoftbox = new THREE.RectAreaLight(
     0xffffff,
-    4.2
+    13,
+    3.8,
+    5.2
   );
 
-  key.position.set(3, 4, 5);
-  scene.add(key);
+  frontSoftbox.position.set(-3, 2, 4);
+  frontSoftbox.lookAt(0, 0, 0);
+  scene.add(frontSoftbox);
 
-  const silverRim = new THREE.DirectionalLight(
-    0xb8c3d4,
+  // Narrow vertical chrome highlight
+  const verticalStrip = new THREE.RectAreaLight(
+    0xffffff,
+    17,
+    0.55,
     4.5
   );
 
-  silverRim.position.set(-4, 1, -3);
-  scene.add(silverRim);
+  verticalStrip.position.set(3.2, 0.5, 2.8);
+  verticalStrip.lookAt(0, 0, 0);
+  scene.add(verticalStrip);
 
-  const top = new THREE.DirectionalLight(
-    0xffffff,
-    2.6
-  );
-
-  top.position.set(0, 5, -2);
-  scene.add(top);
-
-  const champagneLight = new THREE.PointLight(
-    0xc6b69a,
-    18,
-    10
-  );
-
-  champagneLight.position.set(-3, 2, 3);
-  scene.add(champagneLight);
-
-  const coolLight = new THREE.PointLight(
-    0x9da9c0,
+  // Top reflection
+  const topSoftbox = new THREE.RectAreaLight(
+    0xe9edf4,
     14,
-    10
+    4.5,
+    0.65
   );
 
-  coolLight.position.set(3, -3, 2);
-  scene.add(coolLight);
+  topSoftbox.position.set(0, 4, 1);
+  topSoftbox.lookAt(0, 0, 0);
+  scene.add(topSoftbox);
+
+  // Cool rear rim reflection
+  const rearStrip = new THREE.RectAreaLight(
+    0x9aabc5,
+    18,
+    0.7,
+    4
+  );
+
+  rearStrip.position.set(-3, 0, -3);
+  rearStrip.lookAt(0, 0, 0);
+  scene.add(rearStrip);
+
+  // Subtle warm reflection
+  const warmStrip = new THREE.RectAreaLight(
+    0xc6b69a,
+    5,
+    0.45,
+    3
+  );
+
+  warmStrip.position.set(2, -2, -2);
+  warmStrip.lookAt(0, 0, 0);
+  scene.add(warmStrip);
+
+  // Directional accents
+  const key = new THREE.DirectionalLight(
+    0xffffff,
+    2.2
+  );
+
+  key.position.set(3, 5, 5);
+  scene.add(key);
+
+  const rim = new THREE.DirectionalLight(
+    0xb8c8df,
+    2.8
+  );
+
+  rim.position.set(-4, 1, -3);
+  scene.add(rim);
+
+  const lower = new THREE.DirectionalLight(
+    0xffffff,
+    1.1
+  );
+
+  lower.position.set(0, -4, 3);
+  scene.add(lower);
+}
+
+
+// ============================================
+// REFLECTION ENVIRONMENT
+// ============================================
+
+function createEnvironment() {
+  const pmrem = new THREE.PMREMGenerator(renderer);
+
+  pmrem.compileEquirectangularShader();
+
+  const environmentScene = new RoomEnvironment();
+
+  const environment = pmrem.fromScene(
+    environmentScene,
+    0.04
+  ).texture;
+
+  scene.environment = environment;
+  scene.environmentIntensity = 1.25;
+
+  environmentScene.dispose();
+  pmrem.dispose();
 }
 
 
@@ -456,7 +502,7 @@ function createParticles() {
   );
 
   const material = new THREE.PointsMaterial({
-    color: 0xc9c4ba,
+    color: 0xc9cbd0,
     size: 0.014,
     transparent: true,
     opacity: 0.3,
@@ -480,7 +526,6 @@ function createParticles() {
 function updateFlower(time) {
   if (!sculpture) return;
 
-  // Gradually unfold the flower
   const opening = smoothstep(
     clamp(time / 2.8, 0, 1)
   );
@@ -525,9 +570,10 @@ function updateFlower(time) {
   if (flowerCore) {
     flowerCore.rotation.z = time * 0.045;
 
-    flowerCore.scale.setScalar(
-      1 + Math.sin(time * 0.8) * 0.008
-    );
+    const pulse =
+      1 + Math.sin(time * 0.8) * 0.008;
+
+    flowerCore.scale.setScalar(pulse);
   }
 }
 
@@ -569,23 +615,9 @@ function initThree() {
 
     renderer.outputColorSpace = THREE.SRGBColorSpace;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 1.2;
+    renderer.toneMappingExposure = 1.35;
 
-    // Environment reflections
-    const pmrem = new THREE.PMREMGenerator(renderer);
-
-    const environmentScene = new RoomEnvironment();
-
-    const environment = pmrem.fromScene(
-      environmentScene,
-      0.04
-    ).texture;
-
-    scene.environment = environment;
-
-    environmentScene.dispose();
-    pmrem.dispose();
-
+    createEnvironment();
     createLighting();
     createSculpture();
     createParticles();
@@ -627,7 +659,6 @@ function animate() {
 
   const time = clock.getElapsedTime();
 
-  // Smooth pointer following
   targetX = lerp(targetX, pointerX, 0.035);
   targetY = lerp(targetY, pointerY, 0.035);
 
