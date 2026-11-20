@@ -5,7 +5,8 @@ import { RectAreaLightUniformsLib } from "three/addons/lights/RectAreaLightUnifo
 
 // ============================================
 // MYRLORE®
-// CHROME BLOOM — ASYMMETRIC LIQUID ORCHID
+// A2 — SHARP CHROME
+// ABSTRACT LIQUID-METAL SCULPTURE
 // ============================================
 
 const canvas = document.querySelector("#webgl");
@@ -19,12 +20,11 @@ let scene;
 let camera;
 let renderer;
 let sculpture;
-let flowerCore;
-let flowerPetals = [];
 let particles;
 let animationFrame = null;
-let scrollProgress = 0;
+let resizeObserver = null;
 
+let scrollProgress = 0;
 let pointerX = 0;
 let pointerY = 0;
 let targetX = 0;
@@ -40,16 +40,13 @@ const clamp = (v, min, max) =>
 const lerp = (a, b, t) =>
   a + (b - a) * t;
 
-const smoothstep = (t) =>
-  t * t * (3 - 2 * t);
-
 
 // ============================================
 // CHROME MATERIALS
 // ============================================
 
 function createMetalMaterial(
-  color = 0xf0f3f6,
+  color = 0xe9edf2,
   roughness = 0.055
 ) {
   return new THREE.MeshPhysicalMaterial({
@@ -57,77 +54,123 @@ function createMetalMaterial(
     metalness: 1,
     roughness,
     clearcoat: 1,
-    clearcoatRoughness: 0.035,
-    envMapIntensity: 3.2,
+    clearcoatRoughness: 0.025,
+    envMapIntensity: 2.8,
     side: THREE.DoubleSide
   });
 }
 
 
 // ============================================
-// SLENDER SCULPTURAL PETAL GEOMETRY
+// TAPERED SCULPTURAL BLADE GEOMETRY
 // ============================================
 
-function createPetalGeometry(
-  length = 1.7,
-  width = 0.2,
-  detail = 48
-) {
-  const rows = detail;
-  const columns = 24;
+function createBladeGeometry({
+  length = 1.8,
+  radius = 0.16,
+  direction = new THREE.Vector3(0, 1, 0),
+  bend = new THREE.Vector3(0, 0, 0),
+  twist = 0
+}) {
+  const segments = 72;
+  const radialSegments = 20;
 
   const positions = [];
   const uvs = [];
   const indices = [];
 
-  for (let i = 0; i <= rows; i++) {
-    const t = i / rows;
+  const dir = direction.clone().normalize();
 
-    // Narrow base, elegant shoulders, pointed tip
-    const base = Math.pow(
-      Math.sin(Math.PI * Math.pow(t, 0.88)),
-      0.72
+  const reference = Math.abs(dir.y) > 0.92
+    ? new THREE.Vector3(1, 0, 0)
+    : new THREE.Vector3(0, 1, 0);
+
+  const pointAt = (t) => {
+    const primary = dir.clone().multiplyScalar(length * t);
+
+    const curved = bend.clone().multiplyScalar(
+      Math.sin(Math.PI * t)
     );
 
-    const shoulder =
-      0.72 + 0.28 * Math.sin(Math.PI * t);
+    const secondary = new THREE.Vector3(
+      Math.sin(t * Math.PI * 1.4) * 0.035,
+      Math.sin(t * Math.PI * 2) * 0.025,
+      Math.cos(t * Math.PI * 1.2) * 0.035
+    );
 
-    const currentWidth = width * base * shoulder;
+    return primary.add(curved).add(secondary);
+  };
 
-    for (let j = 0; j <= columns; j++) {
-      const across = (j / columns) * 2 - 1;
+  for (let i = 0; i <= segments; i++) {
+    const t = i / segments;
 
-      const x = across * currentWidth;
-      const y = t * length;
+    const current = pointAt(t);
+    const next = pointAt(Math.min(1, t + 0.002));
+    const previous = pointAt(Math.max(0, t - 0.002));
 
-      // Long flowing curvature
-      const arch =
-        Math.sin(Math.PI * t) * 0.16 +
-        t * t * 0.11;
+    const tangent = next.sub(previous).normalize();
 
-      // Concave surface
-      const cup =
-        -across * across *
-        Math.sin(Math.PI * t) * 0.12;
+    let side = new THREE.Vector3()
+      .crossVectors(tangent, reference)
+      .normalize();
 
-      // Raised central ridge
+    if (side.lengthSq() < 0.001) {
+      side.set(1, 0, 0);
+    }
+
+    const normal = new THREE.Vector3()
+      .crossVectors(tangent, side)
+      .normalize();
+
+    const twistAngle =
+      twist * t +
+      Math.sin(t * Math.PI) * 0.25;
+
+    side.applyAxisAngle(tangent, twistAngle);
+    normal.applyAxisAngle(tangent, twistAngle);
+
+    // Wide middle, narrow base and razor-like tip.
+    const swell = Math.pow(
+      Math.sin(Math.PI * t),
+      0.62
+    );
+
+    const taper = Math.pow(1 - t, 0.82);
+
+    const currentRadius =
+      radius * (0.36 + swell * 0.85) * taper;
+
+    for (let j = 0; j <= radialSegments; j++) {
+      const angle =
+        (j / radialSegments) * Math.PI * 2;
+
       const ridge =
-        Math.exp(-across * across * 9) *
-        Math.sin(Math.PI * t) * 0.045;
+        1 + Math.cos(angle * 2) * 0.12;
 
-      // Slightly irregular organic bend
-      const twist =
-        Math.sin(t * Math.PI * 1.35) *
-        across * 0.025;
+      const horizontal =
+        Math.cos(angle) * currentRadius * ridge;
 
-      const z = arch + cup + ridge + twist;
+      const vertical =
+        Math.sin(angle) * currentRadius * 0.34;
 
-      positions.push(x, y, z);
-      uvs.push(j / columns, t);
+      const vertex = current.clone()
+        .addScaledVector(side, horizontal)
+        .addScaledVector(normal, vertical);
 
-      if (i < rows && j < columns) {
-        const a = i * (columns + 1) + j;
-        const b = a + columns + 1;
+      positions.push(
+        vertex.x,
+        vertex.y,
+        vertex.z
+      );
+
+      uvs.push(
+        j / radialSegments,
+        t
+      );
+
+      if (i < segments && j < radialSegments) {
+        const a = i * (radialSegments + 1) + j;
+        const b = a + radialSegments + 1;
 
         indices.push(
           a, b, a + 1,
@@ -158,27 +201,80 @@ function createPetalGeometry(
 
 
 // ============================================
-// INDIVIDUAL PETAL
+// CREATE ONE CHROME BLADE
 // ============================================
 
-function createPetal({
-  length,
-  width,
-  x,
-  y,
-  z,
-  closedAngle,
-  openAngle,
-  tilt,
-  material,
-  index
-}) {
-  const group = new THREE.Group();
+function createBlade(config, material) {
+  const geometry = createBladeGeometry(config);
 
-  const geometry = createPetalGeometry(
-    length,
-    width,
-    48
+  const blade = new THREE.Mesh(
+    geometry,
+    material
+  );
+
+  blade.position.set(
+    config.origin[0],
+    config.origin[1],
+    config.origin[2]
+  );
+
+  blade.castShadow = true;
+  blade.receiveShadow = true;
+
+  sculpture.add(blade);
+
+  return blade;
+}
+
+
+// ============================================
+// CENTRAL METALLIC CORE
+// ============================================
+
+function createCore() {
+  const coreGroup = new THREE.Group();
+
+  const core = new THREE.Mesh(
+    new THREE.SphereGeometry(0.31, 64, 48),
+    createMetalMaterial(0xe9edf2, 0.035)
+  );
+
+  core.scale.set(0.85, 1.15, 0.72);
+
+  coreGroup.add(core);
+
+  // Small offset metallic ridge.
+  const innerForm = new THREE.Mesh(
+    new THREE.SphereGeometry(0.19, 48, 32),
+    createMetalMaterial(0x9faab8, 0.045)
+  );
+
+  innerForm.scale.set(0.8, 1.45, 0.7);
+  innerForm.position.set(0.06, 0.12, 0.12);
+
+  coreGroup.add(innerForm);
+
+  sculpture.add(coreGroup);
+}
+
+
+// ============================================
+// THIN CHROME FILAMENTS
+// ============================================
+
+function createChromeCurve(points, radius, material) {
+  const curve = new THREE.CatmullRomCurve3(
+    points.map(
+      (point) => new THREE.Vector3(...point)
+    )
+  );
+
+  const geometry = new THREE.TubeGeometry(
+    curve,
+    100,
+    radius,
+    12,
+    false
   );
 
   const mesh = new THREE.Mesh(
@@ -186,272 +282,181 @@ function createPetal({
     material
   );
 
-  group.add(mesh);
+  sculpture.add(mesh);
 
-  group.position.set(x, y, z);
-
-  group.rotation.z = closedAngle;
-  group.rotation.x = tilt;
-
-  group.scale.set(1, 0.55, 1);
-
-  group.userData = {
-    closedAngle,
-    openAngle,
-    initialTilt: tilt,
-    phase: index * 0.8,
-    baseScale: 1,
-    length
-  };
-
-  sculpture.add(group);
-  flowerPetals.push(group);
+  return mesh;
 }
 
 
 // ============================================
-// CURVED METALLIC STEM
-// ============================================
-
-function createStem() {
-  const points = [
-    new THREE.Vector3(0.05, -1.9, -0.12),
-    new THREE.Vector3(-0.02, -1.35, -0.06),
-    new THREE.Vector3(0.08, -0.8, 0.02),
-    new THREE.Vector3(0.02, -0.3, 0.03),
-    new THREE.Vector3(0, 0.05, 0.02)
-  ];
-
-  const curve = new THREE.CatmullRomCurve3(points);
-
-  const geometry = new THREE.TubeGeometry(
-    curve,
-    80,
-    0.027,
-    12,
-    false
-  );
-
-  const stem = new THREE.Mesh(
-    geometry,
-    createMetalMaterial(0xb8c2ce, 0.065)
-  );
-
-  sculpture.add(stem);
-
-  // A small sculptural transition at the base of the bloom
-  const collar = new THREE.Mesh(
-    new THREE.SphereGeometry(0.075, 32, 24),
-    createMetalMaterial(0xe4e7eb, 0.045)
-  );
-
-  collar.position.set(0, 0.015, 0.02);
-  collar.scale.set(0.8, 1.25, 0.8);
-
-  sculpture.add(collar);
-}
-
-
-// ============================================
-// FLOWER CENTRE
-// ============================================
-
-function createFlowerCore() {
-  flowerCore = new THREE.Group();
-
-  // An elongated chrome centre, not a round daisy centre
-  const core = new THREE.Mesh(
-    new THREE.SphereGeometry(0.105, 40, 32),
-    createMetalMaterial(0xf2f3f4, 0.045)
-  );
-
-  core.scale.set(0.72, 1.8, 0.68);
-  core.position.set(0, 0.13, 0.12);
-
-  flowerCore.add(core);
-
-  // Fine metallic filaments
-  const filamentMaterial = createMetalMaterial(
-    0xc7b99f,
-    0.075
-  );
-
-  for (let i = 0; i < 3; i++) {
-    const filament = new THREE.Mesh(
-      new THREE.CylinderGeometry(
-        0.008,
-        0.014,
-        0.22,
-        12
-      ),
-      filamentMaterial
-    );
-
-    filament.position.set(
-      0.045 + i * 0.035,
-      0.27 + i * 0.025,
-      0.15
-    );
-
-    filament.rotation.z = -0.25 - i * 0.12;
-
-    flowerCore.add(filament);
-
-    const tip = new THREE.Mesh(
-      new THREE.SphereGeometry(0.025, 20, 16),
-      createMetalMaterial(0xf4f1e9, 0.04)
-    );
-
-    tip.position.set(
-      filament.position.x - 0.025,
-      filament.position.y + 0.11,
-      0.15
-    );
-
-    flowerCore.add(tip);
-  }
-
-  sculpture.add(flowerCore);
-}
-
-
-// ============================================
-// ASYMMETRIC CHROME BLOOM
+// BUILD THE A2 SCULPTURE
 // ============================================
 
 function createSculpture() {
   sculpture = new THREE.Group();
   scene.add(sculpture);
 
-  flowerPetals = [];
-
   const silver = createMetalMaterial(
-    0xf2f4f6,
-    0.045
+    0xf0f3f7,
+    0.035
   );
 
   const platinum = createMetalMaterial(
-    0xb9c4d0,
-    0.065
-  );
-
-  const paleSilver = createMetalMaterial(
-    0xdfe3e8,
+    0xb9c5d2,
     0.055
   );
 
-  const champagne = createMetalMaterial(
-    0xc9b99d,
-    0.085
+  const darkChrome = createMetalMaterial(
+    0x727f91,
+    0.075
   );
 
-  // Petal arrangement:
-  // Each petal has its own length and opening direction.
-  // Negative angles lean towards the right side.
+  const brightChrome = createMetalMaterial(
+    0xffffff,
+    0.025
+  );
 
-  const petals = [
+  createCore();
+
+  // Each blade has its own direction, curve and length.
+  // The arrangement is deliberately irregular.
+
+  const blades = [
+    {
+      length: 2.15,
+      radius: 0.17,
+      origin: [0.02, 0.04, 0.03],
+      direction: new THREE.Vector3(0.28, 0.92, 0.18),
+      bend: new THREE.Vector3(0.40, 0.05, 0.16),
+      twist: 1.25,
+      material: silver
+    },
+    {
+      length: 2.05,
+      radius: 0.155,
+      origin: [-0.05, 0.03, -0.08],
+      direction: new THREE.Vector3(-0.72, 0.48, 0.16),
+      bend: new THREE.Vector3(-0.25, 0.35, 0.10),
+      twist: -1.1,
+      material: brightChrome
+    },
+    {
+      length: 2.25,
+      radius: 0.16,
+      origin: [0.04, 0.02, -0.12],
+      direction: new THREE.Vector3(0.91, 0.23, -0.12),
+      bend: new THREE.Vector3(0.10, 0.43, 0.28),
+      twist: 1.6,
+      material: platinum
+    },
+    {
+      length: 1.85,
+      radius: 0.14,
+      origin: [-0.04, 0.02, 0.12],
+      direction: new THREE.Vector3(-0.92, -0.24, 0.10),
+      bend: new THREE.Vector3(-0.12, -0.25, 0.28),
+      twist: -1.4,
+      material: silver
+    },
+    {
+      length: 1.92,
+      radius: 0.15,
+      origin: [0.03, -0.02, -0.04],
+      direction: new THREE.Vector3(0.60, -0.70, 0.12),
+      bend: new THREE.Vector3(0.35, -0.08, 0.20),
+      twist: 1.3,
+      material: brightChrome
+    },
     {
       length: 1.72,
-      width: 0.19,
-      x: -0.015,
-      y: 0.02,
-      z: -0.10,
-      closedAngle: -0.12,
-      openAngle: -0.68,
-      tilt: 0.48,
-      material: silver
-    },
-    {
-      length: 1.88,
-      width: 0.205,
-      x: 0.015,
-      y: 0.015,
-      z: -0.035,
-      closedAngle: 0.08,
-      openAngle: -0.42,
-      tilt: 0.38,
-      material: paleSilver
-    },
-    {
-      length: 1.58,
-      width: 0.18,
-      x: 0.035,
-      y: 0.02,
-      z: 0.015,
-      closedAngle: 0.20,
-      openAngle: -0.18,
-      tilt: 0.58,
+      radius: 0.13,
+      origin: [-0.02, 0.01, 0.08],
+      direction: new THREE.Vector3(-0.35, 0.30, 0.92),
+      bend: new THREE.Vector3(-0.30, 0.28, 0.05),
+      twist: -1.8,
       material: platinum
     },
     {
-      length: 1.45,
-      width: 0.17,
-      x: -0.025,
-      y: 0.025,
-      z: -0.13,
-      closedAngle: -0.30,
-      openAngle: -0.92,
-      tilt: 0.34,
+      length: 1.75,
+      radius: 0.135,
+      origin: [0.02, 0.01, -0.10],
+      direction: new THREE.Vector3(0.18, -0.88, -0.42),
+      bend: new THREE.Vector3(-0.25, -0.15, -0.12),
+      twist: 1.4,
+      material: darkChrome
+    },
+    {
+      length: 1.48,
+      radius: 0.12,
+      origin: [-0.02, 0.04, 0.06],
+      direction: new THREE.Vector3(-0.12, 0.12, -0.98),
+      bend: new THREE.Vector3(0.28, 0.22, -0.12),
+      twist: -1.5,
       material: silver
     },
     {
-      length: 1.65,
-      width: 0.18,
-      x: 0.045,
-      y: 0.015,
-      z: 0.08,
-      closedAngle: 0.34,
-      openAngle: 0.42,
-      tilt: 0.72,
-      material: paleSilver
-    },
-    {
-      length: 1.30,
-      width: 0.16,
-      x: 0.015,
-      y: 0.02,
-      z: -0.18,
-      closedAngle: -0.18,
-      openAngle: -1.12,
-      tilt: 0.42,
-      material: platinum
-    },
-    {
-      length: 1.12,
-      width: 0.145,
-      x: 0.025,
-      y: 0.035,
-      z: 0.12,
-      closedAngle: 0.12,
-      openAngle: 0.58,
-      tilt: 0.78,
-      material: champagne
+      length: 1.38,
+      radius: 0.105,
+      origin: [0.03, -0.02, 0.04],
+      direction: new THREE.Vector3(0.85, -0.28, 0.45),
+      bend: new THREE.Vector3(0.18, -0.32, 0.10),
+      twist: 1.8,
+      material: brightChrome
     }
   ];
 
-  petals.forEach((petal, index) => {
-    createPetal({
-      ...petal,
-      index
-    });
+  blades.forEach((config) => {
+    const { material, ...bladeConfig } = config;
+    createBlade(bladeConfig, material);
   });
 
-  createFlowerCore();
-  createStem();
+  // A few fine extensions give the sculpture a more
+  // organic, engineered silhouette.
 
-  sculpture.position.set(0.28, 0.05, 0);
-
-  sculpture.scale.setScalar(
-    window.innerWidth < 600 ? 0.88 : 1
+  createChromeCurve(
+    [
+      [-0.08, -0.12, 0.05],
+      [-0.25, -0.65, 0.14],
+      [-0.48, -1.15, 0.22],
+      [-0.42, -1.62, 0.28]
+    ],
+    0.018,
+    platinum
   );
 
-  // Slight permanent sideways lean
-  sculpture.rotation.z = -0.055;
+  createChromeCurve(
+    [
+      [0.08, 0.08, -0.08],
+      [0.48, 0.42, -0.12],
+      [0.95, 0.65, -0.18],
+      [1.34, 0.52, -0.20]
+    ],
+    0.014,
+    brightChrome
+  );
+
+  createChromeCurve(
+    [
+      [-0.10, 0.05, 0.08],
+      [-0.42, 0.38, 0.28],
+      [-0.82, 0.48, 0.35],
+      [-1.12, 0.30, 0.38]
+    ],
+    0.012,
+    darkChrome
+  );
+
+  sculpture.position.set(0.28, 0.05, 0);
+  sculpture.rotation.set(0.08, -0.12, -0.08);
+
+  sculpture.scale.setScalar(
+    window.innerWidth < 600 ? 0.76 : 0.88
+  );
 }
 
 
 // ============================================
-// CHROME REFLECTION ENVIRONMENT
+// REFLECTION ENVIRONMENT
 // ============================================
 
 function createEnvironment() {
@@ -465,7 +470,7 @@ function createEnvironment() {
   ).texture;
 
   scene.environment = environment;
-  scene.environmentIntensity = 1.3;
+  scene.environmentIntensity = 1.25;
 
   environmentScene.dispose();
   pmrem.dispose();
@@ -473,38 +478,38 @@ function createEnvironment() {
 
 
 // ============================================
-// CINEMATIC LIGHTING
+// CINEMATIC REFLECTION LIGHTING
 // ============================================
 
 function createLighting() {
   RectAreaLightUniformsLib.init();
 
-  const lights = [
+  const lightConfigs = [
     {
       color: 0xffffff,
-      intensity: 16,
-      width: 0.65,
+      intensity: 18,
+      width: 0.55,
       height: 5,
-      position: [-3.2, 1.4, 3.5]
+      position: [-3.2, 1.5, 3.5]
     },
     {
-      color: 0xf3f6ff,
-      intensity: 19,
+      color: 0xe7efff,
+      intensity: 22,
       width: 0.42,
       height: 4.5,
-      position: [3.1, 0.6, 2.8]
+      position: [3.2, 0.5, 2.8]
     },
     {
-      color: 0xdce5f2,
-      intensity: 13,
+      color: 0xffffff,
+      intensity: 15,
       width: 4.5,
-      height: 0.55,
+      height: 0.45,
       position: [0, 3.5, 1.5]
     },
     {
-      color: 0x9eacc4,
-      intensity: 17,
-      width: 0.6,
+      color: 0xa9bad2,
+      intensity: 18,
+      width: 0.55,
       height: 4,
       position: [-3, 0.2, -3]
     },
@@ -517,7 +522,7 @@ function createLighting() {
     }
   ];
 
-  lights.forEach((config) => {
+  lightConfigs.forEach((config) => {
     const light = new THREE.RectAreaLight(
       config.color,
       config.intensity,
@@ -533,7 +538,7 @@ function createLighting() {
 
   const key = new THREE.DirectionalLight(
     0xffffff,
-    2.1
+    2
   );
 
   key.position.set(3, 5, 5);
@@ -550,11 +555,11 @@ function createLighting() {
 
 
 // ============================================
-// PARTICLES
+// ATMOSPHERIC PARTICLES
 // ============================================
 
 function createParticles() {
-  const count = window.innerWidth < 600 ? 75 : 150;
+  const count = window.innerWidth < 600 ? 65 : 130;
 
   const positions = new Float32Array(count * 3);
 
@@ -580,7 +585,7 @@ function createParticles() {
     color: 0xc9cbd0,
     size: 0.014,
     transparent: true,
-    opacity: 0.28,
+    opacity: 0.25,
     sizeAttenuation: true,
     depthWrite: false
   });
@@ -591,52 +596,6 @@ function createParticles() {
   );
 
   scene.add(particles);
-}
-
-
-// ============================================
-// ORGANIC OPENING ANIMATION
-// ============================================
-
-function updateFlower(time) {
-  if (!sculpture) return;
-
-  // Slower, more deliberate unfurling
-  const opening = smoothstep(
-    clamp(time / 4.2, 0, 1)
-  );
-
-  flowerPetals.forEach((petal) => {
-    const data = petal.userData;
-
-    const movement =
-      Math.sin(time * 0.38 + data.phase) * 0.012;
-
-    petal.rotation.z = lerp(
-      data.closedAngle,
-      data.openAngle,
-      opening
-    ) + movement;
-
-    // Petals lift at different rates
-    const lift = lerp(
-      0.55,
-      1,
-      opening
-    );
-
-    petal.scale.y =
-      data.baseScale * lift;
-
-    petal.rotation.x =
-      data.initialTilt +
-      Math.sin(time * 0.32 + data.phase) * 0.012;
-  });
-
-  if (flowerCore) {
-    flowerCore.rotation.z =
-      Math.sin(time * 0.2) * 0.035;
-  }
 }
 
 
@@ -685,7 +644,6 @@ function initThree() {
     createParticles();
 
     if (reducedMotion) {
-      updateFlower(5);
       renderer.render(scene, camera);
     } else {
       clock.start();
@@ -693,8 +651,8 @@ function initThree() {
     }
 
     if ("ResizeObserver" in window) {
-      const observer = new ResizeObserver(resizeScene);
-      observer.observe(canvas);
+      resizeObserver = new ResizeObserver(resizeScene);
+      resizeObserver.observe(canvas);
     }
 
   } catch (error) {
@@ -709,7 +667,7 @@ function initThree() {
 
 
 // ============================================
-// ANIMATION LOOP
+// SUBTLE 3D MOTION
 // ============================================
 
 function animate() {
@@ -724,26 +682,27 @@ function animate() {
   targetX = lerp(targetX, pointerX, 0.035);
   targetY = lerp(targetY, pointerY, 0.035);
 
-  updateFlower(time);
-
   if (sculpture) {
+    // Cursor-responsive rotation.
     sculpture.rotation.y =
-      targetX * 0.24 +
-      Math.sin(time * 0.15) * 0.025;
+      -0.12 +
+      targetX * 0.22 +
+      Math.sin(time * 0.16) * 0.025;
 
     sculpture.rotation.x =
-      targetY * 0.16 +
+      0.08 +
+      targetY * 0.15 +
       Math.cos(time * 0.13) * 0.018;
 
     sculpture.rotation.z =
-      -0.055 +
+      -0.08 +
       Math.sin(time * 0.12) * 0.012;
 
     const baseScale =
-      window.innerWidth < 600 ? 0.88 : 1;
+      window.innerWidth < 600 ? 0.76 : 0.88;
 
     const finalScale =
-      window.innerWidth < 600 ? 0.73 : 0.84;
+      window.innerWidth < 600 ? 0.65 : 0.76;
 
     sculpture.scale.setScalar(
       lerp(baseScale, finalScale, scrollProgress)
@@ -751,13 +710,14 @@ function animate() {
 
     sculpture.position.y =
       0.05 -
-      scrollProgress * 0.25 +
-      Math.sin(time * 0.3) * 0.025;
+      scrollProgress * 0.22 +
+      Math.sin(time * 0.3) * 0.018;
   }
 
   if (particles) {
     particles.rotation.y = time * 0.007;
-    particles.rotation.x = Math.sin(time * 0.07) * 0.02;
+    particles.rotation.x =
+      Math.sin(time * 0.07) * 0.02;
   }
 
   renderer.render(scene, camera);
