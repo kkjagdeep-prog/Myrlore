@@ -4,27 +4,38 @@ import { RoomEnvironment } from "https://cdn.jsdelivr.net/npm/three@0.170.0/exam
 
 /* =========================================
    MYRLORE — CREATIVE STUDIO
-   Main JavaScript
+   COMPLETE MAIN JAVASCRIPT
 ========================================= */
 
 const CONFIG = {
   particleCount: window.innerWidth < 768 ? 350 : 900,
-  pixelRatio: Math.min(window.devicePixelRatio, 2),
+  pixelRatio: Math.min(window.devicePixelRatio || 1, 2),
   reducedMotion: window.matchMedia("(prefers-reduced-motion: reduce)").matches
 };
 
 const $ = (selector) => document.querySelector(selector);
 const $$ = (selector) => document.querySelectorAll(selector);
 
-/* =========================================
-   1. DOM ELEMENTS
-========================================= */
+let scene = null;
+let camera = null;
+let renderer = null;
+let mainGroup = null;
+let sculpture = null;
+let particleSystem = null;
+let animationFrame = null;
 
+let pointerX = 0;
+let pointerY = 0;
+let scrollProgress = 0;
+
+const canvas = $("#webgl");
+const fallback = $("#webglFallback");
 const pageLoader = $("#pageLoader");
+
 const menuToggle = $("#menuToggle");
 const menuPanel = $("#menuPanel");
 const menuClose = $("#menuClose");
-const menuLinks = $$(".menu-links a");
+
 const yearElement = $("#year");
 
 if (yearElement) {
@@ -32,29 +43,56 @@ if (yearElement) {
 }
 
 /* =========================================
-   2. PAGE LOADER
+   1. FAILSAFE LOADER
 ========================================= */
 
-function hideLoader() {
-  if (!pageLoader) return;
+let loaderHidden = false;
 
-  if (window.gsap && !CONFIG.reducedMotion) {
-    gsap.to(pageLoader, {
-      opacity: 0,
-      duration: 0.8,
-      delay: 0.2,
-      ease: "power2.inOut",
-      onComplete: () => {
-        pageLoader.style.display = "none";
-      }
-    });
-  } else {
-    pageLoader.style.display = "none";
-  }
+function hideLoader() {
+  if (loaderHidden) return;
+
+  loaderHidden = true;
+
+  const loader = $("#pageLoader");
+
+  if (!loader) return;
+
+  loader.style.transition = "opacity 0.7s ease, visibility 0.7s ease";
+  loader.style.opacity = "0";
+  loader.style.visibility = "hidden";
+  loader.style.pointerEvents = "none";
+
+  setTimeout(() => {
+    loader.style.display = "none";
+  }, 750);
 }
 
+// Normal loader removal
 window.addEventListener("load", () => {
   setTimeout(hideLoader, 500);
+});
+
+// Emergency removal if a module or resource fails
+setTimeout(hideLoader, 5000);
+
+// Remove loader if the document is already loaded
+if (document.readyState === "complete") {
+  setTimeout(hideLoader, 500);
+}
+
+/* =========================================
+   2. GLOBAL ERROR HANDLING
+========================================= */
+
+window.addEventListener("error", (event) => {
+  console.error("MYRLORE error:", event.message);
+
+  // Keep the page usable if a visual script fails
+  if (pageLoader) hideLoader();
+});
+
+window.addEventListener("unhandledrejection", (event) => {
+  console.error("MYRLORE promise error:", event.reason);
 });
 
 /* =========================================
@@ -104,9 +142,7 @@ function closeMenu() {
 
 if (menuToggle) {
   menuToggle.addEventListener("click", () => {
-    const isOpen = menuPanel?.classList.contains("is-open");
-
-    if (isOpen) {
+    if (menuPanel?.classList.contains("is-open")) {
       closeMenu();
     } else {
       openMenu();
@@ -118,14 +154,12 @@ if (menuClose) {
   menuClose.addEventListener("click", closeMenu);
 }
 
-menuLinks.forEach((link) => {
+$$(".menu-links a").forEach((link) => {
   link.addEventListener("click", closeMenu);
 });
 
 document.addEventListener("keydown", (event) => {
-  if (event.key === "Escape") {
-    closeMenu();
-  }
+  if (event.key === "Escape") closeMenu();
 });
 
 /* =========================================
@@ -152,37 +186,18 @@ $$('a[href^="#"]').forEach((link) => {
 });
 
 /* =========================================
-   5. THREE.JS VARIABLES
-========================================= */
-
-let scene;
-let camera;
-let renderer;
-let mainGroup;
-let sculpture;
-let particleSystem;
-let animationFrame;
-
-let pointerX = 0;
-let pointerY = 0;
-let scrollProgress = 0;
-
-const canvas = $("#webgl");
-const fallback = $("#webglFallback");
-
-/* =========================================
-   6. THREE.JS INITIALISATION
+   5. THREE.JS INITIALISATION
 ========================================= */
 
 function initThree() {
   if (!canvas) {
+    console.warn("MYRLORE: #webgl canvas not found.");
     showFallback();
     return;
   }
 
   try {
     scene = new THREE.Scene();
-
     scene.background = new THREE.Color("#101010");
 
     camera = new THREE.PerspectiveCamera(
@@ -203,19 +218,14 @@ function initThree() {
 
     renderer.setSize(window.innerWidth, window.innerHeight);
 
-    renderer.setPixelRatio(
-      Math.min(window.devicePixelRatio, CONFIG.pixelRatio)
-    );
+    renderer.setPixelRatio(CONFIG.pixelRatio);
 
     renderer.outputColorSpace = THREE.SRGBColorSpace;
-
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
     renderer.toneMappingExposure = 1.15;
 
-    /* Environment reflections */
-
+    // Environment reflections
     const pmremGenerator = new THREE.PMREMGenerator(renderer);
-
     const environment = new RoomEnvironment();
 
     const environmentTexture =
@@ -223,17 +233,15 @@ function initThree() {
 
     scene.environment = environmentTexture;
 
+    environment.dispose?.();
     pmremGenerator.dispose();
 
-    /* Lighting */
-
-    const ambientLight = new THREE.AmbientLight(
-      0xffffff,
-      0.8
+    // Ambient lighting
+    scene.add(
+      new THREE.AmbientLight(0xffffff, 0.8)
     );
 
-    scene.add(ambientLight);
-
+    // Main light
     const keyLight = new THREE.PointLight(
       0xffffff,
       90,
@@ -243,6 +251,7 @@ function initThree() {
     keyLight.position.set(4, 5, 6);
     scene.add(keyLight);
 
+    // Warm side lighting
     const sideLight = new THREE.PointLight(
       0xc5a77d,
       65,
@@ -252,6 +261,7 @@ function initThree() {
     sideLight.position.set(-5, -2, 4);
     scene.add(sideLight);
 
+    // Rear lighting
     const rimLight = new THREE.PointLight(
       0x9ca9c2,
       50,
@@ -261,8 +271,7 @@ function initThree() {
     rimLight.position.set(1, 4, -5);
     scene.add(rimLight);
 
-    /* Main object group */
-
+    // Main 3D group
     mainGroup = new THREE.Group();
     scene.add(mainGroup);
 
@@ -272,74 +281,63 @@ function initThree() {
     window.addEventListener("resize", resizeThree);
 
     window.addEventListener("mousemove", (event) => {
-      pointerX =
-        (event.clientX / window.innerWidth - 0.5) * 2;
-
-      pointerY =
-        (event.clientY / window.innerHeight - 0.5) * 2;
+      pointerX = (event.clientX / window.innerWidth - 0.5) * 2;
+      pointerY = (event.clientY / window.innerHeight - 0.5) * 2;
     });
 
     animateThree();
 
+    console.log("MYRLORE: Three.js scene initialised.");
+
   } catch (error) {
-    console.error("MYRLORE 3D scene failed:", error);
+    console.error("MYRLORE Three.js initialisation failed:", error);
     showFallback();
   }
 }
 
 /* =========================================
-   7. CREATE MAIN 3D SCULPTURE
+   6. MAIN 3D SCULPTURE
 ========================================= */
 
 function createSculpture() {
   sculpture = new THREE.Group();
   mainGroup.add(sculpture);
 
-  /* Main chrome torus knot */
-
-  const knotGeometry = new THREE.TorusKnotGeometry(
-    1.05,
-    0.27,
-    220,
-    32,
-    2,
-    5
-  );
-
-  const chromeMaterial = new THREE.MeshPhysicalMaterial({
-    color: 0xc5c5c5,
-    metalness: 1,
-    roughness: 0.13,
-    clearcoat: 1,
-    clearcoatRoughness: 0.08,
-    envMapIntensity: 1.8
-  });
-
+  // Chrome torus knot
   const knot = new THREE.Mesh(
-    knotGeometry,
-    chromeMaterial
+    new THREE.TorusKnotGeometry(
+      1.05,
+      0.27,
+      220,
+      32,
+      2,
+      5
+    ),
+    new THREE.MeshPhysicalMaterial({
+      color: 0xc5c5c5,
+      metalness: 1,
+      roughness: 0.13,
+      clearcoat: 1,
+      clearcoatRoughness: 0.08,
+      envMapIntensity: 1.8
+    })
   );
 
   sculpture.add(knot);
 
-  /* Outer ring */
-
-  const ringGeometry = new THREE.TorusGeometry(
-    1.85,
-    0.025,
-    16,
-    180
-  );
-
-  const ringMaterial = new THREE.MeshStandardMaterial({
-    color: 0xc4aa83,
-    metalness: 1,
-    roughness: 0.25
-  });
-
+  // Outer gold ring
   const ring = new THREE.Mesh(
-    ringGeometry,
-    ringMaterial
+    new THREE.TorusGeometry(
+      1.85,
+      0.025,
+      16,
+      180
+    ),
+    new THREE.MeshStandardMaterial({
+      color: 0xc4aa83,
+      metalness: 1,
+      roughness: 0.25
+    })
   );
 
   ring.rotation.x = Math.PI / 2.5;
@@ -347,10 +345,14 @@ function createSculpture() {
 
   sculpture.add(ring);
 
-  /* Second orbit ring */
-
+  // Secondary orbit
   const secondRing = new THREE.Mesh(
-    new THREE.TorusGeometry(2.1, 0.012, 12, 160),
+    new THREE.TorusGeometry(
+      2.1,
+      0.012,
+      12,
+      160
+    ),
     new THREE.MeshStandardMaterial({
       color: 0x888888,
       metalness: 1,
@@ -363,8 +365,7 @@ function createSculpture() {
 
   sculpture.add(secondRing);
 
-  /* Floating metallic spheres */
-
+  // Floating metallic spheres
   const sphereGeometry = new THREE.SphereGeometry(
     0.16,
     32,
@@ -395,36 +396,26 @@ function createSculpture() {
     sculpture.add(sphere);
   });
 
-  /* Glass-like central sphere */
-
-  const glassGeometry = new THREE.SphereGeometry(
-    0.52,
-    64,
-    64
-  );
-
-  const glassMaterial = new THREE.MeshPhysicalMaterial({
-    color: 0xeeeeee,
-    metalness: 0.05,
-    roughness: 0.05,
-    transmission: 0.92,
-    thickness: 1.2,
-    ior: 1.45,
-    transparent: true,
-    opacity: 1,
-    envMapIntensity: 1.5
-  });
-
+  // Glass central sphere
   const glassSphere = new THREE.Mesh(
-    glassGeometry,
-    glassMaterial
+    new THREE.SphereGeometry(0.52, 64, 64),
+    new THREE.MeshPhysicalMaterial({
+      color: 0xeeeeee,
+      metalness: 0.05,
+      roughness: 0.05,
+      transmission: 0.92,
+      thickness: 1.2,
+      ior: 1.45,
+      transparent: true,
+      opacity: 1,
+      envMapIntensity: 1.5
+    })
   );
 
   glassSphere.position.set(0, 0, 0.15);
   sculpture.add(glassSphere);
 
-  /* Small floating torus */
-
+  // Small orbiting ring
   const smallTorus = new THREE.Mesh(
     new THREE.TorusGeometry(0.4, 0.055, 20, 80),
     new THREE.MeshPhysicalMaterial({
@@ -436,21 +427,20 @@ function createSculpture() {
 
   smallTorus.position.set(1.4, -1.35, 0.2);
   smallTorus.rotation.x = Math.PI / 2;
+
   sculpture.add(smallTorus);
 }
 
 /* =========================================
-   8. PARTICLE FIELD
+   7. PARTICLE FIELD
 ========================================= */
 
 function createParticles() {
-  const particleCount = CONFIG.particleCount;
-
   const positions = new Float32Array(
-    particleCount * 3
+    CONFIG.particleCount * 3
   );
 
-  for (let i = 0; i < particleCount; i++) {
+  for (let i = 0; i < CONFIG.particleCount; i++) {
     const i3 = i * 3;
 
     positions[i3] = (Math.random() - 0.5) * 12;
@@ -482,14 +472,13 @@ function createParticles() {
 }
 
 /* =========================================
-   9. RESIZE HANDLING
+   8. RESIZE
 ========================================= */
 
 function resizeThree() {
   if (!camera || !renderer) return;
 
-  camera.aspect =
-    window.innerWidth / window.innerHeight;
+  camera.aspect = window.innerWidth / window.innerHeight;
 
   camera.position.z =
     window.innerWidth < 768 ? 10 : 9;
@@ -502,26 +491,21 @@ function resizeThree() {
   );
 
   renderer.setPixelRatio(
-    Math.min(window.devicePixelRatio, CONFIG.pixelRatio)
+    Math.min(window.devicePixelRatio || 1, 2)
   );
 }
 
 /* =========================================
-   10. SCROLL PROGRESS
+   9. SCROLL PROGRESS
 ========================================= */
 
 function updateScrollProgress() {
-  const scrollableHeight =
-    document.documentElement.scrollHeight -
-    window.innerHeight;
+  const maxScroll =
+    document.documentElement.scrollHeight - window.innerHeight;
 
-  if (scrollableHeight <= 0) {
-    scrollProgress = 0;
-    return;
-  }
-
-  scrollProgress =
-    window.scrollY / scrollableHeight;
+  scrollProgress = maxScroll > 0
+    ? window.scrollY / maxScroll
+    : 0;
 }
 
 window.addEventListener(
@@ -531,7 +515,7 @@ window.addEventListener(
 );
 
 /* =========================================
-   11. THREE.JS ANIMATION LOOP
+   10. ANIMATION LOOP
 ========================================= */
 
 const clock = new THREE.Clock();
@@ -544,32 +528,30 @@ function animateThree() {
   const elapsed = clock.getElapsedTime();
 
   if (mainGroup && sculpture) {
-    /* Gentle continuous movement */
-
+    // Subtle idle rotation
     mainGroup.rotation.y =
       Math.sin(elapsed * 0.18) * 0.12;
 
     mainGroup.rotation.z =
       Math.sin(elapsed * 0.13) * 0.04;
 
-    /* Cursor movement affects inner sculpture */
-
-    const cursorTiltX = pointerY * 0.12;
-    const cursorTiltY = pointerX * 0.17;
+    // Cursor movement
+    const targetX = pointerY * 0.12;
+    const targetY = pointerX * 0.17;
 
     sculpture.rotation.x +=
-      (cursorTiltX - sculpture.rotation.x) * 0.025;
+      (targetX - sculpture.rotation.x) * 0.025;
 
     sculpture.rotation.y +=
-      (cursorTiltY - sculpture.rotation.y) * 0.025;
+      (targetY - sculpture.rotation.y) * 0.025;
 
-    /* Scroll movement */
-
-    const targetY = scrollProgress * 0.8;
+    // Scroll movement
+    const targetPositionY = scrollProgress * 0.8;
 
     mainGroup.position.y +=
-      (targetY - mainGroup.position.y) * 0.025;
+      (targetPositionY - mainGroup.position.y) * 0.025;
 
+    // Responsive scale
     const targetScale =
       window.innerWidth < 768 ? 0.72 : 1;
 
@@ -578,6 +560,7 @@ function animateThree() {
 
   if (particleSystem) {
     particleSystem.rotation.y = elapsed * 0.008;
+
     particleSystem.rotation.x =
       Math.sin(elapsed * 0.1) * 0.025;
   }
@@ -586,7 +569,7 @@ function animateThree() {
 }
 
 /* =========================================
-   12. FALLBACK IF WEBGL FAILS
+   11. WEBGL FALLBACK
 ========================================= */
 
 function showFallback() {
@@ -600,7 +583,7 @@ function showFallback() {
 }
 
 /* =========================================
-   13. GSAP ANIMATIONS
+   12. GSAP ANIMATIONS
 ========================================= */
 
 function initGSAP() {
@@ -615,21 +598,23 @@ function initGSAP() {
 
   gsap.registerPlugin(ScrollTrigger);
 
-  /* Hero entrance */
-
+  // Hero entrance
   const heroTimeline = gsap.timeline({
     defaults: {
       ease: "power4.out"
     }
   });
 
-  heroTimeline
-    .from(".hero-top", {
+  if ($(".hero-top")) {
+    heroTimeline.from(".hero-top", {
       y: 25,
       opacity: 0,
       duration: 1
-    })
-    .from(
+    });
+  }
+
+  if ($(".hero-title .hero-line").length) {
+    heroTimeline.from(
       ".hero-title .hero-line",
       {
         yPercent: 110,
@@ -638,8 +623,11 @@ function initGSAP() {
         stagger: 0.12
       },
       "-=0.55"
-    )
-    .from(
+    );
+  }
+
+  if ($(".hero-copy .eyebrow")) {
+    heroTimeline.from(
       ".hero-copy .eyebrow",
       {
         y: 20,
@@ -647,8 +635,11 @@ function initGSAP() {
         duration: 0.8
       },
       "-=0.65"
-    )
-    .from(
+    );
+  }
+
+  if ($(".hero-bottom")) {
+    heroTimeline.from(
       ".hero-bottom",
       {
         y: 25,
@@ -657,9 +648,9 @@ function initGSAP() {
       },
       "-=0.5"
     );
+  }
 
-  /* General reveal animations */
-
+  // General reveal animations
   $$(".reveal").forEach((element) => {
     gsap.fromTo(
       element,
@@ -681,10 +672,9 @@ function initGSAP() {
     );
   });
 
-  /* Studio section */
-
-  if ($("#studio")) {
-    gsap.from(".studio .studio-heading", {
+  // Studio heading
+  if ($(".studio-heading")) {
+    gsap.from(".studio-heading", {
       y: 70,
       opacity: 0,
       duration: 1.2,
@@ -696,8 +686,7 @@ function initGSAP() {
     });
   }
 
-  /* Expertise list */
-
+  // Expertise list
   $$(".expertise-item").forEach((item, index) => {
     gsap.from(item, {
       x: 55,
@@ -712,8 +701,7 @@ function initGSAP() {
     });
   });
 
-  /* Work cards */
-
+  // Work cards
   $$(".work-card").forEach((card, index) => {
     gsap.from(card, {
       y: 65,
@@ -728,10 +716,9 @@ function initGSAP() {
     });
   });
 
-  /* Manifesto text */
-
-  if ($(".manifesto")) {
-    gsap.from(".manifesto .manifesto-text", {
+  // Manifesto
+  if ($(".manifesto-text")) {
+    gsap.from(".manifesto-text", {
       y: 80,
       opacity: 0,
       duration: 1.2,
@@ -743,8 +730,7 @@ function initGSAP() {
     });
   }
 
-  /* Process steps */
-
+  // Process steps
   $$(".process-step").forEach((step, index) => {
     gsap.from(step, {
       y: 45,
@@ -758,10 +744,9 @@ function initGSAP() {
     });
   });
 
-  /* Contact section */
-
-  if ($("#contact")) {
-    gsap.from("#contact .contact-heading", {
+  // Contact
+  if ($(".contact-heading")) {
+    gsap.from(".contact-heading", {
       y: 70,
       opacity: 0,
       duration: 1.1,
@@ -773,9 +758,8 @@ function initGSAP() {
     });
   }
 
-  /* Horizontal intro strip */
-
-  if ($(".intro-strip-track")) {
+  // Intro strip
+  if ($(".intro-strip-track") && $(".intro-strip")) {
     gsap.to(".intro-strip-track", {
       xPercent: -20,
       ease: "none",
@@ -788,8 +772,7 @@ function initGSAP() {
     });
   }
 
-  /* 3D sculpture scroll animation */
-
+  // 3D sculpture scroll movement
   if (mainGroup) {
     gsap.to(mainGroup.rotation, {
       x: Math.PI * 0.16,
@@ -803,15 +786,11 @@ function initGSAP() {
     });
   }
 
-  /* Refresh calculations after images load */
-
-  window.addEventListener("load", () => {
-    ScrollTrigger.refresh();
-  });
+  ScrollTrigger.refresh();
 }
 
 /* =========================================
-   14. HOVER INTERACTIONS
+   13. HOVER INTERACTIONS
 ========================================= */
 
 function initHoverEffects() {
@@ -841,7 +820,7 @@ function initHoverEffects() {
 }
 
 /* =========================================
-   15. NAVBAR SCROLL STATE
+   14. NAVBAR SCROLL STATE
 ========================================= */
 
 function initNavbar() {
@@ -850,11 +829,10 @@ function initNavbar() {
   if (!header) return;
 
   function updateHeader() {
-    if (window.scrollY > 60) {
-      header.classList.add("is-scrolled");
-    } else {
-      header.classList.remove("is-scrolled");
-    }
+    header.classList.toggle(
+      "is-scrolled",
+      window.scrollY > 60
+    );
   }
 
   window.addEventListener(
@@ -867,15 +845,31 @@ function initNavbar() {
 }
 
 /* =========================================
-   16. INITIALISE EVERYTHING
+   15. INITIALISE
 ========================================= */
 
 function init() {
-  initThree();
-  initGSAP();
+  try {
+    initThree();
+  } catch (error) {
+    console.error("3D initialisation error:", error);
+    showFallback();
+  }
+
+  try {
+    initGSAP();
+  } catch (error) {
+    console.error("GSAP initialisation error:", error);
+  }
+
   initHoverEffects();
   initNavbar();
   updateScrollProgress();
+
+  // Never let a visual script hold the page hostage
+  hideLoader();
+
+  console.log("MYRLORE website initialised.");
 }
 
 if (document.readyState === "loading") {
@@ -885,7 +879,7 @@ if (document.readyState === "loading") {
 }
 
 /* =========================================
-   17. CLEANUP
+   16. CLEANUP
 ========================================= */
 
 window.addEventListener("beforeunload", () => {
