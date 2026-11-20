@@ -16,7 +16,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
-  <!-- STYLESHEET -->
+  <!-- MAIN STYLESHEET -->
   <link rel="stylesheet" href="style.css">
 
   <!-- THREE.JS IMPORT MAP -->
@@ -37,48 +37,41 @@
 <body>
 
   <!-- PAGE LOADER -->
-
   <div class="page-loader" id="pageLoader">
     <div class="loader-word">MYRLORE<span>®</span></div>
     <div class="loader-line"><span></span></div>
     <p>CREATING SOMETHING DIFFERENT</p>
   </div>
 
+  <!-- BACKGROUND EFFECTS -->
+  <div class="noise" aria-hidden="true"></div>
+  <div class="cursor-glow" id="cursorGlow" aria-hidden="true"></div>
 
+  <!-- CINEMATIC PAGE TRANSITION -->
+  <div
+    class="page-transition"
+    id="pageTransition"
+    aria-hidden="true"
+    inert
+  >
+    <div class="transition-curtain"></div>
 
-<!-- BACKGROUND EFFECTS -->
+    <div class="transition-content">
+      <span class="transition-wordmark">
+        MYRLORE<span>®</span>
+      </span>
 
-<div class="noise" aria-hidden="true"></div>
-<div class="cursor-glow" id="cursorGlow" aria-hidden="true"></div>
+      <span class="transition-caption">
+        INDEPENDENT CREATIVE STUDIO
+      </span>
 
-<!-- CINEMATIC PAGE TRANSITION -->
-
-<div
-  class="page-transition"
-  id="pageTransition"
-  aria-hidden="true"
->
-  <div class="transition-curtain"></div>
-
-  <div class="transition-content">
-    <span class="transition-wordmark">
-      MYRLORE<span>®</span>
-    </span>
-
-    <span class="transition-caption">
-      INDEPENDENT CREATIVE STUDIO
-    </span>
-
-    <div class="transition-progress">
-      <span></span>
+      <div class="transition-progress">
+        <span></span>
+      </div>
     </div>
   </div>
-</div>
-
-
 
   <!-- HEADER -->
-
   <header class="site-header">
 
     <a class="logo" href="#home" aria-label="MYRLORE home">
@@ -105,9 +98,7 @@
 
   </header>
 
-
   <!-- NAVIGATION -->
-
   <nav class="menu-panel" id="menuPanel" aria-label="Main navigation">
 
     <button class="menu-close" id="menuClose" type="button">
@@ -127,11 +118,9 @@
 
   </nav>
 
-
   <main>
 
     <!-- HERO -->
-
     <section class="hero" id="home">
 
       <div class="hero-meta">
@@ -173,9 +162,7 @@
 
         </div>
 
-
         <!-- THREE.JS VISUAL -->
-
         <div class="hero-visual">
 
           <div class="visual-caption caption-top">
@@ -200,7 +187,6 @@
 
       </div>
 
-
       <div class="hero-footer">
 
         <span>
@@ -214,9 +200,7 @@
 
     </section>
 
-
     <!-- INTRO MARQUEE -->
-
     <section class="intro-band" aria-label="Studio principles">
 
       <div class="intro-track">
@@ -231,9 +215,7 @@
 
     </section>
 
-
     <!-- STUDIO -->
-
     <section class="studio section-pad" id="studio">
 
       <div class="section-top">
@@ -276,9 +258,7 @@
 
     </section>
 
-
     <!-- SERVICES -->
-
     <section class="services section-pad" id="services">
 
       <div class="section-top">
@@ -325,9 +305,7 @@
 
     </section>
 
-
     <!-- SELECTED WORK -->
-
     <section class="work section-pad" id="work">
 
       <div class="section-top">
@@ -348,11 +326,9 @@
 
       </div>
 
-
       <div class="work-grid">
 
         <!-- CORROGUARD -->
-
         <a
           class="work-card work-large"
           href="#case-study"
@@ -391,9 +367,7 @@
 
         </a>
 
-
         <!-- FLOODWATCH CHENNAI -->
-
         <a
           class="work-card work-small"
           href="#case-study"
@@ -433,9 +407,7 @@
 
         </a>
 
-
         <!-- WORK NOTE -->
-
         <div class="work-note">
 
           <span>MORE TO COME</span>
@@ -451,9 +423,7 @@
 
     </section>
 
-
     <!-- MANIFESTO -->
-
     <section class="manifesto section-pad">
 
       <span class="section-number">04 / THE BELIEF</span>
@@ -473,9 +443,7 @@
 
     </section>
 
-
     <!-- CONTACT -->
-
     <section class="contact section-pad" id="contact">
 
       <div class="section-top">
@@ -495,35 +463,29 @@
       </h2>
 
       <a class="contact-link" href="mailto:hello@myrlore.com">
-
         <span>hello@myrlore.com</span>
         <span>↗</span>
-
       </a>
 
     </section>
 
   </main>
 
-
   <!-- INTERACTIVE CASE STUDY OVERLAY -->
-
   <div
     class="case-modal"
     id="caseStudyModal"
     aria-hidden="true"
+    inert
   >
 
     <!-- BACKDROP -->
-
     <div
       class="case-backdrop"
       data-case-close
     ></div>
 
-
     <!-- CASE STUDY PANEL -->
-
     <section
       class="case-panel"
       role="dialog"
@@ -533,7 +495,6 @@
     >
 
       <!-- TOP BAR -->
-
       <div class="case-topbar">
 
         <a class="case-logo" href="#home">
@@ -551,14 +512,10 @@
 
       </div>
 
-
       <!-- CASE CONTENT -->
-
       <div class="case-content">
 
-
         <!-- PROJECT ARTWORK -->
-
         <div class="case-hero-art" id="caseHeroArt">
 
           <span class="case-art-index" id="caseIndex">
@@ -575,19 +532,15 @@
 
         </div>
 
-
         <!-- PROJECT INTRODUCTION -->
-
         <div class="case-intro">
 
           <div class="case-eyebrow">
-
             <span class="status-dot"></span>
 
             <span id="caseCategory">
               ENGINEERING · DIGITAL PLATFORM
             </span>
-
           </div>
 
           <h2 id="caseTitle">
@@ -601,13 +554,8 @@
 
         </div>
 
-
         <!-- PROJECT DETAILS -->
-
         <div class="case-details">
-
-
-          <!-- OVERVIEW -->
 
           <div class="case-detail-block">
 
@@ -619,9 +567,6 @@
 
           </div>
 
-
-          <!-- FEATURES -->
-
           <div class="case-detail-block">
 
             <span class="case-label">
@@ -631,9 +576,6 @@
             <ul id="caseFeatures"></ul>
 
           </div>
-
-
-          <!-- TECHNOLOGY -->
 
           <div class="case-detail-block">
 
@@ -650,9 +592,7 @@
 
         </div>
 
-
         <!-- BOTTOM BAR -->
-
         <div class="case-bottom">
 
           <span>
@@ -675,9 +615,7 @@
 
   </div>
 
-
   <!-- FOOTER -->
-
   <footer class="footer">
 
     <a class="logo" href="#home">
@@ -694,13 +632,14 @@
 
   </footer>
 
-
   <!-- LOADER FALLBACK -->
-
   <script>
     (() => {
+      let loaderHidden = false;
 
       const hideLoader = () => {
+        if (loaderHidden) return;
+        loaderHidden = true;
 
         document.body.classList.add("loaded");
 
@@ -709,21 +648,17 @@
         if (loader) {
           loader.style.display = "none";
         }
-
       };
 
       window.addEventListener("load", () => {
         setTimeout(hideLoader, 500);
-      });
+      }, { once: true });
 
       setTimeout(hideLoader, 5000);
-
     })();
   </script>
 
-
   <!-- MAIN THREE.JS / GSAP SCRIPT -->
-
   <script type="module" src="script.js"></script>
 
 </body>
