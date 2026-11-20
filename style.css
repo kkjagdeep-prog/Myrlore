@@ -709,3 +709,125 @@ body.case-open {
     transition: none !important;
   }
 }
+/* ==========================================
+   MYRLORE — REFINED CURSOR SYSTEM
+========================================== */
+
+.cursor-glow {
+  transition:
+    width .45s cubic-bezier(.2,.7,.2,1),
+    height .45s cubic-bezier(.2,.7,.2,1),
+    opacity .35s ease;
+  will-change: left, top;
+}
+
+/* Fine cursor ring */
+
+.cursor-glow::before {
+  content: "";
+  position: absolute;
+  width: 30px;
+  height: 30px;
+  left: 50%;
+  top: 50%;
+  border: 1px solid rgba(198,182,154,.65);
+  border-radius: 50%;
+  transform: translate(-50%,-50%);
+  opacity: 0;
+  transition:
+    width .4s cubic-bezier(.2,.7,.2,1),
+    height .4s cubic-bezier(.2,.7,.2,1),
+    opacity .3s ease,
+    border-color .3s ease;
+}
+
+/* Hover expansion */
+
+.cursor-glow.cursor-hover {
+  width: 430px;
+  height: 430px;
+  background: radial-gradient(
+    circle,
+    rgba(198,182,154,.09),
+    transparent 68%
+  );
+}
+
+.cursor-glow.cursor-hover::before {
+  width: 54px;
+  height: 54px;
+  opacity: 1;
+}
+
+/* Project cursor label */
+
+.cursor-glow::after {
+  content: attr(data-label);
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  padding: 9px 12px;
+  border: 1px solid rgba(198,182,154,.35);
+  background: rgba(8,9,11,.85);
+  color: var(--champagne);
+  font: 8px var(--mono);
+  letter-spacing: .13em;
+  white-space: nowrap;
+  transform: translate(-50%,-50%) scale(.8);
+  opacity: 0;
+  transition:
+    opacity .3s ease,
+    transform .3s ease;
+  backdrop-filter: blur(10px);
+}
+
+.cursor-glow.cursor-project::after {
+  opacity: 1;
+  transform: translate(-50%,-50%) scale(1);
+}
+
+.cursor-glow.cursor-project::before {
+  opacity: 0;
+}
+
+/* Magnetic element movement */
+
+.round-link,
+.contact-link,
+.text-link,
+.menu-toggle,
+.case-close,
+.case-bottom-close {
+  transition:
+    translate .3s cubic-bezier(.2,.7,.2,1),
+    color .3s ease,
+    background .3s ease;
+}
+
+/* Keep touchscreens clean */
+
+@media (hover: none), (pointer: coarse) {
+  .cursor-glow {
+    display: none !important;
+  }
+}
+
+/* Reduced motion */
+
+@media (prefers-reduced-motion: reduce) {
+  .cursor-glow,
+  .cursor-glow::before,
+  .cursor-glow::after {
+    display: none !important;
+    transition: none !important;
+  }
+
+  .round-link,
+  .contact-link,
+  .text-link,
+  .menu-toggle,
+  .case-close,
+  .case-bottom-close {
+    translate: none !important;
+  }
+}
