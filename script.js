@@ -977,6 +977,210 @@ function initAnimations() {
 
 
 // ============================================
+// INTERACTIVE SERVICES ACCORDION
+// ============================================
+
+const serviceItems = document.querySelectorAll(".service-item");
+const serviceTriggers = document.querySelectorAll(".service-trigger");
+
+let activeServicePanel = null;
+
+function animateServiceOpen(panel) {
+  panel.hidden = false;
+
+  // Start from a closed height before measuring the full content.
+  panel.style.height = "0px";
+
+  const fullHeight = panel.scrollHeight;
+
+  if (reducedMotion) {
+    panel.style.height = "auto";
+    return;
+  }
+
+  if (window.gsap) {
+    window.gsap.killTweensOf(panel);
+
+    window.gsap.fromTo(
+      panel,
+      { height: 0 },
+      {
+        height: fullHeight,
+        duration: 0.55,
+        ease: "power3.inOut",
+        onComplete: () => {
+          panel.style.height = "auto";
+        }
+      }
+    );
+
+    return;
+  }
+
+  if (panel.animate) {
+    const animation = panel.animate(
+      [
+        { height: "0px" },
+        { height: `${fullHeight}px` }
+      ],
+      {
+        duration: 500,
+        easing: "cubic-bezier(.22,1,.36,1)"
+      }
+    );
+
+    animation.onfinish = () => {
+      panel.style.height = "auto";
+    };
+
+    return;
+  }
+
+  panel.style.height = "auto";
+}
+
+function animateServiceClose(panel, onComplete) {
+  const currentHeight = panel.scrollHeight;
+
+  if (reducedMotion) {
+    panel.hidden = true;
+    panel.style.height = "";
+    onComplete?.();
+    return;
+  }
+
+  if (window.gsap) {
+    window.gsap.killTweensOf(panel);
+
+    window.gsap.fromTo(
+      panel,
+      { height: currentHeight },
+      {
+        height: 0,
+        duration: 0.4,
+        ease: "power3.inOut",
+        onComplete: () => {
+          panel.hidden = true;
+          panel.style.height = "";
+          onComplete?.();
+        }
+      }
+    );
+
+    return;
+  }
+
+  if (panel.animate) {
+    const animation = panel.animate(
+      [
+        { height: `${currentHeight}px` },
+        { height: "0px" }
+      ],
+      {
+        duration: 400,
+        easing: "cubic-bezier(.22,1,.36,1)"
+      }
+    );
+
+    animation.onfinish = () => {
+      panel.hidden = true;
+      panel.style.height = "";
+      onComplete?.();
+    };
+
+    return;
+  }
+
+  panel.hidden = true;
+  panel.style.height = "";
+  onComplete?.();
+}
+
+function closeService(item) {
+  const trigger = item.querySelector(".service-trigger");
+  const panelId = trigger?.getAttribute("aria-controls");
+  const panel = panelId
+    ? document.getElementById(panelId)
+    : null;
+
+  item.classList.remove("is-active");
+
+  trigger?.setAttribute("aria-expanded", "false");
+
+  if (!panel || panel.hidden) return;
+
+  animateServiceClose(panel);
+}
+
+function openService(item) {
+  const trigger = item.querySelector(".service-trigger");
+  const panelId = trigger?.getAttribute("aria-controls");
+  const panel = panelId
+    ? document.getElementById(panelId)
+    : null;
+
+  if (!trigger || !panel) {
+    console.warn("MYRLORE service panel is missing:", item);
+    return;
+  }
+
+  // Close the previously active service first.
+  serviceItems.forEach((otherItem) => {
+    if (otherItem !== item) {
+      closeService(otherItem);
+    }
+  });
+
+  item.classList.add("is-active");
+  trigger.setAttribute("aria-expanded", "true");
+
+  activeServicePanel = panel;
+
+  animateServiceOpen(panel);
+}
+
+function toggleService(item) {
+  const trigger = item.querySelector(".service-trigger");
+
+  if (!trigger) return;
+
+  const isOpen =
+    trigger.getAttribute("aria-expanded") === "true";
+
+  if (isOpen) {
+    closeService(item);
+    activeServicePanel = null;
+  } else {
+    openService(item);
+  }
+}
+
+serviceTriggers.forEach((trigger) => {
+  trigger.addEventListener("click", () => {
+    const item = trigger.closest(".service-item");
+
+    if (!item) return;
+
+    toggleService(item);
+  });
+});
+
+// Keep the expanded panel height correct if its content
+// changes size while it is open.
+window.addEventListener("resize", () => {
+  if (!activeServicePanel || activeServicePanel.hidden) return;
+
+  if (activeServicePanel.style.height === "auto") return;
+
+  if (window.gsap) {
+    window.gsap.set(activeServicePanel, {
+      height: activeServicePanel.scrollHeight
+    });
+  }
+});
+
+
+// ============================================
 // FOOTER YEAR
 // ============================================
 
@@ -1146,7 +1350,6 @@ function openCaseStudy(projectId, trigger) {
   caseModal.classList.add("is-open");
   caseModal.setAttribute("aria-hidden", "false");
 
-  // If the modal has inert in the HTML, remove it while open.
   caseModal.removeAttribute("inert");
 
   document.body.classList.add("case-open");
@@ -1471,7 +1674,6 @@ async function navigateWithTransition(target, link) {
   try {
     await animateTransitionIn();
 
-    // Scroll while the curtain covers the page.
     window.scrollTo({
       top: target.getBoundingClientRect().top + window.scrollY,
       behavior: "auto"
@@ -1485,7 +1687,6 @@ async function navigateWithTransition(target, link) {
       );
     }
 
-    // Allow the browser to apply the new scroll position.
     await new Promise((resolve) => {
       requestAnimationFrame(() => {
         requestAnimationFrame(resolve);
@@ -1514,13 +1715,10 @@ document.querySelectorAll('a[href^="#"]').forEach((link) => {
 
     if (!target) return;
 
-    // Project cards open their own case study overlay.
     if (link.hasAttribute("data-case-study")) return;
 
-    // Don't intercept links inside the case study panel.
     if (link.closest(".case-panel")) return;
 
-    // The case-study close controls have their own handlers.
     if (
       link.matches("[data-case-close]") ||
       link.classList.contains("case-close") ||
