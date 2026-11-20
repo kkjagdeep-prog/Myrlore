@@ -19,14 +19,19 @@ const finePointer = window.matchMedia(
   "(hover: hover) and (pointer: fine)"
 ).matches;
 
+const clamp = (v, min, max) =>
+  Math.max(min, Math.min(max, v));
+
+const lerp = (a, b, t) =>
+  a + (b - a) * t;
+
 let scene;
 let camera;
 let renderer;
 let sculpture;
 let particles;
-let animationFrame = null;
-let resizeObserver = null;
 
+let animationFrame = null;
 let scrollProgress = 0;
 let pointerX = 0;
 let pointerY = 0;
@@ -36,12 +41,6 @@ let targetY = 0;
 let isPageVisible = !document.hidden;
 
 const clock = new THREE.Clock();
-
-const clamp = (v, min, max) =>
-  Math.max(min, Math.min(max, v));
-
-const lerp = (a, b, t) =>
-  a + (b - a) * t;
 
 
 // ============================================
@@ -63,12 +62,11 @@ function createMetalMaterial(
 
 
 // ============================================
-// CUSTOM STUDIO REFLECTION ENVIRONMENT
+// STUDIO REFLECTION ENVIRONMENT
 // ============================================
 
 function createEnvironment() {
   const pmrem = new THREE.PMREMGenerator(renderer);
-
   const envScene = new THREE.Scene();
 
   envScene.background = new THREE.Color(0x08090b);
@@ -128,22 +126,16 @@ function createEnvironment() {
     envScene.add(mesh);
   });
 
-  const environment = pmrem.fromScene(
+  scene.environment = pmrem.fromScene(
     envScene,
     0.04
   ).texture;
 
-  scene.environment = environment;
   scene.environmentIntensity = 1.4;
 
   envScene.traverse((object) => {
-    if (object.geometry) {
-      object.geometry.dispose();
-    }
-
-    if (object.material) {
-      object.material.dispose();
-    }
+    if (object.geometry) object.geometry.dispose();
+    if (object.material) object.material.dispose();
   });
 
   pmrem.dispose();
@@ -247,16 +239,8 @@ function createBladeGeometry({
         .addScaledVector(side, horizontal)
         .addScaledVector(normal, vertical);
 
-      positions.push(
-        vertex.x,
-        vertex.y,
-        vertex.z
-      );
-
-      uvs.push(
-        j / radialSegments,
-        t
-      );
+      positions.push(vertex.x, vertex.y, vertex.z);
+      uvs.push(j / radialSegments, t);
 
       if (i < segments && j < radialSegments) {
         const a = i * (radialSegments + 1) + j;
@@ -291,19 +275,15 @@ function createBladeGeometry({
 
 
 // ============================================
-// CREATE CHROME BLADE
+// CREATE BLADE
 // ============================================
 
 function createBlade(config, material) {
   const geometry = createBladeGeometry(config);
 
-  const blade = new THREE.Mesh(
-    geometry,
-    material
-  );
+  const blade = new THREE.Mesh(geometry, material);
 
   blade.position.set(...config.origin);
-
   blade.castShadow = true;
   blade.receiveShadow = true;
 
@@ -314,7 +294,7 @@ function createBlade(config, material) {
 
 
 // ============================================
-// CENTRAL SCULPTURAL CORE
+// CENTRAL CORE
 // ============================================
 
 function createCore() {
@@ -326,7 +306,6 @@ function createCore() {
   );
 
   core.scale.set(0.85, 1.15, 0.72);
-
   coreGroup.add(core);
 
   const innerForm = new THREE.Mesh(
@@ -338,7 +317,6 @@ function createCore() {
   innerForm.position.set(0.06, 0.12, 0.12);
 
   coreGroup.add(innerForm);
-
   sculpture.add(coreGroup);
 }
 
@@ -349,9 +327,7 @@ function createCore() {
 
 function createChromeCurve(points, radius, material) {
   const curve = new THREE.CatmullRomCurve3(
-    points.map(
-      (point) => new THREE.Vector3(...point)
-    )
+    points.map((point) => new THREE.Vector3(...point))
   );
 
   const geometry = new THREE.TubeGeometry(
@@ -362,11 +338,7 @@ function createChromeCurve(points, radius, material) {
     false
   );
 
-  const mesh = new THREE.Mesh(
-    geometry,
-    material
-  );
-
+  const mesh = new THREE.Mesh(geometry, material);
   sculpture.add(mesh);
 
   return mesh;
@@ -381,25 +353,10 @@ function createSculpture() {
   sculpture = new THREE.Group();
   scene.add(sculpture);
 
-  const silver = createMetalMaterial(
-    0xffffff,
-    0.022
-  );
-
-  const platinum = createMetalMaterial(
-    0xcbd4df,
-    0.035
-  );
-
-  const darkChrome = createMetalMaterial(
-    0x788596,
-    0.045
-  );
-
-  const brightChrome = createMetalMaterial(
-    0xffffff,
-    0.012
-  );
+  const silver = createMetalMaterial(0xffffff, 0.022);
+  const platinum = createMetalMaterial(0xcbd4df, 0.035);
+  const darkChrome = createMetalMaterial(0x788596, 0.045);
+  const brightChrome = createMetalMaterial(0xffffff, 0.012);
 
   createCore();
 
@@ -535,7 +492,7 @@ function createSculpture() {
 
 
 // ============================================
-// CINEMATIC LIGHTING
+// LIGHTING
 // ============================================
 
 function createLighting() {
@@ -593,42 +550,28 @@ function createLighting() {
     scene.add(light);
   });
 
-  const key = new THREE.DirectionalLight(
-    0xffffff,
-    1.8
-  );
-
+  const key = new THREE.DirectionalLight(0xffffff, 1.8);
   key.position.set(3, 5, 5);
   scene.add(key);
 
-  const rim = new THREE.DirectionalLight(
-    0xb8c8df,
-    2.2
-  );
-
+  const rim = new THREE.DirectionalLight(0xb8c8df, 2.2);
   rim.position.set(-4, 1, -3);
   scene.add(rim);
 }
 
 
 // ============================================
-// ATMOSPHERIC PARTICLES
+// PARTICLES
 // ============================================
 
 function createParticles() {
   const count = window.innerWidth < 600 ? 65 : 130;
-
   const positions = new Float32Array(count * 3);
 
   for (let i = 0; i < count; i++) {
-    positions[i * 3] =
-      (Math.random() - 0.5) * 10;
-
-    positions[i * 3 + 1] =
-      (Math.random() - 0.5) * 8;
-
-    positions[i * 3 + 2] =
-      (Math.random() - 0.5) * 6;
+    positions[i * 3] = (Math.random() - 0.5) * 10;
+    positions[i * 3 + 1] = (Math.random() - 0.5) * 8;
+    positions[i * 3 + 2] = (Math.random() - 0.5) * 6;
   }
 
   const geometry = new THREE.BufferGeometry();
@@ -647,17 +590,13 @@ function createParticles() {
     depthWrite: false
   });
 
-  particles = new THREE.Points(
-    geometry,
-    material
-  );
-
+  particles = new THREE.Points(geometry, material);
   scene.add(particles);
 }
 
 
 // ============================================
-// INITIALIZATION
+// THREE.JS INITIALIZATION
 // ============================================
 
 function initThree() {
@@ -690,7 +629,6 @@ function initThree() {
     );
 
     renderer.setSize(width, height);
-
     renderer.outputColorSpace = THREE.SRGBColorSpace;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
     renderer.toneMappingExposure = 1.15;
@@ -707,24 +645,15 @@ function initThree() {
       animate();
     }
 
-    if ("ResizeObserver" in window) {
-      resizeObserver = new ResizeObserver(resizeScene);
-      resizeObserver.observe(canvas);
-    }
-
   } catch (error) {
-    console.error(
-      "MYRLORE 3D initialization failed:",
-      error
-    );
-
+    console.error("MYRLORE 3D initialization failed:", error);
     canvas.style.display = "none";
   }
 }
 
 
 // ============================================
-// SUBTLE 3D ANIMATION
+// THREE.JS ANIMATION
 // ============================================
 
 function animate() {
@@ -772,8 +701,7 @@ function animate() {
 
   if (particles) {
     particles.rotation.y = time * 0.007;
-    particles.rotation.x =
-      Math.sin(time * 0.07) * 0.02;
+    particles.rotation.x = Math.sin(time * 0.07) * 0.02;
   }
 
   renderer.render(scene, camera);
@@ -803,7 +731,7 @@ document.addEventListener("visibilitychange", () => {
 
 
 // ============================================
-// MYRLORE — REFINED CURSOR
+// CURSOR
 // ============================================
 
 let cursorTargetX = window.innerWidth / 2;
@@ -837,11 +765,8 @@ if (cursorGlow && finePointer && !reducedMotion) {
 window.addEventListener(
   "pointermove",
   (event) => {
-    pointerX =
-      (event.clientX / window.innerWidth) * 2 - 1;
-
-    pointerY =
-      -(event.clientY / window.innerHeight) * 2 + 1;
+    pointerX = (event.clientX / window.innerWidth) * 2 - 1;
+    pointerY = -(event.clientY / window.innerHeight) * 2 + 1;
 
     if (finePointer) {
       cursorTargetX = event.clientX;
@@ -853,12 +778,11 @@ window.addEventListener(
 
 
 // ============================================
-// SCROLL INTERACTION
+// SCROLL PROGRESS
 // ============================================
 
 function updateScrollProgress() {
   const hero = document.querySelector(".hero");
-
   if (!hero) return;
 
   const rect = hero.getBoundingClientRect();
@@ -870,11 +794,9 @@ function updateScrollProgress() {
   );
 }
 
-window.addEventListener(
-  "scroll",
-  updateScrollProgress,
-  { passive: true }
-);
+window.addEventListener("scroll", updateScrollProgress, {
+  passive: true
+});
 
 
 // ============================================
@@ -967,9 +889,7 @@ function initAnimations() {
 
   gsap.registerPlugin(ScrollTrigger);
 
-  const heroTimeline = gsap.timeline({
-    delay: 0.25
-  });
+  const heroTimeline = gsap.timeline({ delay: 0.25 });
 
   heroTimeline
     .from(".hero-meta", {
@@ -1082,7 +1002,7 @@ setTimeout(() => {
 
 
 // ============================================
-// MYRLORE — INTERACTIVE CASE STUDIES
+// INTERACTIVE CASE STUDIES
 // ============================================
 
 const caseModal = document.querySelector("#caseStudyModal");
@@ -1103,13 +1023,7 @@ const caseArtCaption = document.querySelector("#caseArtCaption");
 
 let lastCaseTrigger = null;
 
-
-// ============================================
-// CASE STUDY DATA
-// ============================================
-
 const caseStudies = {
-
   corroguard: {
     index: "PROJECT / 001",
     title: "CorroGuard",
@@ -1172,13 +1086,7 @@ const caseStudies = {
       "GeoJSON"
     ]
   }
-
 };
-
-
-// ============================================
-// POPULATE CASE STUDY
-// ============================================
 
 function populateCaseStudy(project) {
   if (!project) return;
@@ -1224,11 +1132,6 @@ function populateCaseStudy(project) {
     "0 12px 45px rgba(0,0,0,.45)";
 }
 
-
-// ============================================
-// OPEN CASE STUDY
-// ============================================
-
 function openCaseStudy(projectId, trigger) {
   const project = caseStudies[projectId];
 
@@ -1250,11 +1153,6 @@ function openCaseStudy(projectId, trigger) {
   });
 }
 
-
-// ============================================
-// CLOSE CASE STUDY
-// ============================================
-
 function closeCaseStudy() {
   if (!caseModal || !caseModal.classList.contains("is-open")) {
     return;
@@ -1265,46 +1163,22 @@ function closeCaseStudy() {
 
   document.body.classList.remove("case-open");
 
-  if (lastCaseTrigger) {
-    lastCaseTrigger.focus({ preventScroll: true });
-  }
+  lastCaseTrigger?.focus({ preventScroll: true });
 }
-
-
-// ============================================
-// PROJECT CARD EVENTS
-// ============================================
 
 document.querySelectorAll("[data-case-study]").forEach((card) => {
   card.addEventListener("click", (event) => {
     event.preventDefault();
 
-    const projectId = card.dataset.caseStudy;
-
-    openCaseStudy(projectId, card);
+    openCaseStudy(card.dataset.caseStudy, card);
   });
 });
 
-
-// ============================================
-// CLOSE BUTTON
-// ============================================
-
 caseClose?.addEventListener("click", closeCaseStudy);
-
-
-// ============================================
-// BACKDROP AND BOTTOM CLOSE BUTTON
-// ============================================
 
 caseModal?.querySelectorAll("[data-case-close]").forEach((element) => {
   element.addEventListener("click", closeCaseStudy);
 });
-
-
-// ============================================
-// KEYBOARD CONTROLS
-// ============================================
 
 document.addEventListener("keydown", (event) => {
   if (!caseModal?.classList.contains("is-open")) return;
@@ -1338,7 +1212,7 @@ document.addEventListener("keydown", (event) => {
 
 
 // ============================================
-// MYRLORE — MAGNETIC INTERACTIONS
+// MAGNETIC INTERACTIONS
 // ============================================
 
 const magneticElements = document.querySelectorAll(
@@ -1346,9 +1220,7 @@ const magneticElements = document.querySelectorAll(
 );
 
 if (finePointer && !reducedMotion) {
-
   magneticElements.forEach((element) => {
-
     element.addEventListener("pointermove", (event) => {
       const rect = element.getBoundingClientRect();
 
@@ -1384,9 +1256,7 @@ if (finePointer && !reducedMotion) {
     element.addEventListener("pointerleave", () => {
       element.style.translate = "0px 0px";
     });
-
   });
-
 }
 
 
@@ -1394,10 +1264,7 @@ if (finePointer && !reducedMotion) {
 // PROJECT CARD CURSOR LABEL
 // ============================================
 
-const projectCards = document.querySelectorAll(".work-card");
-
-projectCards.forEach((card) => {
-
+document.querySelectorAll(".work-card").forEach((card) => {
   card.addEventListener("pointerenter", () => {
     if (!cursorGlow || !finePointer || reducedMotion) return;
 
@@ -1411,7 +1278,6 @@ projectCards.forEach((card) => {
     cursorGlow.classList.remove("cursor-project");
     cursorGlow.dataset.label = "";
   });
-
 });
 
 
@@ -1419,12 +1285,9 @@ projectCards.forEach((card) => {
 // INTERACTIVE CURSOR STATES
 // ============================================
 
-const interactiveElements = document.querySelectorAll(
+document.querySelectorAll(
   "a, button, .work-card, .service-item"
-);
-
-interactiveElements.forEach((element) => {
-
+).forEach((element) => {
   element.addEventListener("pointerenter", () => {
     if (!cursorGlow || !finePointer || reducedMotion) return;
 
@@ -1436,12 +1299,216 @@ interactiveElements.forEach((element) => {
 
     cursorGlow.classList.remove("cursor-hover");
   });
-
 });
+
+
 // ============================================
-// MYRLORE — BASIC COPY PROTECTION
+// CINEMATIC PAGE TRANSITIONS
 // ============================================
 
-document.addEventListener("contextmenu", (event) => {
-  event.preventDefault();
+const transitionLayer = document.querySelector("#pageTransition");
+const transitionCurtain = document.querySelector(".transition-curtain");
+const transitionContent = document.querySelector(".transition-content");
+const transitionWordmark = document.querySelector(".transition-wordmark");
+const transitionCaption = document.querySelector(".transition-caption");
+const transitionProgress = document.querySelector(".transition-progress span");
+
+let isTransitioning = false;
+
+function setTransitionState(active) {
+  if (!transitionLayer) return;
+
+  transitionLayer.classList.toggle("is-active", active);
+  transitionLayer.setAttribute(
+    "aria-hidden",
+    active ? "false" : "true"
+  );
+}
+
+function animateTransitionIn() {
+  if (!transitionLayer) return Promise.resolve();
+
+  setTransitionState(true);
+
+  if (reducedMotion || !window.gsap) {
+    return new Promise((resolve) => {
+      transitionCurtain.style.transform = "scaleY(1)";
+      transitionContent.style.opacity = "1";
+      setTimeout(resolve, 100);
+    });
+  }
+
+  const gsap = window.gsap;
+
+  gsap.killTweensOf([
+    transitionCurtain,
+    transitionContent,
+    transitionWordmark,
+    transitionCaption,
+    transitionProgress
+  ]);
+
+  gsap.set(transitionCurtain, {
+    transformOrigin: "bottom",
+    scaleY: 0
+  });
+
+  gsap.set(transitionContent, {
+    opacity: 0,
+    y: 15
+  });
+
+  gsap.set(transitionProgress, {
+    scaleX: 0,
+    transformOrigin: "left"
+  });
+
+  return new Promise((resolve) => {
+    const timeline = gsap.timeline({
+      onComplete: resolve
+    });
+
+    timeline
+      .to(transitionCurtain, {
+        scaleY: 1,
+        duration: 0.65,
+        ease: "power4.inOut"
+      })
+      .to(transitionContent, {
+        opacity: 1,
+        y: 0,
+        duration: 0.45,
+        ease: "power3.out"
+      }, "-=0.12")
+      .to(transitionProgress, {
+        scaleX: 1,
+        duration: 0.45,
+        ease: "power2.inOut"
+      }, "-=0.15");
+  });
+}
+
+function animateTransitionOut() {
+  if (!transitionLayer) return Promise.resolve();
+
+  if (reducedMotion || !window.gsap) {
+    transitionCurtain.style.transform = "scaleY(0)";
+    transitionContent.style.opacity = "0";
+    setTransitionState(false);
+
+    return Promise.resolve();
+  }
+
+  const gsap = window.gsap;
+
+  return new Promise((resolve) => {
+    const timeline = gsap.timeline({
+      onComplete: () => {
+        setTransitionState(false);
+        resolve();
+      }
+    });
+
+    timeline
+      .to(transitionContent, {
+        opacity: 0,
+        y: -12,
+        duration: 0.25,
+        ease: "power2.in"
+      })
+      .to(transitionCurtain, {
+        scaleY: 0,
+        transformOrigin: "top",
+        duration: 0.7,
+        ease: "power4.inOut"
+      }, "-=0.05");
+  });
+}
+
+function getTargetFromLink(link) {
+  const href = link.getAttribute("href");
+
+  if (!href || !href.startsWith("#")) return null;
+
+  const targetId = href.slice(1);
+
+  if (!targetId) return null;
+
+  return document.getElementById(targetId);
+}
+
+async function navigateWithTransition(target, link) {
+  if (!target || isTransitioning) return;
+
+  isTransitioning = true;
+
+  const targetId = target.id;
+
+  closeMenu();
+
+  await animateTransitionIn();
+
+  target.scrollIntoView({
+    behavior: "instant",
+    block: "start"
+  });
+
+  if (window.history && targetId) {
+    window.history.replaceState(
+      null,
+      "",
+      `#${targetId}`
+    );
+  }
+
+  await animateTransitionOut();
+
+  isTransitioning = false;
+
+  if (link) {
+    link.blur();
+  }
+}
+
+
+// ============================================
+// INTERNAL LINK INTERCEPTION
+// ============================================
+
+document.querySelectorAll('a[href^="#"]').forEach((link) => {
+  link.addEventListener("click", (event) => {
+    const target = getTargetFromLink(link);
+
+    if (!target) return;
+
+    // Case study cards have their own overlay.
+    if (link.hasAttribute("data-case-study")) return;
+
+    // Case study close and navigation controls
+    // are handled by their own event listeners.
+    if (
+      link.closest(".case-panel") ||
+      link.closest(".menu-panel") === null &&
+      link.classList.contains("case-logo")
+    ) {
+      return;
+    }
+
+    event.preventDefault();
+
+    navigateWithTransition(target, link);
+  });
 });
+
+
+// ============================================
+// INITIAL PAGE TRANSITION STATE
+// ============================================
+
+if (transitionLayer) {
+  if (reducedMotion) {
+    setTransitionState(false);
+  } else {
+    setTransitionState(false);
+  }
+}
