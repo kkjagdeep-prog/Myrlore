@@ -1,809 +1,282 @@
 
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="theme-color" content="#08090b">
+  <meta name="theme-color" content="#10100f">
+  <meta name="description" content="MYRLORE is an independent creative studio shaping brands and digital experiences.">
+  <title>MYRLORE® — Digital Creative Studio</title>
 
-  <meta name="description" content="MYRLORE is an independent creative studio shaping distinctive brands, digital experiences and technology.">
-  <meta name="author" content="MYRLORE">
-
-  <title>MYRLORE® — Beyond The Ordinary</title>
-
-  <!-- Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-
   <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
-  <!-- Stylesheet -->
-  <link rel="stylesheet" href="./style.css">
+  <link rel="stylesheet" href="style.css">
 
-  <!-- Three.js Import Map -->
   <script type="importmap">
-  {
-    "imports": {
-      "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js"
-    }
-  }
-  </script>
-
-  <!-- GSAP -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
-
-  <!-- Emergency Loader Protection -->
-  <script>
-    window.addEventListener("load", function () {
-      setTimeout(function () {
-        const loader = document.getElementById("pageLoader");
-
-        if (loader) {
-          loader.style.opacity = "0";
-          loader.style.visibility = "hidden";
-          loader.style.pointerEvents = "none";
-
-          setTimeout(function () {
-            loader.style.display = "none";
-          }, 800);
-        }
-      }, 1800);
-    });
-
-    // Backup in case a JavaScript module fails
-    setTimeout(function () {
-      const loader = document.getElementById("pageLoader");
-
-      if (loader) {
-        loader.style.display = "none";
+    {
+      "imports": {
+        "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js"
       }
-    }, 6000);
+    }
   </script>
 
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js" defer></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js" defer></script>
 </head>
 
 <body>
-
-  <!-- =====================================
-       PAGE LOADER
-  ====================================== -->
-
   <div class="page-loader" id="pageLoader">
-    <div class="loader-wordmark">
-      MYRLORE<span>®</span>
-    </div>
-
-    <div class="loader-track">
-      <span></span>
-    </div>
-
-    <div class="loader-caption">
-      A WORLD OF OUR OWN
-    </div>
+    <div class="loader-word">MYRLORE<span>®</span></div>
+    <div class="loader-line"><span></span></div>
+    <p>CREATING SOMETHING DIFFERENT</p>
   </div>
 
-
-  <!-- =====================================
-       BACKGROUND EFFECTS
-  ====================================== -->
-
   <div class="noise"></div>
-
-  <div class="webgl-fallback" id="webglFallback"></div>
-
-  <canvas id="webgl"></canvas>
-
-
-  <!-- =====================================
-       HEADER
-  ====================================== -->
+  <div class="cursor-glow" id="cursorGlow"></div>
 
   <header class="site-header">
+    <a class="logo" href="#home">MYRLORE<span>®</span></a>
 
-    <a href="#home" class="wordmark" aria-label="MYRLORE home">
-      MYRLORE<span>®</span>
-    </a>
-
-    <div class="header-status">
+    <div class="header-center">
       <span class="status-dot"></span>
       INDEPENDENT CREATIVE STUDIO
     </div>
 
-    <button
-      class="menu-toggle"
-      id="menuToggle"
-      aria-label="Open navigation"
-      aria-expanded="false"
-      aria-controls="menuPanel"
-      type="button"
-    >
+    <button class="menu-toggle" id="menuToggle" aria-label="Open menu">
       <span>MENU</span>
-      <i></i>
-      <i></i>
+      <i></i><i></i>
     </button>
-
   </header>
 
-
-  <!-- =====================================
-       NAVIGATION PANEL
-  ====================================== -->
-
-  <nav class="menu-panel" id="menuPanel" aria-hidden="true">
-
-    <div class="menu-panel-top">
-
-      <span>MYRLORE® / INDEX</span>
-
-      <button id="menuClose" type="button" aria-label="Close navigation">
-        CLOSE ×
-      </button>
-
-    </div>
-
-    <div class="menu-links">
-
-      <a href="#home">
-        <small>01</small>
-        Home
-        <span>↗</span>
-      </a>
-
-      <a href="#studio">
-        <small>02</small>
-        Studio
-        <span>↗</span>
-      </a>
-
-      <a href="#expertise">
-        <small>03</small>
-        Expertise
-        <span>↗</span>
-      </a>
-
-      <a href="#work">
-        <small>04</small>
-        Selected work
-        <span>↗</span>
-      </a>
-
-      <a href="#contact">
-        <small>05</small>
-        Contact
-        <span>↗</span>
-      </a>
-
-    </div>
-
-    <div class="menu-panel-bottom">
-      <span>DESIGN / TECHNOLOGY / CULTURE</span>
-      <span>EST. 2026</span>
-    </div>
-
+  <nav class="menu-panel" id="menuPanel">
+    <button class="menu-close" id="menuClose">CLOSE ×</button>
+    <div class="menu-label">EXPLORE MYRLORE</div>
+    <a href="#studio"><span>01</span> Studio</a>
+    <a href="#services"><span>02</span> Expertise</a>
+    <a href="#work"><span>03</span> Selected work</a>
+    <a href="#contact"><span>04</span> Contact</a>
+    <div class="menu-bottom">INDEPENDENT BY NATURE. CREATIVE BY DESIGN.</div>
   </nav>
 
-
-  <!-- =====================================
-       MAIN CONTENT
-  ====================================== -->
-
   <main>
-
-
-    <!-- HERO -->
-
-    <section class="hero scene-section" id="home">
-
-      <div class="hero-top mono">
+    <section class="hero" id="home">
+      <div class="hero-meta">
         <span>INDEPENDENT CREATIVE STUDIO</span>
-        <span>INDIA / EVERYWHERE</span>
+        <span>BASED IN INDIA · WORKING EVERYWHERE</span>
       </div>
 
-      <div class="hero-copy">
+      <div class="hero-content">
+        <div class="hero-copy">
+          <p class="eyebrow"><span class="eyebrow-line"></span> A DIFFERENT KIND OF CREATIVE STUDIO</p>
 
-        <div class="eyebrow reveal">
-          A DIFFERENT KIND OF CREATIVE STUDIO
+          <h1>
+            We make<br>
+            <span class="headline-outline">digital</span><br>
+            <span class="headline-last">matter<span class="lime-dot">.</span></span>
+          </h1>
+
+          <div class="hero-bottom">
+            <p>We shape brands, build digital experiences and turn ambitious ideas into something extraordinary.</p>
+            <a class="round-link" href="#work" aria-label="Explore our work">
+              <span>↘</span>
+            </a>
+          </div>
         </div>
 
-        <h1 class="hero-title">
-
-          <span class="hero-line">
-            WE MAKE
-          </span>
-
-          <span class="hero-line hero-line-two">
-            DIGITAL
-          </span>
-
-          <span class="hero-line hero-line-three">
-            <span class="outline-word">
-              MATTER.
-            </span>
-          </span>
-
-        </h1>
-
+        <div class="hero-visual">
+          <div class="visual-caption caption-top">FORM / 001</div>
+          <canvas id="webgl"></canvas>
+          <div class="visual-caption caption-bottom">AN EXPLORATION IN FORM & MOTION</div>
+          <div class="visual-index">01 — 04</div>
+          <div class="visual-cross cross-one">+</div>
+          <div class="visual-cross cross-two">+</div>
+        </div>
       </div>
 
-      <div class="hero-bottom">
-
-        <p class="hero-description">
-          We shape brands, build digital experiences and turn ambitious ideas into something extraordinary.
-        </p>
-
-        <a href="#studio" class="scroll-cue">
-          <span>SCROLL TO EXPLORE</span>
-          <i>↓</i>
-        </a>
-
-        <span class="hero-coordinate mono">
-          01 — 05
-        </span>
-
+      <div class="hero-footer">
+        <span>SCROLL TO EXPLORE <span class="scroll-arrow">↓</span></span>
+        <span>DESIGN WITH INTENTION.</span>
       </div>
-
-      <div class="hero-side-label mono">
-        CREATIVITY WITHOUT A FIXED FORM
-      </div>
-
     </section>
 
-
-    <!-- INTRO STRIP -->
-
-    <section class="intro-strip">
-
-      <div class="intro-strip-inner intro-strip-track">
-
-        <span>NOT ANOTHER AGENCY.</span>
-        <span class="strip-symbol">✳</span>
-
-        <span>A CREATIVE PRACTICE.</span>
-        <span class="strip-symbol">✳</span>
-
-        <span>BUILT FOR WHAT'S NEXT.</span>
-        <span class="strip-symbol">✳</span>
-
-        <span>NOT ANOTHER AGENCY.</span>
-        <span class="strip-symbol">✳</span>
-
-        <span>A CREATIVE PRACTICE.</span>
-
+    <section class="intro-band">
+      <div class="intro-track">
+        <span>IDEAS INTO IMPACT</span><b>✳</b>
+        <span>DESIGN WITHOUT LIMITS</span><b>✳</b>
+        <span>BUILT TO BE DIFFERENT</span><b>✳</b>
+        <span>IDEAS INTO IMPACT</span><b>✳</b>
+        <span>DESIGN WITHOUT LIMITS</span><b>✳</b>
       </div>
-
     </section>
 
-
-    <!-- STUDIO -->
-
-    <section class="studio section scene-section" id="studio">
-
-      <div class="section-index mono">
-        <span>01 / THE STUDIO</span>
-        <span>OUR POINT OF VIEW</span>
+    <section class="studio section-pad" id="studio">
+      <div class="section-top">
+        <span class="section-number">01 / THE STUDIO</span>
+        <span class="section-aside">SMALL BY DESIGN. BIG ON IDEAS.</span>
       </div>
 
       <div class="studio-layout">
-
-        <div class="studio-heading">
-
-          <div class="eyebrow reveal">
-            INDEPENDENT BY DESIGN.
-          </div>
-
-          <h2 class="display-heading reveal">
-            WE BELIEVE<br>
-            IN <span>THE</span><br>
-            UNEXPECTED.
-          </h2>
-
-        </div>
-
-        <div class="studio-copy reveal">
-
-          <div class="studio-mark">
-            M<span>.</span>
-          </div>
-
-          <p class="studio-lead">
-            The most interesting things happen where creativity meets possibility.
-          </p>
-
-          <p class="body-copy">
-            MYRLORE is an independent creative studio exploring the intersection of design, technology and culture. We work with businesses and creators to shape distinctive identities and meaningful digital experiences.
-          </p>
-
-          <a href="#expertise" class="text-link">
-            GET TO KNOW OUR EXPERTISE
-            <span>↗</span>
-          </a>
-
-        </div>
-
-      </div>
-
-      <div class="studio-foot mono">
-        <span>CURIOUS MINDS. BOLD IDEAS.</span>
-        <span>ALWAYS EXPLORING.</span>
-      </div>
-
-    </section>
-
-
-    <!-- EXPERTISE -->
-
-    <section class="expertise section scene-section" id="expertise">
-
-      <div class="section-index mono">
-        <span>02 / WHAT WE DO</span>
-        <span>OUR EXPERTISE</span>
-      </div>
-
-      <div class="expertise-intro">
-
-        <h2 class="display-heading reveal">
-          MANY FORMS.<br>
-          <span>ONE INTENTION.</span>
+        <h2 class="studio-heading reveal">
+          Not here to<br>
+          blend <span>in.</span>
         </h2>
 
-        <p class="body-copy reveal">
-          A multidisciplinary approach to ideas, identities and digital experiences.
-        </p>
-
+        <div class="studio-description reveal">
+          <p class="large-copy">We believe the internet deserves more than ordinary.</p>
+          <p>MYRLORE is an independent creative studio exploring the intersection of design, technology and imagination. We create distinctive identities and digital experiences for people with ideas worth putting into the world.</p>
+          <a class="text-link" href="#contact">A LITTLE MORE ABOUT US <span>↗</span></a>
+        </div>
       </div>
 
-      <div class="expertise-list">
-
-        <article class="expertise-item reveal">
-
-          <span class="expertise-number mono">01</span>
-
-          <div class="expertise-name">
-            <h3>Digital experiences</h3>
-            <p>Interfaces that feel intuitive, distinctive and considered.</p>
-          </div>
-
-          <div class="expertise-tags mono">
-            UI / UX · WEB DESIGN · ART DIRECTION
-          </div>
-
-          <span class="expertise-arrow">↗</span>
-
-        </article>
-
-
-        <article class="expertise-item reveal">
-
-          <span class="expertise-number mono">02</span>
-
-          <div class="expertise-name">
-            <h3>Development & technology</h3>
-            <p>Digital products built to perform and evolve.</p>
-          </div>
-
-          <div class="expertise-tags mono">
-            WEBSITES · WEB APPS · DEVELOPMENT
-          </div>
-
-          <span class="expertise-arrow">↗</span>
-
-        </article>
-
-
-        <article class="expertise-item reveal">
-
-          <span class="expertise-number mono">03</span>
-
-          <div class="expertise-name">
-            <h3>Brand identity</h3>
-            <p>Visual worlds that give ideas a recognisable presence.</p>
-          </div>
-
-          <div class="expertise-tags mono">
-            BRANDING · LOGOS · IDENTITY
-          </div>
-
-          <span class="expertise-arrow">↗</span>
-
-        </article>
-
-
-        <article class="expertise-item reveal">
-
-          <span class="expertise-number mono">04</span>
-
-          <div class="expertise-name">
-            <h3>Creative media</h3>
-            <p>Visual communication with character and intention.</p>
-          </div>
-
-          <div class="expertise-tags mono">
-            GRAPHICS · SOCIAL · CONTENT
-          </div>
-
-          <span class="expertise-arrow">↗</span>
-
-        </article>
-
-
-        <article class="expertise-item reveal">
-
-          <span class="expertise-number mono">05</span>
-
-          <div class="expertise-name">
-            <h3>Digital innovation</h3>
-            <p>Exploring new possibilities through emerging technology.</p>
-          </div>
-
-          <div class="expertise-tags mono">
-            AI · AUTOMATION · INTERACTIVE
-          </div>
-
-          <span class="expertise-arrow">↗</span>
-
-        </article>
-
+      <div class="studio-bottom">
+        <span>CURIOUS MINDS. UNCOMMON IDEAS.</span>
+        <span>EST. 2026</span>
       </div>
-
     </section>
 
-
-    <!-- SELECTED WORK -->
-
-    <section class="work section scene-section" id="work">
-
-      <div class="section-index mono">
-        <span>03 / SELECTED WORK</span>
-        <span>INDEPENDENT EXPLORATIONS</span>
+    <section class="services section-pad" id="services">
+      <div class="section-top">
+        <span class="section-number">02 / WHAT WE DO</span>
+        <span class="section-aside">THOUGHTFUL FROM START TO FINISH.</span>
       </div>
 
-      <div class="work-intro">
+      <h2 class="services-heading reveal">Ideas need<br><span>execution.</span></h2>
 
-        <h2 class="display-heading reveal">
-          MADE TO<br>
-          <span>MOVE THINGS.</span>
-        </h2>
+      <div class="service-list">
+        <article class="service-item">
+          <span class="service-num">01</span>
+          <h3>Brand identity</h3>
+          <p>Identity systems · Art direction · Visual language</p>
+          <span class="service-arrow">↗</span>
+        </article>
+        <article class="service-item">
+          <span class="service-num">02</span>
+          <h3>Digital experiences</h3>
+          <p>UI / UX · Websites · Interactive experiences</p>
+          <span class="service-arrow">↗</span>
+        </article>
+        <article class="service-item">
+          <span class="service-num">03</span>
+          <h3>Development</h3>
+          <p>Web development · Creative technology · Web apps</p>
+          <span class="service-arrow">↗</span>
+        </article>
+        <article class="service-item">
+          <span class="service-num">04</span>
+          <h3>Digital innovation</h3>
+          <p>AI-assisted solutions · Automation · Experiments</p>
+          <span class="service-arrow">↗</span>
+        </article>
+      </div>
+    </section>
 
-        <p class="body-copy reveal">
-          A selection of independent projects and digital explorations.
-        </p>
+    <section class="work section-pad" id="work">
+      <div class="section-top">
+        <span class="section-number">03 / SELECTED WORK</span>
+        <span class="section-aside">INDEPENDENT PROJECTS & EXPLORATIONS</span>
+      </div>
 
+      <div class="work-heading-row">
+        <h2 class="reveal">Made with<br><span>intention.</span></h2>
+        <p>A selection of digital projects and creative explorations.</p>
       </div>
 
       <div class="work-grid">
-
-
-        <!-- CORROGUARD -->
-
-        <article class="work-card work-card-tall reveal">
-
-          <a
-            class="work-art art-corro"
-            href="#contact"
-            aria-label="Discuss a project like CorroGuard"
-          >
-
-            <div class="art-grid"></div>
-
-            <div class="art-orbit art-orbit-one"></div>
-            <div class="art-orbit art-orbit-two"></div>
-
-            <div class="art-object art-object-corro"></div>
-
-            <div class="art-label mono">
-              ENGINEERING / DIGITAL PLATFORM
-            </div>
-
-            <div class="art-title">
-              <span>CORRO</span>
-              <span>GUARD<span class="art-period">.</span></span>
-            </div>
-
-            <span class="art-index mono">01 / 03</span>
-
-            <span class="art-visit">
-              VIEW PROJECT <i>↗</i>
-            </span>
-
-          </a>
-
-          <div class="work-caption">
-
-            <div>
-              <h3>CorroGuard</h3>
-              <p>Interactive engineering chemistry platform</p>
-            </div>
-
-            <span class="mono">2026</span>
-
+        <a class="work-card work-large" href="#contact">
+          <div class="work-art art-corro">
+            <div class="art-orbit"></div>
+            <div class="art-core">CG<span>®</span></div>
+            <span class="art-label">MATERIAL INTELLIGENCE</span>
           </div>
-
-        </article>
-
-
-        <!-- FLOODWATCH -->
-
-        <article class="work-card work-card-offset reveal">
-
-          <a
-            class="work-art art-flood"
-            href="#contact"
-            aria-label="Discuss a project like FloodWatch Chennai"
-          >
-
-            <div class="flood-lines"></div>
-            <div class="flood-glow"></div>
-
-            <div class="art-label mono">
-              DATA / ENVIRONMENT
-            </div>
-
-            <div class="art-title flood-title">
-              <span>FLOOD</span>
-              <span>WATCH<span class="art-period">.</span></span>
-            </div>
-
-            <span class="art-index mono">02 / 03</span>
-
-            <span class="art-visit">
-              VIEW PROJECT <i>↗</i>
-            </span>
-
-          </a>
-
-          <div class="work-caption">
-
-            <div>
-              <h3>FloodWatch Chennai</h3>
-              <p>Web-based flood risk analysis platform</p>
-            </div>
-
-            <span class="mono">2026</span>
-
+          <div class="work-info">
+            <div><h3>CorroGuard</h3><p>Engineering · Digital platform</p></div>
+            <span>↗</span>
           </div>
-
-        </article>
-
-
-        <!-- XTREMETOY -->
-
-        <article class="work-card work-card-wide reveal">
-
-          <a
-            class="work-art art-xtreme"
-            href="#contact"
-            aria-label="Discuss a project like XTREMETOY"
-          >
-
-            <div class="xtreme-glow"></div>
-            <div class="xtreme-orb"></div>
-
-            <div class="art-label mono">
-              DIGITAL / PERSONAL BRAND
-            </div>
-
-            <div class="art-title xtreme-title">
-              <span>XTREMETOY<span class="art-period">.</span></span>
-            </div>
-
-            <span class="art-index mono">03 / 03</span>
-
-            <span class="art-visit">
-              VIEW PROJECT <i>↗</i>
-            </span>
-
-          </a>
-
-          <div class="work-caption">
-
-            <div>
-              <h3>XTREMETOY</h3>
-              <p>Personal digital experience</p>
-            </div>
-
-            <span class="mono">2026</span>
-
-          </div>
-
-        </article>
-
-      </div>
-
-      <p class="work-note mono">
-        INDEPENDENT PROJECTS AND EXPLORATIONS — NOT CLIENT CASE STUDIES.
-      </p>
-
-    </section>
-
-
-    <!-- MANIFESTO -->
-
-    <section class="manifesto scene-section">
-
-      <div class="manifesto-inner">
-
-        <div class="eyebrow reveal">
-          OUR CREATIVE PHILOSOPHY
-        </div>
-
-        <h2 class="manifesto-heading reveal">
-          ORDINARY<br>
-          IS A CHOICE.<br>
-          <span>WE CHOOSE</span><br>
-          OTHERWISE.
-        </h2>
-
-        <p class="manifesto-copy reveal">
-          We don't believe in creating more of the same. We believe in curiosity, experimentation and making things that matter.
-        </p>
-
-        <div class="manifesto-signature mono reveal">
-          MYRLORE® — ALWAYS IN THE MAKING
-        </div>
-
-      </div>
-
-    </section>
-
-
-    <!-- PROCESS -->
-
-    <section class="process section scene-section">
-
-      <div class="section-index mono">
-        <span>04 / THE APPROACH</span>
-        <span>HOW WE WORK</span>
-      </div>
-
-      <div class="process-intro">
-
-        <h2 class="display-heading reveal">
-          THOUGHTFUL<br>
-          <span>AT EVERY STEP.</span>
-        </h2>
-
-        <p class="body-copy reveal">
-          Good work comes from asking the right questions and caring about every detail.
-        </p>
-
-      </div>
-
-      <div class="process-grid">
-
-        <article class="process-step reveal">
-          <span class="mono">01 / DISCOVER</span>
-          <h3>Understand.</h3>
-          <p>We start with your goals, your audience and the opportunity ahead.</p>
-        </article>
-
-        <article class="process-step reveal">
-          <span class="mono">02 / DEFINE</span>
-          <h3>Imagine.</h3>
-          <p>We develop a clear direction that gives the idea purpose.</p>
-        </article>
-
-        <article class="process-step reveal">
-          <span class="mono">03 / CREATE</span>
-          <h3>Make.</h3>
-          <p>We bring the concept to life through thoughtful design and development.</p>
-        </article>
-
-        <article class="process-step reveal">
-          <span class="mono">04 / DELIVER</span>
-          <h3>Refine.</h3>
-          <p>We test, refine and prepare the experience for the world.</p>
-        </article>
-
-      </div>
-
-    </section>
-
-
-    <!-- CONTACT -->
-
-    <section class="contact scene-section" id="contact">
-
-      <div class="section-index mono">
-        <span>05 / START SOMETHING</span>
-        <span>THE NEXT CHAPTER</span>
-      </div>
-
-      <div class="contact-main">
-
-        <div class="eyebrow reveal">
-          HAVE SOMETHING IN MIND?
-        </div>
-
-        <h2 class="contact-heading reveal">
-          LET'S MAKE<br>
-          <span>IT MATTER.</span>
-        </h2>
-
-        <p class="contact-copy reveal">
-          A project, a possibility or an idea waiting to happen. Start a conversation with the studio.
-        </p>
-
-        <a class="contact-button reveal" href="mailto:hello@myrlore.com">
-          <span>START A CONVERSATION</span>
-          <i>↗</i>
         </a>
 
-      </div>
+        <a class="work-card work-small" href="#contact">
+          <div class="work-art art-flood">
+            <div class="flood-lines"></div>
+            <div class="flood-title">FLOOD<br>WATCH<span>.</span></div>
+            <span class="art-label">CHENNAI / INDIA</span>
+          </div>
+          <div class="work-info">
+            <div><h3>FloodWatch Chennai</h3><p>Data · Mapping · Web platform</p></div>
+            <span>↗</span>
+          </div>
+        </a>
 
-      <div class="contact-bottom mono">
-        <span>GOOD THINGS START WITH AN IDEA.</span>
-        <span>MYRLORE®</span>
-      </div>
+        <a class="work-card work-small" href="#contact">
+          <div class="work-art art-xtreme">
+            <div class="xtreme-symbol">X<span>T</span></div>
+            <span class="art-label">DIGITAL CULTURE / GAMING</span>
+          </div>
+          <div class="work-info">
+            <div><h3>XTREMETOY</h3><p>Identity · Digital experience</p></div>
+            <span>↗</span>
+          </div>
+        </a>
 
+        <div class="work-note">
+          <span>MORE TO COME</span>
+          <p>Good work takes curiosity.<br>We're just getting started.</p>
+        </div>
+      </div>
     </section>
 
+    <section class="manifesto section-pad">
+      <span class="section-number">04 / THE BELIEF</span>
+      <h2 class="manifesto-heading reveal">
+        The future<br>
+        belongs to<br>
+        the <span>curious.</span>
+      </h2>
+      <div class="manifesto-bottom">
+        <span>STAY CURIOUS. MAKE MEANING.</span>
+        <span>MYRLORE® — 2026</span>
+      </div>
+    </section>
+
+    <section class="contact section-pad" id="contact">
+      <div class="section-top">
+        <span class="section-number">05 / START SOMETHING</span>
+        <span class="section-aside">HAVE AN IDEA? LET'S EXPLORE IT.</span>
+      </div>
+
+      <p class="contact-kicker">GOOD THINGS START WITH A CONVERSATION.</p>
+      <h2 class="contact-heading reveal">Let's make<br>it <span>matter.</span></h2>
+
+      <a class="contact-link" href="mailto:hello@myrlore.com">
+        <span>hello@myrlore.com</span><span>↗</span>
+      </a>
+    </section>
   </main>
 
-
-  <!-- =====================================
-       FOOTER
-  ====================================== -->
-
-  <footer class="site-footer">
-
-    <div class="footer-main">
-
-      <a href="#home" class="footer-wordmark">
-        MYRLORE<span>®</span>
-      </a>
-
-      <p>
-        Independent by design.<br>
-        Creative by nature.
-      </p>
-
-    </div>
-
-    <div class="footer-nav">
-
-      <div>
-        <span class="mono">EXPLORE</span>
-        <a href="#studio">Studio</a>
-        <a href="#expertise">Expertise</a>
-        <a href="#work">Selected work</a>
-      </div>
-
-      <div>
-        <span class="mono">CONNECT</span>
-        <a href="#contact">Contact</a>
-        <a href="mailto:hello@myrlore.com">Email ↗</a>
-      </div>
-
-    </div>
-
-    <div class="footer-bottom mono">
-
-      <span>
-        © <span id="year"></span> MYRLORE. ALL RIGHTS RESERVED.
-      </span>
-
-      <a href="#home">BACK TO TOP ↑</a>
-
-      <span>DESIGNED BEYOND THE ORDINARY.</span>
-
-    </div>
-
+  <footer class="footer">
+    <a class="logo" href="#home">MYRLORE<span>®</span></a>
+    <span>INDEPENDENT CREATIVE STUDIO</span>
+    <span>© <span id="year"></span> MYRLORE. ALL RIGHTS RESERVED.</span>
+    <a href="#home">BACK TO TOP ↑</a>
   </footer>
 
+  <script>
+    window.addEventListener("load", () => {
+      setTimeout(() => {
+        document.body.classList.add("loaded");
+        const loader = document.getElementById("pageLoader");
+        if (loader) loader.style.display = "none";
+      }, 500);
+    });
 
-  <!-- =====================================
-       JAVASCRIPT
-  ====================================== -->
+    setTimeout(() => {
+      document.body.classList.add("loaded");
+      const loader = document.getElementById("pageLoader");
+      if (loader) loader.style.display = "none";
+    }, 5000);
+  </script>
 
-  <script type="module" src="./script.js"></script>
-
-  <noscript>
-    <div class="noscript-message">
-      MYRLORE is best experienced with JavaScript enabled.
-    </div>
-  </noscript>
-
+  <script type="module" src="script.js"></script>
 </body>
 </html>
