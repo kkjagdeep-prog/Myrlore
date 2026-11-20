@@ -831,3 +831,31 @@ body.case-open {
     translate: none !important;
   }
 }
+/* ==========================================
+   MYRLORE — TEXT SELECTION PROTECTION
+========================================== */
+
+body {
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+/* Keep form fields usable */
+input,
+textarea,
+select,
+[contenteditable="true"] {
+  -webkit-user-select: text;
+  user-select: text;
+}
+
+/* Disable text dragging */
+body {
+  -webkit-user-drag: none;
+}
+
+/* Custom selection appearance */
+::selection {
+  background: rgba(198, 182, 154, 0.25);
+  color: #eeede8;
+}
