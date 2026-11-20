@@ -15,6 +15,10 @@ const reducedMotion = window.matchMedia(
   "(prefers-reduced-motion: reduce)"
 ).matches;
 
+const finePointer = window.matchMedia(
+  "(hover: hover) and (pointer: fine)"
+).matches;
+
 let scene;
 let camera;
 let renderer;
@@ -799,8 +803,36 @@ document.addEventListener("visibilitychange", () => {
 
 
 // ============================================
-// POINTER INTERACTION
+// MYRLORE — REFINED CURSOR
 // ============================================
+
+let cursorTargetX = window.innerWidth / 2;
+let cursorTargetY = window.innerHeight / 2;
+let cursorCurrentX = cursorTargetX;
+let cursorCurrentY = cursorTargetY;
+
+function animateCursor() {
+  if (
+    !cursorGlow ||
+    !finePointer ||
+    reducedMotion ||
+    !isPageVisible
+  ) {
+    return;
+  }
+
+  cursorCurrentX = lerp(cursorCurrentX, cursorTargetX, 0.16);
+  cursorCurrentY = lerp(cursorCurrentY, cursorTargetY, 0.16);
+
+  cursorGlow.style.left = `${cursorCurrentX}px`;
+  cursorGlow.style.top = `${cursorCurrentY}px`;
+
+  requestAnimationFrame(animateCursor);
+}
+
+if (cursorGlow && finePointer && !reducedMotion) {
+  animateCursor();
+}
 
 window.addEventListener(
   "pointermove",
@@ -811,9 +843,9 @@ window.addEventListener(
     pointerY =
       -(event.clientY / window.innerHeight) * 2 + 1;
 
-    if (cursorGlow) {
-      cursorGlow.style.left = `${event.clientX}px`;
-      cursorGlow.style.top = `${event.clientY}px`;
+    if (finePointer) {
+      cursorTargetX = event.clientX;
+      cursorTargetY = event.clientY;
     }
   },
   { passive: true }
@@ -1109,7 +1141,6 @@ const caseStudies = {
     ]
   },
 
-
   floodwatch: {
     index: "PROJECT / 002",
     title: "FloodWatch Chennai",
@@ -1303,4 +1334,107 @@ document.addEventListener("keydown", (event) => {
       first.focus();
     }
   }
+});
+
+
+// ============================================
+// MYRLORE — MAGNETIC INTERACTIONS
+// ============================================
+
+const magneticElements = document.querySelectorAll(
+  ".round-link, .contact-link, .text-link, .menu-toggle, .case-close, .case-bottom-close"
+);
+
+if (finePointer && !reducedMotion) {
+
+  magneticElements.forEach((element) => {
+
+    element.addEventListener("pointermove", (event) => {
+      const rect = element.getBoundingClientRect();
+
+      const centerX = rect.left + rect.width / 2;
+      const centerY = rect.top + rect.height / 2;
+
+      const distanceX = event.clientX - centerX;
+      const distanceY = event.clientY - centerY;
+
+      const strength = element.classList.contains("contact-link")
+        ? 0.10
+        : 0.22;
+
+      const maxDistance = element.classList.contains("contact-link")
+        ? 7
+        : 10;
+
+      const moveX = clamp(
+        distanceX * strength,
+        -maxDistance,
+        maxDistance
+      );
+
+      const moveY = clamp(
+        distanceY * strength,
+        -maxDistance,
+        maxDistance
+      );
+
+      element.style.translate = `${moveX}px ${moveY}px`;
+    });
+
+    element.addEventListener("pointerleave", () => {
+      element.style.translate = "0px 0px";
+    });
+
+  });
+
+}
+
+
+// ============================================
+// PROJECT CARD CURSOR LABEL
+// ============================================
+
+const projectCards = document.querySelectorAll(".work-card");
+
+projectCards.forEach((card) => {
+
+  card.addEventListener("pointerenter", () => {
+    if (!cursorGlow || !finePointer || reducedMotion) return;
+
+    cursorGlow.classList.add("cursor-project");
+    cursorGlow.dataset.label = "VIEW PROJECT";
+  });
+
+  card.addEventListener("pointerleave", () => {
+    if (!cursorGlow) return;
+
+    cursorGlow.classList.remove("cursor-project");
+    cursorGlow.dataset.label = "";
+  });
+
+});
+
+
+// ============================================
+// INTERACTIVE CURSOR STATES
+// ============================================
+
+const interactiveElements = document.querySelectorAll(
+  "a, button, .work-card, .service-item"
+);
+
+interactiveElements.forEach((element) => {
+
+  element.addEventListener("pointerenter", () => {
+    if (!cursorGlow || !finePointer || reducedMotion) return;
+
+    cursorGlow.classList.add("cursor-hover");
+  });
+
+  element.addEventListener("pointerleave", () => {
+    if (!cursorGlow) return;
+
+    cursorGlow.classList.remove("cursor-hover");
+  });
+
 });
