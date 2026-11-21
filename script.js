@@ -1,1471 +1,498 @@
+/* ==========================================
+   MYRLORE® — MAIN INTERACTION SYSTEM
+   Three.js · GSAP · UI · Case Studies
+========================================== */
 
 let THREE;
 let RectAreaLightUniformsLib;
 let clock;
 
-let threeLoadPromise = null;
-let threeInitialized = false;
+(() => {
+  "use strict";
 
-// ============================================
-// MYRLORE®
-// A2 — SHARP CHROME
-// LIQUID METAL STUDIO SCULPTURE
-// PERFORMANCE OPTIMISED
-// ============================================
+  const $ = (selector, parent = document) =>
+    parent.querySelector(selector);
 
-const canvas = document.querySelector("#webgl");
-const cursorGlow = document.querySelector("#cursorGlow");
+  const $$ = (selector, parent = document) =>
+    [...parent.querySelectorAll(selector)];
 
-const reducedMotion = window.matchMedia(
-  "(prefers-reduced-motion: reduce)"
-).matches;
+  const prefersReducedMotion =
+    window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-const finePointer = window.matchMedia(
-  "(hover: hover) and (pointer: fine)"
-).matches;
+  const isTouchDevice =
+    window.matchMedia("(hover: none), (pointer: coarse)").matches;
 
-const clamp = (v, min, max) =>
-  Math.max(min, Math.min(max, v));
+  /* ==========================================
+     PAGE INITIALISATION
+  ========================================== */
 
-const lerp = (a, b, t) =>
-  a + (b - a) * t;
+  const body = document.body;
+  const loader = $("#pageLoader");
 
-let scene;
-let camera;
-let renderer;
-let sculpture;
-let particles;
+  function hideLoader() {
+    body.classList.add("loaded");
 
-let animationFrame = null;
-let scrollProgress = 0;
-let pointerX = 0;
-let pointerY = 0;
-let targetX = 0;
-let targetY = 0;
-
-let isPageVisible = !document.hidden;
-
-
-// ============================================
-// RENDERING PERFORMANCE
-// ============================================
-
-function getRenderPixelRatio() {
-  const isMobile = window.innerWidth < 600;
-
-  return Math.min(
-    window.devicePixelRatio || 1,
-    isMobile ? 1.25 : 1.5
-  );
-}
-
-
-// ============================================
-// CHROME MATERIALS
-// ============================================
-
-function createMetalMaterial(
-  color = 0xffffff,
-  roughness = 0.025
-) {
-  return new THREE.MeshStandardMaterial({
-    color,
-    metalness: 1,
-    roughness,
-    envMapIntensity: 3.5,
-    side: THREE.DoubleSide
-  });
-}
-
-
-// ============================================
-// STUDIO REFLECTION ENVIRONMENT
-// ============================================
-
-function createEnvironment() {
-  const pmrem = new THREE.PMREMGenerator(renderer);
-  const envScene = new THREE.Scene();
-
-  envScene.background = new THREE.Color(0x08090b);
-
-  envScene.add(
-    new THREE.HemisphereLight(
-      0xffffff,
-      0x10131a,
-      0.8
-    )
-  );
-
-  const panels = [
-    {
-      position: [-3.5, 0.5, 2],
-      size: [0.8, 5, 0.12],
-      color: 0xffffff
-    },
-    {
-      position: [3.4, 0.2, 1.8],
-      size: [0.55, 4.5, 0.12],
-      color: 0xe5edff
-    },
-    {
-      position: [0, 3.4, 0],
-      size: [4.5, 0.55, 0.12],
-      color: 0xffffff
-    },
-    {
-      position: [-2.4, -2.5, 0.5],
-      size: [0.65, 3, 0.12],
-      color: 0xa8b8d2
-    },
-    {
-      position: [2.5, -2, -1],
-      size: [0.55, 2.5, 0.12],
-      color: 0xffffff
-    },
-    {
-      position: [0, 0, -4],
-      size: [3.5, 3.5, 0.12],
-      color: 0x333b4a
-    }
-  ];
-
-  panels.forEach((panel) => {
-    const mesh = new THREE.Mesh(
-      new THREE.BoxGeometry(1, 1, 1),
-      new THREE.MeshBasicMaterial({
-        color: panel.color
-      })
-    );
-
-    mesh.position.set(...panel.position);
-    mesh.scale.set(...panel.size);
-
-    envScene.add(mesh);
-  });
-
-  scene.environment = pmrem.fromScene(
-    envScene,
-    0.04
-  ).texture;
-
-  scene.environmentIntensity = 1.4;
-
-  envScene.traverse((object) => {
-    if (object.geometry) object.geometry.dispose();
-    if (object.material) object.material.dispose();
-  });
-
-  pmrem.dispose();
-}
-
-
-// ============================================
-// SCULPTURAL BLADE GEOMETRY
-// ============================================
-
-function createBladeGeometry({
-  length = 1.8,
-  radius = 0.16,
-  direction = new THREE.Vector3(0, 1, 0),
-  bend = new THREE.Vector3(0, 0, 0),
-  twist = 0
-}) {
-  const segments = 84;
-  const radialSegments = 24;
-
-  const positions = [];
-  const uvs = [];
-  const indices = [];
-
-  const dir = direction.clone().normalize();
-
-  const reference = Math.abs(dir.y) > 0.92
-    ? new THREE.Vector3(1, 0, 0)
-    : new THREE.Vector3(0, 1, 0);
-
-  const pointAt = (t) => {
-    const primary = dir.clone().multiplyScalar(
-      length * t
-    );
-
-    const curved = bend.clone().multiplyScalar(
-      Math.sin(Math.PI * t)
-    );
-
-    const secondary = new THREE.Vector3(
-      Math.sin(t * Math.PI * 1.4) * 0.035,
-      Math.sin(t * Math.PI * 2) * 0.025,
-      Math.cos(t * Math.PI * 1.2) * 0.035
-    );
-
-    return primary.add(curved).add(secondary);
-  };
-
-  for (let i = 0; i <= segments; i++) {
-    const t = i / segments;
-
-    const current = pointAt(t);
-    const next = pointAt(Math.min(1, t + 0.002));
-    const previous = pointAt(Math.max(0, t - 0.002));
-
-    const tangent = next.sub(previous).normalize();
-
-    let side = new THREE.Vector3()
-      .crossVectors(tangent, reference)
-      .normalize();
-
-    if (side.lengthSq() < 0.001) {
-      side.set(1, 0, 0);
-    }
-
-    const normal = new THREE.Vector3()
-      .crossVectors(tangent, side)
-      .normalize();
-
-    const twistAngle =
-      twist * t +
-      Math.sin(t * Math.PI) * 0.25;
-
-    side.applyAxisAngle(tangent, twistAngle);
-    normal.applyAxisAngle(tangent, twistAngle);
-
-    const swell = Math.pow(
-      Math.sin(Math.PI * t),
-      0.62
-    );
-
-    const taper = Math.pow(1 - t, 0.82);
-
-    const currentRadius =
-      radius * (0.36 + swell * 0.85) * taper;
-
-    for (let j = 0; j <= radialSegments; j++) {
-      const angle =
-        (j / radialSegments) * Math.PI * 2;
-
-      const ridge =
-        1 + Math.cos(angle * 2) * 0.12;
-
-      const horizontal =
-        Math.cos(angle) * currentRadius * ridge;
-
-      const vertical =
-        Math.sin(angle) * currentRadius * 0.34;
-
-      const vertex = current.clone()
-        .addScaledVector(side, horizontal)
-        .addScaledVector(normal, vertical);
-
-      positions.push(vertex.x, vertex.y, vertex.z);
-      uvs.push(j / radialSegments, t);
-
-      if (i < segments && j < radialSegments) {
-        const a = i * (radialSegments + 1) + j;
-        const b = a + radialSegments + 1;
-
-        indices.push(
-          a, b, a + 1,
-          b, b + 1, a + 1
-        );
-      }
+    if (loader) {
+      loader.style.display = "none";
     }
   }
 
-  const geometry = new THREE.BufferGeometry();
+  window.addEventListener("load", hideLoader, { once: true });
 
-  geometry.setAttribute(
-    "position",
-    new THREE.Float32BufferAttribute(positions, 3)
-  );
+  setTimeout(hideLoader, 5000);
 
-  geometry.setAttribute(
-    "uv",
-    new THREE.Float32BufferAttribute(uvs, 2)
-  );
+  const year = $("#year");
 
-  geometry.setIndex(indices);
-  geometry.computeVertexNormals();
-  geometry.computeBoundingSphere();
-
-  return geometry;
-}
-
-
-// ============================================
-// CREATE BLADE
-// ============================================
-
-function createBlade(config, material) {
-  const geometry = createBladeGeometry(config);
-
-  const blade = new THREE.Mesh(geometry, material);
-
-  blade.position.set(...config.origin);
-  blade.castShadow = true;
-  blade.receiveShadow = true;
-
-  sculpture.add(blade);
-
-  return blade;
-}
-
-
-// ============================================
-// CENTRAL CORE
-// ============================================
-
-function createCore() {
-  const coreGroup = new THREE.Group();
-
-  const core = new THREE.Mesh(
-    new THREE.SphereGeometry(0.31, 64, 48),
-    createMetalMaterial(0xffffff, 0.018)
-  );
-
-  core.scale.set(0.85, 1.15, 0.72);
-  coreGroup.add(core);
-
-  const innerForm = new THREE.Mesh(
-    new THREE.SphereGeometry(0.19, 48, 32),
-    createMetalMaterial(0x9faab8, 0.035)
-  );
-
-  innerForm.scale.set(0.8, 1.45, 0.7);
-  innerForm.position.set(0.06, 0.12, 0.12);
-
-  coreGroup.add(innerForm);
-  sculpture.add(coreGroup);
-}
-
-
-// ============================================
-// CHROME FILAMENTS
-// ============================================
-
-function createChromeCurve(points, radius, material) {
-  const curve = new THREE.CatmullRomCurve3(
-    points.map((point) => new THREE.Vector3(...point))
-  );
-
-  const geometry = new THREE.TubeGeometry(
-    curve,
-    100,
-    radius,
-    12,
-    false
-  );
-
-  const mesh = new THREE.Mesh(geometry, material);
-  sculpture.add(mesh);
-
-  return mesh;
-}
-
-
-// ============================================
-// BUILD SCULPTURE
-// ============================================
-
-function createSculpture() {
-  sculpture = new THREE.Group();
-  scene.add(sculpture);
-
-  const silver = createMetalMaterial(0xffffff, 0.022);
-  const platinum = createMetalMaterial(0xcbd4df, 0.035);
-  const darkChrome = createMetalMaterial(0x788596, 0.045);
-  const brightChrome = createMetalMaterial(0xffffff, 0.012);
-
-  createCore();
-
-  const blades = [
-    {
-      length: 2.15,
-      radius: 0.17,
-      origin: [0.02, 0.04, 0.03],
-      direction: new THREE.Vector3(0.28, 0.92, 0.18),
-      bend: new THREE.Vector3(0.40, 0.05, 0.16),
-      twist: 1.25,
-      material: silver
-    },
-    {
-      length: 2.05,
-      radius: 0.155,
-      origin: [-0.05, 0.03, -0.08],
-      direction: new THREE.Vector3(-0.72, 0.48, 0.16),
-      bend: new THREE.Vector3(-0.25, 0.35, 0.10),
-      twist: -1.1,
-      material: brightChrome
-    },
-    {
-      length: 2.25,
-      radius: 0.16,
-      origin: [0.04, 0.02, -0.12],
-      direction: new THREE.Vector3(0.91, 0.23, -0.12),
-      bend: new THREE.Vector3(0.10, 0.43, 0.28),
-      twist: 1.6,
-      material: platinum
-    },
-    {
-      length: 1.85,
-      radius: 0.14,
-      origin: [-0.04, 0.02, 0.12],
-      direction: new THREE.Vector3(-0.92, -0.24, 0.10),
-      bend: new THREE.Vector3(-0.12, -0.25, 0.28),
-      twist: -1.4,
-      material: silver
-    },
-    {
-      length: 1.92,
-      radius: 0.15,
-      origin: [0.03, -0.02, -0.04],
-      direction: new THREE.Vector3(0.60, -0.70, 0.12),
-      bend: new THREE.Vector3(0.35, -0.08, 0.20),
-      twist: 1.3,
-      material: brightChrome
-    },
-    {
-      length: 1.72,
-      radius: 0.13,
-      origin: [-0.02, 0.01, 0.08],
-      direction: new THREE.Vector3(-0.35, 0.30, 0.92),
-      bend: new THREE.Vector3(-0.30, 0.28, 0.05),
-      twist: -1.8,
-      material: platinum
-    },
-    {
-      length: 1.75,
-      radius: 0.135,
-      origin: [0.02, 0.01, -0.10],
-      direction: new THREE.Vector3(0.18, -0.88, -0.42),
-      bend: new THREE.Vector3(-0.25, -0.15, -0.12),
-      twist: 1.4,
-      material: darkChrome
-    },
-    {
-      length: 1.48,
-      radius: 0.12,
-      origin: [-0.02, 0.04, 0.06],
-      direction: new THREE.Vector3(-0.12, 0.12, -0.98),
-      bend: new THREE.Vector3(0.28, 0.22, -0.12),
-      twist: -1.5,
-      material: silver
-    },
-    {
-      length: 1.38,
-      radius: 0.105,
-      origin: [0.03, -0.02, 0.04],
-      direction: new THREE.Vector3(0.85, -0.28, 0.45),
-      bend: new THREE.Vector3(0.18, -0.32, 0.10),
-      twist: 1.8,
-      material: brightChrome
-    }
-  ];
-
-  blades.forEach((config) => {
-    const { material, ...bladeConfig } = config;
-    createBlade(bladeConfig, material);
-  });
-
-  createChromeCurve(
-    [
-      [-0.08, -0.12, 0.05],
-      [-0.25, -0.65, 0.14],
-      [-0.48, -1.15, 0.22],
-      [-0.42, -1.62, 0.28]
-    ],
-    0.018,
-    platinum
-  );
-
-  createChromeCurve(
-    [
-      [0.08, 0.08, -0.08],
-      [0.48, 0.42, -0.12],
-      [0.95, 0.65, -0.18],
-      [1.34, 0.52, -0.20]
-    ],
-    0.014,
-    brightChrome
-  );
-
-  createChromeCurve(
-    [
-      [-0.10, 0.05, 0.08],
-      [-0.42, 0.38, 0.28],
-      [-0.82, 0.48, 0.35],
-      [-1.12, 0.30, 0.38]
-    ],
-    0.012,
-    darkChrome
-  );
-
-  sculpture.position.set(0.28, 0.05, 0);
-  sculpture.rotation.set(0.08, -0.12, -0.08);
-
-  sculpture.scale.setScalar(
-    window.innerWidth < 600 ? 0.76 : 0.88
-  );
-}
-
-
-// ============================================
-// LIGHTING
-// ============================================
-
-function createLighting() {
-  RectAreaLightUniformsLib.init();
-
-  const lightConfigs = [
-    {
-      color: 0xffffff,
-      intensity: 20,
-      width: 0.55,
-      height: 5,
-      position: [-3.2, 1.5, 3.5]
-    },
-    {
-      color: 0xe7efff,
-      intensity: 24,
-      width: 0.42,
-      height: 4.5,
-      position: [3.2, 0.5, 2.8]
-    },
-    {
-      color: 0xffffff,
-      intensity: 16,
-      width: 4.5,
-      height: 0.45,
-      position: [0, 3.5, 1.5]
-    },
-    {
-      color: 0xa9bad2,
-      intensity: 18,
-      width: 0.55,
-      height: 4,
-      position: [-3, 0.2, -3]
-    },
-    {
-      color: 0xc9b99f,
-      intensity: 6,
-      width: 0.4,
-      height: 2.8,
-      position: [2, -2, -2]
-    }
-  ];
-
-  lightConfigs.forEach((config) => {
-    const light = new THREE.RectAreaLight(
-      config.color,
-      config.intensity,
-      config.width,
-      config.height
-    );
-
-    light.position.set(...config.position);
-    light.lookAt(0, 0, 0);
-
-    scene.add(light);
-  });
-
-  const key = new THREE.DirectionalLight(0xffffff, 1.8);
-  key.position.set(3, 5, 5);
-  scene.add(key);
-
-  const rim = new THREE.DirectionalLight(0xb8c8df, 2.2);
-  rim.position.set(-4, 1, -3);
-  scene.add(rim);
-}
-
-
-// ============================================
-// PARTICLES
-// ============================================
-
-function createParticles() {
-  const count = window.innerWidth < 600 ? 65 : 130;
-  const positions = new Float32Array(count * 3);
-
-  for (let i = 0; i < count; i++) {
-    positions[i * 3] = (Math.random() - 0.5) * 10;
-    positions[i * 3 + 1] = (Math.random() - 0.5) * 8;
-    positions[i * 3 + 2] = (Math.random() - 0.5) * 6;
+  if (year) {
+    year.textContent = new Date().getFullYear();
   }
 
-  const geometry = new THREE.BufferGeometry();
+  /* ==========================================
+     NAVIGATION MENU
+  ========================================== */
 
-  geometry.setAttribute(
-    "position",
-    new THREE.BufferAttribute(positions, 3)
-  );
+  const menuToggle = $("#menuToggle");
+  const menuClose = $("#menuClose");
+  const menuPanel = $("#menuPanel");
 
-  const material = new THREE.PointsMaterial({
-    color: 0xc9cbd0,
-    size: 0.014,
-    transparent: true,
-    opacity: 0.25,
-    sizeAttenuation: true,
-    depthWrite: false
-  });
+  function openMenu() {
+    if (!menuPanel || !menuToggle) return;
 
-  particles = new THREE.Points(geometry, material);
-  scene.add(particles);
-}
+    menuPanel.classList.add("open");
+    menuToggle.setAttribute("aria-expanded", "true");
+    menuToggle.setAttribute("aria-label", "Close menu");
 
+    menuPanel.removeAttribute("inert");
+    menuPanel.setAttribute("aria-hidden", "false");
 
-// ============================================
-// THREE.JS INITIALIZATION
-// LAZY-LOADED
-// ============================================
-
-async function initThree() {
-  if (!canvas || threeInitialized) return;
-
-  if (threeLoadPromise) {
-    return threeLoadPromise;
+    body.style.overflow = "hidden";
   }
 
-  threeLoadPromise = (async () => {
-    try {
-      const [threeModule, areaLightModule] = await Promise.all([
-        import("three"),
-        import("three/addons/lights/RectAreaLightUniformsLib.js")
-      ]);
+  function closeMenu() {
+    if (!menuPanel || !menuToggle) return;
 
-      THREE = threeModule;
+    menuPanel.classList.remove("open");
+    menuToggle.setAttribute("aria-expanded", "false");
+    menuToggle.setAttribute("aria-label", "Open menu");
 
-      RectAreaLightUniformsLib =
-        areaLightModule.RectAreaLightUniformsLib;
+    menuPanel.setAttribute("inert", "");
+    menuPanel.setAttribute("aria-hidden", "true");
 
-      clock = new THREE.Clock();
+    body.style.overflow = "";
+  }
 
-      const width = Math.max(canvas.clientWidth, 1);
-      const height = Math.max(canvas.clientHeight, 1);
+  menuToggle?.addEventListener("click", () => {
+    menuPanel?.classList.contains("open")
+      ? closeMenu()
+      : openMenu();
+  });
 
-      scene = new THREE.Scene();
+  menuClose?.addEventListener("click", closeMenu);
 
-      camera = new THREE.PerspectiveCamera(
-        34,
-        width / height,
-        0.1,
-        100
-      );
+  $$("#menuPanel a").forEach(link => {
+    link.addEventListener("click", closeMenu);
+  });
 
-      camera.position.set(0, 0, 6.4);
+  /* ==========================================
+     ESCAPE KEY
+  ========================================== */
 
-      renderer = new THREE.WebGLRenderer({
-        canvas,
-        antialias: true,
-        alpha: true,
-        powerPreference: "high-performance"
+  document.addEventListener("keydown", event => {
+    if (event.key !== "Escape") return;
+
+    closeMenu();
+
+    if ($("#caseStudyModal")?.classList.contains("is-open")) {
+      closeCaseStudy();
+    }
+  });
+
+  /* ==========================================
+     CURSOR GLOW
+  ========================================== */
+
+  const cursorGlow = $("#cursorGlow");
+
+  if (cursorGlow && !isTouchDevice && !prefersReducedMotion) {
+    let mouseX = window.innerWidth / 2;
+    let mouseY = window.innerHeight / 2;
+    let currentX = mouseX;
+    let currentY = mouseY;
+
+    document.addEventListener("mousemove", event => {
+      mouseX = event.clientX;
+      mouseY = event.clientY;
+    });
+
+    function animateCursor() {
+      currentX += (mouseX - currentX) * 0.12;
+      currentY += (mouseY - currentY) * 0.12;
+
+      cursorGlow.style.left = `${currentX}px`;
+      cursorGlow.style.top = `${currentY}px`;
+
+      requestAnimationFrame(animateCursor);
+    }
+
+    animateCursor();
+
+    $$("a, button, [data-magnetic]").forEach(element => {
+      element.addEventListener("mouseenter", () => {
+        cursorGlow.classList.add("cursor-hover");
       });
 
-      renderer.setPixelRatio(getRenderPixelRatio());
-      renderer.setSize(width, height);
+      element.addEventListener("mouseleave", () => {
+        cursorGlow.classList.remove("cursor-hover");
+        cursorGlow.classList.remove("cursor-project");
+        cursorGlow.removeAttribute("data-label");
+      });
+    });
 
-      renderer.outputColorSpace = THREE.SRGBColorSpace;
-      renderer.toneMapping = THREE.ACESFilmicToneMapping;
-      renderer.toneMappingExposure = 1.15;
+    $$("[data-case-study]").forEach(card => {
+      card.addEventListener("mouseenter", () => {
+        cursorGlow.classList.add("cursor-project");
+        cursorGlow.setAttribute("data-label", "VIEW PROJECT");
+      });
+    });
+  }
 
-      createEnvironment();
-      createLighting();
-      createSculpture();
-      createParticles();
+  /* ==========================================
+     GSAP INITIALISATION
+  ========================================== */
 
-      threeInitialized = true;
+  let gsapReady = false;
 
-      if (reducedMotion || !isPageVisible) {
-        renderer.render(scene, camera);
-      } else {
-        clock.start();
-        animate();
-      }
+  if (window.gsap) {
+    gsapReady = true;
 
-    } catch (error) {
-      console.error(
-        "MYRLORE 3D initialization failed:",
-        error
+    if (window.ScrollTrigger) {
+      gsap.registerPlugin(ScrollTrigger);
+    }
+  }
+
+  /* ==========================================
+     REVEAL ANIMATIONS
+  ========================================== */
+
+  const revealElements = $$(".reveal");
+
+  if (gsapReady && !prefersReducedMotion) {
+    revealElements.forEach(element => {
+      gsap.fromTo(
+        element,
+        {
+          opacity: 0,
+          y: 45
+        },
+        {
+          opacity: 1,
+          y: 0,
+          duration: 1.1,
+          ease: "power3.out",
+          scrollTrigger: {
+            trigger: element,
+            start: "top 88%",
+            once: true
+          }
+        }
       );
-
-      canvas.style.display = "none";
-    }
-  })();
-
-  return threeLoadPromise;
-}
-
-
-// ============================================
-// LAZY-LOAD SCHEDULER
-// ============================================
-
-function scheduleThreeLoad() {
-  if (!canvas) return;
-
-  if (!("IntersectionObserver" in window)) {
-    initThree();
-    return;
-  }
-
-  const observer = new IntersectionObserver(
-    (entries) => {
-      const shouldLoad = entries.some(
-        (entry) => entry.isIntersecting
-      );
-
-      if (shouldLoad) {
-        observer.disconnect();
-        initThree();
-      }
-    },
-    {
-      rootMargin: "250px 0px"
-    }
-  );
-
-  observer.observe(canvas);
-}
-
-
-// ============================================
-// THREE.JS ANIMATION
-// ============================================
-
-function animate() {
-  if (reducedMotion || !isPageVisible) return;
-
-  animationFrame = requestAnimationFrame(animate);
-
-  if (!renderer || !scene || !camera) return;
-
-  const time = clock.getElapsedTime();
-
-  targetX = lerp(targetX, pointerX, 0.035);
-  targetY = lerp(targetY, pointerY, 0.035);
-
-  if (sculpture) {
-    sculpture.rotation.y =
-      -0.12 +
-      targetX * 0.22 +
-      Math.sin(time * 0.16) * 0.025;
-
-    sculpture.rotation.x =
-      0.08 +
-      targetY * 0.15 +
-      Math.cos(time * 0.13) * 0.018;
-
-    sculpture.rotation.z =
-      -0.08 +
-      Math.sin(time * 0.12) * 0.012;
-
-    const baseScale =
-      window.innerWidth < 600 ? 0.76 : 0.88;
-
-    const finalScale =
-      window.innerWidth < 600 ? 0.65 : 0.76;
-
-    sculpture.scale.setScalar(
-      lerp(baseScale, finalScale, scrollProgress)
-    );
-
-    sculpture.position.y =
-      0.05 -
-      scrollProgress * 0.22 +
-      Math.sin(time * 0.3) * 0.018;
-  }
-
-  if (particles) {
-    particles.rotation.y = time * 0.007;
-    particles.rotation.x = Math.sin(time * 0.07) * 0.02;
-  }
-
-  renderer.render(scene, camera);
-}
-
-
-// ============================================
-// PAGE VISIBILITY
-// ============================================
-
-document.addEventListener("visibilitychange", () => {
-  isPageVisible = !document.hidden;
-
-  if (!renderer || reducedMotion) return;
-
-  if (isPageVisible) {
-    clock.start();
-
-    if (animationFrame === null) {
-      animate();
-    }
-  } else if (animationFrame !== null) {
-    cancelAnimationFrame(animationFrame);
-    animationFrame = null;
-  }
-});
-
-
-// ============================================
-// CURSOR
-// ============================================
-
-let cursorTargetX = window.innerWidth / 2;
-let cursorTargetY = window.innerHeight / 2;
-let cursorCurrentX = cursorTargetX;
-let cursorCurrentY = cursorTargetY;
-
-let cursorAnimationFrame = null;
-
-function animateCursor() {
-  if (
-    !cursorGlow ||
-    !finePointer ||
-    reducedMotion ||
-    !isPageVisible
-  ) {
-    cursorAnimationFrame = null;
-    return;
-  }
-
-  cursorCurrentX = lerp(cursorCurrentX, cursorTargetX, 0.16);
-  cursorCurrentY = lerp(cursorCurrentY, cursorTargetY, 0.16);
-
-  cursorGlow.style.left = `${cursorCurrentX}px`;
-  cursorGlow.style.top = `${cursorCurrentY}px`;
-
-  cursorAnimationFrame = requestAnimationFrame(animateCursor);
-}
-
-if (cursorGlow && finePointer && !reducedMotion) {
-  animateCursor();
-}
-
-window.addEventListener(
-  "pointermove",
-  (event) => {
-    pointerX = (event.clientX / window.innerWidth) * 2 - 1;
-    pointerY = -(event.clientY / window.innerHeight) * 2 + 1;
-
-    if (finePointer) {
-      cursorTargetX = event.clientX;
-      cursorTargetY = event.clientY;
-    }
-  },
-  { passive: true }
-);
-
-
-// ============================================
-// SCROLL PROGRESS
-// ============================================
-
-function updateScrollProgress() {
-  const hero = document.querySelector(".hero");
-  if (!hero) return;
-
-  const rect = hero.getBoundingClientRect();
-
-  scrollProgress = clamp(
-    -rect.top / Math.max(hero.offsetHeight, 1),
-    0,
-    1
-  );
-}
-
-window.addEventListener("scroll", updateScrollProgress, {
-  passive: true
-});
-
-
-// ============================================
-// RESIZE
-// ============================================
-
-function resizeScene() {
-  if (!camera || !renderer || !canvas) return;
-
-  const width = canvas.clientWidth;
-  const height = canvas.clientHeight;
-
-  if (!width || !height) return;
-
-  camera.aspect = width / height;
-  camera.updateProjectionMatrix();
-
-  renderer.setPixelRatio(getRenderPixelRatio());
-  renderer.setSize(width, height);
-
-  if (reducedMotion || !isPageVisible) {
-    renderer.render(scene, camera);
-  }
-}
-
-window.addEventListener("resize", resizeScene);
-
-
-// ============================================
-// NAVIGATION MENU
-// ============================================
-
-const menuToggle = document.querySelector("#menuToggle");
-const menuClose = document.querySelector("#menuClose");
-const menuPanel = document.querySelector("#menuPanel");
-
-function openMenu() {
-  if (!menuPanel) return;
-
-  menuPanel.classList.add("open");
-  menuToggle?.setAttribute("aria-expanded", "true");
-  document.body.classList.add("menu-open");
-}
-
-function closeMenu() {
-  if (!menuPanel) return;
-
-  menuPanel.classList.remove("open");
-  menuToggle?.setAttribute("aria-expanded", "false");
-  document.body.classList.remove("menu-open");
-}
-
-menuToggle?.addEventListener("click", openMenu);
-menuClose?.addEventListener("click", closeMenu);
-
-document.querySelectorAll(".menu-panel a").forEach((link) => {
-  link.addEventListener("click", closeMenu);
-});
-
-document.addEventListener("keydown", (event) => {
-  if (event.key === "Escape") closeMenu();
-});
-
-
-// ============================================
-// GSAP ANIMATIONS
-// ============================================
-
-function initAnimations() {
-  const revealElements = document.querySelectorAll(".reveal");
-
-  if (
-    !window.gsap ||
-    !window.ScrollTrigger ||
-    reducedMotion
-  ) {
-    revealElements.forEach((element) => {
+    });
+  } else {
+    revealElements.forEach(element => {
       element.style.opacity = "1";
       element.style.transform = "none";
     });
-
-    return;
   }
 
-  const gsap = window.gsap;
-  const ScrollTrigger = window.ScrollTrigger;
+  /* ==========================================
+     HERO ENTRANCE
+  ========================================== */
 
-  gsap.registerPlugin(ScrollTrigger);
+  const heroElements = [
+    $(".hero-meta"),
+    $(".eyebrow"),
+    $(".hero h1"),
+    $(".hero-bottom"),
+    $(".hero-footer")
+  ].filter(Boolean);
 
-  const heroTimeline = gsap.timeline({ delay: 0.25 });
-
-  heroTimeline
-    .from(".hero-meta", {
+  if (gsapReady && !prefersReducedMotion) {
+    gsap.from(heroElements, {
       opacity: 0,
-      y: 18,
-      duration: 0.8
-    })
-    .from(".eyebrow", {
-      opacity: 0,
-      y: 15,
-      duration: 0.7
-    }, "-=0.45")
-    .from(".hero h1", {
-      opacity: 0,
-      y: 55,
-      duration: 1.15,
-      ease: "power4.out"
-    }, "-=0.35")
-    .from(".hero-bottom", {
-      opacity: 0,
-      y: 20,
-      duration: 0.8
-    }, "-=0.6");
-
-  gsap.utils.toArray(".reveal").forEach((element) => {
-    gsap.fromTo(
-      element,
-      { opacity: 0, y: 35 },
-      {
-        opacity: 1,
-        y: 0,
-        duration: 1,
-        ease: "power3.out",
-        scrollTrigger: {
-          trigger: element,
-          start: "top 86%",
-          once: true
-        }
-      }
-    );
-  });
-
-  gsap.utils.toArray(".service-item").forEach((item, index) => {
-    gsap.from(item, {
-      opacity: 0,
-      x: -25,
-      duration: 0.8,
-      delay: index * 0.06,
-      ease: "power3.out",
-      scrollTrigger: {
-        trigger: item,
-        start: "top 90%",
-        once: true
-      }
+      y: 30,
+      duration: 1.1,
+      stagger: 0.12,
+      delay: 0.25,
+      ease: "power3.out"
     });
-  });
-
-  gsap.utils.toArray(".work-card").forEach((card) => {
-    gsap.from(card, {
-      opacity: 0,
-      y: 35,
-      duration: 0.9,
-      ease: "power3.out",
-      scrollTrigger: {
-        trigger: card,
-        start: "top 88%",
-        once: true
-      }
-    });
-  });
-
-  gsap.from(".intro-track", {
-    opacity: 0.4,
-    scrollTrigger: {
-      trigger: ".intro-band",
-      start: "top 95%",
-      end: "bottom 70%",
-      scrub: 1
-    }
-  });
-}
-
-
-// ============================================
-// INTERACTIVE SERVICES ACCORDION
-// ============================================
-
-const serviceItems = document.querySelectorAll(".service-item");
-const serviceTriggers = document.querySelectorAll(".service-trigger");
-
-let activeServicePanel = null;
-
-function animateServiceOpen(panel) {
-  panel.hidden = false;
-
-  panel.style.height = "0px";
-
-  const fullHeight = panel.scrollHeight;
-
-  if (reducedMotion) {
-    panel.style.height = "auto";
-    return;
   }
 
-  if (window.gsap) {
-    window.gsap.killTweensOf(panel);
+  /* ==========================================
+     INTERACTIVE SERVICES
+  ========================================== */
 
-    window.gsap.fromTo(
-      panel,
-      { height: 0 },
-      {
-        height: fullHeight,
-        duration: 0.55,
-        ease: "power3.inOut",
-        onComplete: () => {
-          panel.style.height = "auto";
-        }
-      }
-    );
+  const serviceItems = $$(".service-item");
 
-    return;
-  }
+  function closeService(item) {
+    const trigger = $(".service-trigger", item);
+    const panel = $(".service-details", item);
 
-  if (panel.animate) {
-    const animation = panel.animate(
-      [
-        { height: "0px" },
-        { height: `${fullHeight}px` }
-      ],
-      {
-        duration: 500,
-        easing: "cubic-bezier(.22,1,.36,1)"
-      }
-    );
+    if (!trigger || !panel) return;
 
-    animation.onfinish = () => {
-      panel.style.height = "auto";
-    };
+    trigger.setAttribute("aria-expanded", "false");
+    item.classList.remove("is-active");
 
-    return;
-  }
-
-  panel.style.height = "auto";
-}
-
-function animateServiceClose(panel, onComplete) {
-  const currentHeight = panel.scrollHeight;
-
-  if (reducedMotion) {
-    panel.hidden = true;
-    panel.style.height = "";
-    onComplete?.();
-    return;
-  }
-
-  if (window.gsap) {
-    window.gsap.killTweensOf(panel);
-
-    window.gsap.fromTo(
-      panel,
-      { height: currentHeight },
-      {
+    if (gsapReady && !prefersReducedMotion && !panel.hidden) {
+      gsap.to(panel, {
         height: 0,
-        duration: 0.4,
-        ease: "power3.inOut",
+        opacity: 0,
+        duration: 0.35,
+        ease: "power2.inOut",
         onComplete: () => {
           panel.hidden = true;
           panel.style.height = "";
-          onComplete?.();
+          panel.style.opacity = "";
         }
-      }
-    );
-
-    return;
-  }
-
-  if (panel.animate) {
-    const animation = panel.animate(
-      [
-        { height: `${currentHeight}px` },
-        { height: "0px" }
-      ],
-      {
-        duration: 400,
-        easing: "cubic-bezier(.22,1,.36,1)"
-      }
-    );
-
-    animation.onfinish = () => {
+      });
+    } else {
       panel.hidden = true;
       panel.style.height = "";
-      onComplete?.();
-    };
-
-    return;
-  }
-
-  panel.hidden = true;
-  panel.style.height = "";
-  onComplete?.();
-}
-
-function closeService(item) {
-  const trigger = item.querySelector(".service-trigger");
-  const panelId = trigger?.getAttribute("aria-controls");
-  const panel = panelId
-    ? document.getElementById(panelId)
-    : null;
-
-  item.classList.remove("is-active");
-
-  trigger?.setAttribute("aria-expanded", "false");
-
-  if (!panel || panel.hidden) return;
-
-  animateServiceClose(panel);
-}
-
-function openService(item) {
-  const trigger = item.querySelector(".service-trigger");
-  const panelId = trigger?.getAttribute("aria-controls");
-  const panel = panelId
-    ? document.getElementById(panelId)
-    : null;
-
-  if (!trigger || !panel) {
-    console.warn("MYRLORE service panel is missing:", item);
-    return;
-  }
-
-  serviceItems.forEach((otherItem) => {
-    if (otherItem !== item) {
-      closeService(otherItem);
+      panel.style.opacity = "";
     }
-  });
-
-  item.classList.add("is-active");
-  trigger.setAttribute("aria-expanded", "true");
-
-  activeServicePanel = panel;
-
-  animateServiceOpen(panel);
-}
-
-function toggleService(item) {
-  const trigger = item.querySelector(".service-trigger");
-
-  if (!trigger) return;
-
-  const isOpen =
-    trigger.getAttribute("aria-expanded") === "true";
-
-  if (isOpen) {
-    closeService(item);
-    activeServicePanel = null;
-  } else {
-    openService(item);
   }
-}
 
-serviceTriggers.forEach((trigger) => {
-  trigger.addEventListener("click", () => {
-    const item = trigger.closest(".service-item");
+  function openService(item) {
+    const trigger = $(".service-trigger", item);
+    const panel = $(".service-details", item);
 
-    if (!item) return;
+    if (!trigger || !panel) return;
 
-    toggleService(item);
-  });
-});
+    trigger.setAttribute("aria-expanded", "true");
+    item.classList.add("is-active");
 
-window.addEventListener("resize", () => {
-  if (!activeServicePanel || activeServicePanel.hidden) return;
+    panel.hidden = false;
 
-  if (activeServicePanel.style.height === "auto") return;
+    if (gsapReady && !prefersReducedMotion) {
+      gsap.fromTo(
+        panel,
+        {
+          height: 0,
+          opacity: 0
+        },
+        {
+          height: "auto",
+          opacity: 1,
+          duration: 0.5,
+          ease: "power3.out"
+        }
+      );
+    }
+  }
 
-  if (window.gsap) {
-    window.gsap.set(activeServicePanel, {
-      height: activeServicePanel.scrollHeight
+  serviceItems.forEach(item => {
+    const trigger = $(".service-trigger", item);
+
+    if (!trigger) return;
+
+    trigger.addEventListener("click", () => {
+      const isActive = item.classList.contains("is-active");
+
+      serviceItems.forEach(other => {
+        if (other !== item) {
+          closeService(other);
+        }
+      });
+
+      if (isActive) {
+        closeService(item);
+      } else {
+        openService(item);
+      }
     });
-  }
-});
-
-
-// ============================================
-// FOOTER YEAR
-// ============================================
-
-const yearElement = document.querySelector("#year");
-
-if (yearElement) {
-  yearElement.textContent = new Date().getFullYear();
-}
-
-
-// ============================================
-// INTERACTIVE CASE STUDIES
-// ============================================
-
-const caseModal = document.querySelector("#caseStudyModal");
-const casePanel = document.querySelector(".case-panel");
-const caseClose = document.querySelector("#caseClose");
-
-const caseTitle = document.querySelector("#caseTitle");
-const caseCategory = document.querySelector("#caseCategory");
-const caseSummary = document.querySelector("#caseSummary");
-const caseOverview = document.querySelector("#caseOverview");
-const caseFeatures = document.querySelector("#caseFeatures");
-const caseTech = document.querySelector("#caseTech");
-
-const caseHeroArt = document.querySelector("#caseHeroArt");
-const caseSymbol = document.querySelector("#caseSymbol");
-const caseIndex = document.querySelector("#caseIndex");
-const caseArtCaption = document.querySelector("#caseArtCaption");
-
-let lastCaseTrigger = null;
-
-const caseStudies = {
-  corroguard: {
-    index: "PROJECT / 001",
-    title: "CorroGuard",
-    category: "ENGINEERING · DIGITAL PLATFORM",
-    symbol: "CG",
-    caption: "MATERIAL INTELLIGENCE",
-    theme: "corro",
-
-    summary:
-      "An interactive engineering chemistry platform exploring corrosion analysis, material behaviour and prevention strategies.",
-
-    overview:
-      "CorroGuard is an educational digital platform designed to make corrosion concepts easier to explore. It brings together an illustrative risk calculator, material information and interactive engineering tools in one experience.",
-
-    features: [
-      "Interactive corrosion risk calculator",
-      "Metal material information and comparisons",
-      "Metal compatibility checker",
-      "Corrosion types and engineering explanations",
-      "Prevention methods and case studies"
-    ],
-
-    technology: [
-      "HTML",
-      "CSS",
-      "JavaScript",
-      "Chart.js",
-      "Engineering Chemistry"
-    ]
-  },
-
-  floodwatch: {
-    index: "PROJECT / 002",
-    title: "FloodWatch Chennai",
-    category: "DATA · MAPPING · WEB PLATFORM",
-    symbol: "FW",
-    caption: "RAINFALL / DRAINAGE / INSIGHTS",
-    theme: "flood",
-
-    summary:
-      "A web-based flood awareness and analysis platform focused on rainfall patterns, drainage infrastructure and flood-risk information in Chennai.",
-
-    overview:
-      "FloodWatch Chennai brings environmental and infrastructure information into a single interactive platform. It combines rainfall analysis with drainage mapping and location-based exploration to make flood-related information easier to understand.",
-
-    features: [
-      "Rainfall statistics and interactive graphs",
-      "Annual rainfall comparisons",
-      "Interactive drainage infrastructure map",
-      "Zone and ward search with map highlighting",
-      "Drainage condition details and flood-risk insights"
-    ],
-
-    technology: [
-      "HTML",
-      "CSS",
-      "JavaScript",
-      "Chart.js",
-      "Leaflet",
-      "GeoJSON"
-    ]
-  }
-};
-
-function populateCaseStudy(project) {
-  if (!project) return;
-
-  if (
-    !caseIndex ||
-    !caseTitle ||
-    !caseCategory ||
-    !caseSummary ||
-    !caseOverview ||
-    !caseFeatures ||
-    !caseTech ||
-    !caseHeroArt ||
-    !caseSymbol ||
-    !caseArtCaption
-  ) {
-    console.warn("MYRLORE case study elements are incomplete.");
-    return;
-  }
-
-  caseIndex.textContent = project.index;
-  caseTitle.textContent = project.title;
-  caseCategory.textContent = project.category;
-  caseSummary.textContent = project.summary;
-  caseOverview.textContent = project.overview;
-  caseSymbol.textContent = project.symbol;
-  caseArtCaption.textContent = project.caption;
-
-  caseFeatures.replaceChildren();
-
-  project.features.forEach((feature) => {
-    const item = document.createElement("li");
-    item.textContent = feature;
-    caseFeatures.appendChild(item);
   });
 
-  caseTech.replaceChildren();
+  /* ==========================================
+     CASE STUDY DATA
+  ========================================== */
 
-  project.technology.forEach((technology) => {
-    const tag = document.createElement("span");
-    tag.textContent = technology;
-    caseTech.appendChild(tag);
-  });
+  const caseStudies = {
+    corroguard: {
+      index: "PROJECT / 001",
+      symbol: "CG",
+      caption: "MATERIAL INTELLIGENCE",
+      category: "ENGINEERING · DIGITAL PLATFORM",
+      title: "CorroGuard",
+      summary:
+        "An interactive engineering chemistry platform exploring corrosion analysis, material behaviour and prevention strategies.",
+      overview:
+        "CorroGuard is an educational digital platform designed to make corrosion science more accessible through interactive tools, material information and practical engineering concepts.",
+      features: [
+        "Interactive corrosion risk calculator",
+        "Metal material information and comparisons",
+        "Metal compatibility checker",
+        "Corrosion types and case studies",
+        "Corrosion prevention information"
+      ],
+      technology: [
+        "HTML",
+        "CSS",
+        "JavaScript",
+        "Chart.js"
+      ]
+    },
 
-  const backgrounds = {
-    corro:
-      "radial-gradient(circle at 50% 45%, #555a5d, #24282c 48%, #121417 100%)",
-
-    flood:
-      "radial-gradient(ellipse at 50% 50%, #46565a, #1c272c 75%)"
+    floodwatch: {
+      index: "PROJECT / 002",
+      symbol: "FW",
+      caption: "RAINFALL · MAPPING · INSIGHT",
+      category: "DATA · MAPPING · WEB PLATFORM",
+      title: "FloodWatch Chennai",
+      summary:
+        "A web-based flood awareness and risk analysis platform focused on rainfall information and urban drainage infrastructure.",
+      overview:
+        "FloodWatch Chennai explores how rainfall information, drainage infrastructure data and interactive mapping can be brought together to support better understanding of urban flood-related conditions.",
+      features: [
+        "Rainfall data visualisation",
+        "Historical annual rainfall comparisons",
+        "Interactive drainage infrastructure map",
+        "Zone and ward-based search",
+        "Drainage condition information",
+        "Flood awareness insights"
+      ],
+      technology: [
+        "HTML",
+        "CSS",
+        "JavaScript",
+        "Leaflet",
+        "Chart.js",
+        "GeoJSON"
+      ]
+    }
   };
 
-  caseHeroArt.style.background =
-    backgrounds[project.theme] || backgrounds.corro;
+  /* ==========================================
+     CASE STUDY MODAL
+  ========================================== */
 
-  caseSymbol.style.color = "#e8e5dc";
+  const caseModal = $("#caseStudyModal");
+  const casePanel = $(".case-panel", caseModal || document);
+  const caseClose = $("#caseClose");
 
-  caseSymbol.style.textShadow =
-    "0 12px 45px rgba(0,0,0,.45)";
-}
+  let previousFocus = null;
 
-function openCaseStudy(projectId, trigger) {
-  const project = caseStudies[projectId];
+  function populateCaseStudy(project) {
+    if (!caseStudies[project]) return false;
 
-  if (!project || !caseModal || !casePanel) return;
+    const data = caseStudies[project];
 
-  lastCaseTrigger = trigger;
+    const setText = (selector, value) => {
+      const element = $(selector);
 
-  populateCaseStudy(project);
+      if (element) {
+        element.textContent = value;
+      }
+    };
 
-  caseModal.classList.add("is-open");
-  caseModal.setAttribute("aria-hidden", "false");
+    setText("#caseIndex", data.index);
+    setText("#caseSymbol", data.symbol);
+    setText("#caseArtCaption", data.caption);
+    setText("#caseCategory", data.category);
+    setText("#caseTitle", data.title);
+    setText("#caseSummary", data.summary);
+    setText("#caseOverview", data.overview);
 
-  caseModal.removeAttribute("inert");
+    const features = $("#caseFeatures");
+    const technology = $("#caseTech");
 
-  document.body.classList.add("case-open");
+    if (features) {
+      features.replaceChildren();
 
-  casePanel.scrollTop = 0;
+      data.features.forEach(feature => {
+        const li = document.createElement("li");
+        li.textContent = feature;
+        features.appendChild(li);
+      });
+    }
 
-  requestAnimationFrame(() => {
-    casePanel.focus({ preventScroll: true });
-  });
-}
+    if (technology) {
+      technology.replaceChildren();
 
-function closeCaseStudy() {
-  if (!caseModal || !caseModal.classList.contains("is-open")) {
-    return;
+      data.technology.forEach(item => {
+        const span = document.createElement("span");
+        span.textContent = item;
+        technology.appendChild(span);
+      });
+    }
+
+    const art = $("#caseHeroArt");
+
+    if (art) {
+      art.classList.toggle(
+        "case-flood",
+        project === "floodwatch"
+      );
+    }
+
+    return true;
   }
 
-  caseModal.classList.remove("is-open");
-  caseModal.setAttribute("aria-hidden", "true");
+  function openCaseStudy(project, trigger) {
+    if (!caseModal || !casePanel) return;
 
-  document.body.classList.remove("case-open");
+    if (!populateCaseStudy(project)) return;
 
-  lastCaseTrigger?.focus({ preventScroll: true });
-}
+    previousFocus = trigger || document.activeElement;
 
-document.querySelectorAll("[data-case-study]").forEach((card) => {
-  card.addEventListener("click", (event) => {
-    event.preventDefault();
+    caseModal.classList.add("is-open");
+    caseModal.setAttribute("aria-hidden", "false");
+    caseModal.removeAttribute("inert");
 
-    openCaseStudy(card.dataset.caseStudy, card);
-  });
-});
+    body.classList.add("case-open");
 
-caseClose?.addEventListener("click", closeCaseStudy);
-
-caseModal?.querySelectorAll("[data-case-close]").forEach((element) => {
-  element.addEventListener("click", closeCaseStudy);
-});
-
-document.addEventListener("keydown", (event) => {
-  if (!caseModal?.classList.contains("is-open")) return;
-
-  if (event.key === "Escape") {
-    closeCaseStudy();
+    requestAnimationFrame(() => {
+      caseClose?.focus();
+    });
   }
 
-  if (event.key === "Tab" && casePanel) {
-    const focusable = casePanel.querySelectorAll(
-      'a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])'
-    );
+  function closeCaseStudy() {
+    if (!caseModal) return;
+
+    caseModal.classList.remove("is-open");
+    caseModal.setAttribute("aria-hidden", "true");
+
+    // Restore inert state after closing.
+    caseModal.setAttribute("inert", "");
+
+    body.classList.remove("case-open");
+
+    if (previousFocus && typeof previousFocus.focus === "function") {
+      previousFocus.focus();
+    }
+  }
+
+  $$("[data-case-study]").forEach(card => {
+    card.addEventListener("click", event => {
+      event.preventDefault();
+
+      const project = card.dataset.caseStudy;
+
+      openCaseStudy(project, card);
+    });
+  });
+
+  $$("[data-case-close]").forEach(element => {
+    element.addEventListener("click", closeCaseStudy);
+  });
+
+  caseClose?.addEventListener("click", closeCaseStudy);
+
+  casePanel?.addEventListener("keydown", event => {
+    if (event.key !== "Tab") return;
+
+    const focusable = $$(
+      'a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])',
+      casePanel
+    ).filter(element => element.offsetParent !== null);
 
     if (!focusable.length) return;
 
@@ -1475,383 +502,574 @@ document.addEventListener("keydown", (event) => {
     if (event.shiftKey && document.activeElement === first) {
       event.preventDefault();
       last.focus();
-    } else if (
-      !event.shiftKey &&
-      document.activeElement === last
-    ) {
+    } else if (!event.shiftKey && document.activeElement === last) {
       event.preventDefault();
       first.focus();
     }
-  }
-});
-
-
-// ============================================
-// MAGNETIC INTERACTIONS
-// ============================================
-
-const magneticElements = document.querySelectorAll(
-  ".round-link, .contact-link, .text-link, .menu-toggle, .case-close, .case-bottom-close"
-);
-
-if (finePointer && !reducedMotion) {
-  magneticElements.forEach((element) => {
-    element.addEventListener("pointermove", (event) => {
-      const rect = element.getBoundingClientRect();
-
-      const centerX = rect.left + rect.width / 2;
-      const centerY = rect.top + rect.height / 2;
-
-      const distanceX = event.clientX - centerX;
-      const distanceY = event.clientY - centerY;
-
-      const strength = element.classList.contains("contact-link")
-        ? 0.10
-        : 0.22;
-
-      const maxDistance = element.classList.contains("contact-link")
-        ? 7
-        : 10;
-
-      const moveX = clamp(
-        distanceX * strength,
-        -maxDistance,
-        maxDistance
-      );
-
-      const moveY = clamp(
-        distanceY * strength,
-        -maxDistance,
-        maxDistance
-      );
-
-      element.style.translate = `${moveX}px ${moveY}px`;
-    });
-
-    element.addEventListener("pointerleave", () => {
-      element.style.translate = "0px 0px";
-    });
-  });
-}
-
-
-// ============================================
-// PROJECT CARD CURSOR LABEL
-// ============================================
-
-document.querySelectorAll(".work-card").forEach((card) => {
-  card.addEventListener("pointerenter", () => {
-    if (!cursorGlow || !finePointer || reducedMotion) return;
-
-    cursorGlow.classList.add("cursor-project");
-    cursorGlow.dataset.label = "VIEW PROJECT";
   });
 
-  card.addEventListener("pointerleave", () => {
-    if (!cursorGlow) return;
+  /* ==========================================
+     MAGNETIC INTERACTIONS
+  ========================================== */
 
-    cursorGlow.classList.remove("cursor-project");
-    cursorGlow.dataset.label = "";
-  });
-});
-
-
-// ============================================
-// INTERACTIVE CURSOR STATES
-// ============================================
-
-document.querySelectorAll(
-  "a, button, .work-card, .service-item"
-).forEach((element) => {
-  element.addEventListener("pointerenter", () => {
-    if (!cursorGlow || !finePointer || reducedMotion) return;
-
-    cursorGlow.classList.add("cursor-hover");
-  });
-
-  element.addEventListener("pointerleave", () => {
-    if (!cursorGlow) return;
-
-    cursorGlow.classList.remove("cursor-hover");
-  });
-});
-
-
-// ============================================
-// CINEMATIC PAGE TRANSITIONS
-// ============================================
-
-const transitionLayer = document.querySelector("#pageTransition");
-const transitionCurtain = document.querySelector(".transition-curtain");
-const transitionContent = document.querySelector(".transition-content");
-const transitionWordmark = document.querySelector(".transition-wordmark");
-const transitionCaption = document.querySelector(".transition-caption");
-const transitionProgress = document.querySelector(".transition-progress span");
-
-let isTransitioning = false;
-
-function setTransitionState(active) {
-  if (!transitionLayer) return;
-
-  transitionLayer.classList.toggle("is-active", active);
-  transitionLayer.setAttribute(
-    "aria-hidden",
-    active ? "false" : "true"
+  const magneticElements = $$(
+    ".round-link, .contact-link, .text-link, .menu-toggle, .case-close, .case-bottom-close"
   );
-}
 
-function animateTransitionIn() {
-  if (!transitionLayer || !transitionCurtain) {
-    return Promise.resolve();
-  }
+  if (!isTouchDevice && !prefersReducedMotion) {
+    magneticElements.forEach(element => {
+      element.addEventListener("mousemove", event => {
+        const rect = element.getBoundingClientRect();
 
-  setTransitionState(true);
+        const x = event.clientX - rect.left - rect.width / 2;
+        const y = event.clientY - rect.top - rect.height / 2;
 
-  if (
-    reducedMotion ||
-    !window.gsap ||
-    !transitionContent ||
-    !transitionProgress
-  ) {
-    transitionCurtain.style.transform = "scaleY(1)";
+        element.style.translate =
+          `${x * 0.12}px ${y * 0.12}px`;
+      });
 
-    if (transitionContent) {
-      transitionContent.style.opacity = "1";
-    }
-
-    return new Promise((resolve) => {
-      setTimeout(resolve, 150);
-    });
-  }
-
-  const gsap = window.gsap;
-
-  gsap.killTweensOf([
-    transitionCurtain,
-    transitionContent,
-    transitionWordmark,
-    transitionCaption,
-    transitionProgress
-  ]);
-
-  gsap.set(transitionCurtain, {
-    transformOrigin: "bottom center",
-    scaleY: 0
-  });
-
-  gsap.set(transitionContent, {
-    opacity: 0,
-    y: 18
-  });
-
-  gsap.set(transitionProgress, {
-    scaleX: 0,
-    transformOrigin: "left center"
-  });
-
-  return new Promise((resolve) => {
-    gsap.timeline({
-      onComplete: resolve
-    })
-      .to(transitionCurtain, {
-        scaleY: 1,
-        duration: 0.7,
-        ease: "power4.inOut"
-      })
-      .to(transitionContent, {
-        opacity: 1,
-        y: 0,
-        duration: 0.5,
-        ease: "power3.out"
-      }, "-=0.15")
-      .to(transitionProgress, {
-        scaleX: 1,
-        duration: 0.5,
-        ease: "power2.inOut"
-      }, "-=0.2");
-  });
-}
-
-function animateTransitionOut() {
-  if (!transitionLayer || !transitionCurtain) {
-    return Promise.resolve();
-  }
-
-  if (
-    reducedMotion ||
-    !window.gsap ||
-    !transitionContent
-  ) {
-    transitionCurtain.style.transform = "scaleY(0)";
-
-    if (transitionContent) {
-      transitionContent.style.opacity = "0";
-    }
-
-    setTransitionState(false);
-
-    return Promise.resolve();
-  }
-
-  const gsap = window.gsap;
-
-  return new Promise((resolve) => {
-    gsap.timeline({
-      onComplete: () => {
-        setTransitionState(false);
-        resolve();
-      }
-    })
-      .to(transitionContent, {
-        opacity: 0,
-        y: -14,
-        duration: 0.3,
-        ease: "power2.in"
-      })
-      .to(transitionCurtain, {
-        scaleY: 0,
-        transformOrigin: "top center",
-        duration: 0.75,
-        ease: "power4.inOut"
-      }, "-=0.05");
-  });
-}
-
-function getTargetFromLink(link) {
-  const href = link.getAttribute("href");
-
-  if (!href || !href.startsWith("#")) return null;
-
-  const targetId = href.slice(1);
-
-  if (!targetId) return null;
-
-  return document.getElementById(targetId);
-}
-
-async function navigateWithTransition(target, link) {
-  if (!target || isTransitioning) return;
-
-  isTransitioning = true;
-
-  const targetId = target.id;
-
-  closeMenu();
-
-  try {
-    await animateTransitionIn();
-
-    window.scrollTo({
-      top: target.getBoundingClientRect().top + window.scrollY,
-      behavior: "auto"
-    });
-
-    if (targetId) {
-      window.history.replaceState(
-        null,
-        "",
-        `#${targetId}`
-      );
-    }
-
-    await new Promise((resolve) => {
-      requestAnimationFrame(() => {
-        requestAnimationFrame(resolve);
+      element.addEventListener("mouseleave", () => {
+        element.style.translate = "0 0";
       });
     });
-
-    await animateTransitionOut();
-
-    link?.blur();
-  } catch (error) {
-    console.error("MYRLORE transition failed:", error);
-    setTransitionState(false);
-  } finally {
-    isTransitioning = false;
   }
-}
 
+  /* ==========================================
+     CINEMATIC PAGE TRANSITIONS
+  ========================================== */
 
-// ============================================
-// INTERNAL LINK INTERCEPTION
-// ============================================
+  const pageTransition = $("#pageTransition");
+  const transitionCurtain = $(".transition-curtain");
+  const transitionContent = $(".transition-content");
+  const transitionProgress = $(".transition-progress span");
 
-document.querySelectorAll('a[href^="#"]').forEach((link) => {
-  link.addEventListener("click", (event) => {
-    const target = getTargetFromLink(link);
+  let transitionRunning = false;
 
-    if (!target) return;
+  function setTransitionState(active) {
+    if (!pageTransition) return;
 
-    if (link.hasAttribute("data-case-study")) return;
+    pageTransition.classList.toggle("active", active);
+    pageTransition.classList.toggle("is-active", active);
 
-    if (link.closest(".case-panel")) return;
+    pageTransition.setAttribute(
+      "aria-hidden",
+      active ? "false" : "true"
+    );
 
-    if (
-      link.matches("[data-case-close]") ||
-      link.classList.contains("case-close") ||
-      link.classList.contains("case-bottom-close")
-    ) {
+    // Make the overlay inaccessible when inactive.
+    if (active) {
+      pageTransition.removeAttribute("inert");
+    } else {
+      pageTransition.setAttribute("inert", "");
+    }
+  }
+
+  function runPageTransition(url) {
+    if (transitionRunning || !pageTransition) {
+      window.location.href = url;
       return;
     }
 
-    event.preventDefault();
+    transitionRunning = true;
+    setTransitionState(true);
 
-    navigateWithTransition(target, link);
-  });
-});
+    if (gsapReady && !prefersReducedMotion) {
+      const timeline = gsap.timeline({
+        onComplete: () => {
+          window.location.href = url;
+        }
+      });
 
+      timeline
+        .to(transitionCurtain, {
+          scaleY: 1,
+          duration: 0.65,
+          ease: "power4.inOut",
+          transformOrigin: "bottom center"
+        })
+        .to(transitionContent, {
+          opacity: 1,
+          y: 0,
+          duration: 0.45,
+          ease: "power2.out"
+        }, "-=0.1")
+        .to(transitionProgress, {
+          scaleX: 1,
+          duration: 0.7,
+          ease: "power2.inOut"
+        }, "-=0.1");
+    } else {
+      pageTransition.style.visibility = "visible";
+      pageTransition.style.opacity = "1";
 
-// ============================================
-// INITIAL PAGE TRANSITION STATE
-// ============================================
+      if (transitionCurtain) {
+        transitionCurtain.style.transform = "scaleY(1)";
+      }
 
-if (transitionLayer) {
-  setTransitionState(false);
-}
-
-
-// ============================================
-// PAGE INITIALIZATION
-// ============================================
-
-scheduleThreeLoad();
-initAnimations();
-updateScrollProgress();
-
-window.addEventListener("load", () => {
-  document.body.classList.add("loaded");
-});
-
-setTimeout(() => {
-  document.body.classList.add("loaded");
-}, 4500);
-
-
-// ============================================
-// CURSOR VISIBILITY HANDLING
-// ============================================
-
-document.addEventListener("visibilitychange", () => {
-  if (!cursorGlow || !finePointer || reducedMotion) return;
-
-  if (document.hidden) {
-    if (cursorAnimationFrame !== null) {
-      cancelAnimationFrame(cursorAnimationFrame);
-      cursorAnimationFrame = null;
+      setTimeout(() => {
+        window.location.href = url;
+      }, 150);
     }
-  } else if (cursorAnimationFrame === null) {
-    animateCursor();
   }
-});
 
+  $$('a[href]').forEach(link => {
+    link.addEventListener("click", event => {
+      const href = link.getAttribute("href");
 
-// ============================================
-// MYRLORE® — SECRET KEYBOARD EASTER EGG
-// KONAMI CODE + CHROME RESONANCE
-// ============================================
+      if (
+        !href ||
+        href.startsWith("#") ||
+        href.startsWith("mailto:") ||
+        href.startsWith("tel:") ||
+        link.target === "_blank" ||
+        event.ctrlKey ||
+        event.metaKey ||
+        event.shiftKey ||
+        event.altKey
+      ) {
+        return;
+      }
 
-(() => {
-  const sequence = [
+      let destination;
+
+      try {
+        destination = new URL(href, window.location.href);
+      } catch {
+        return;
+      }
+
+      if (destination.origin !== window.location.origin) return;
+
+      const currentPath = window.location.pathname;
+      const destinationPath = destination.pathname;
+
+      if (currentPath === destinationPath) return;
+
+      event.preventDefault();
+
+      runPageTransition(destination.href);
+    });
+  });
+
+  /* ==========================================
+     THREE.JS SCULPTURE
+  ========================================== */
+
+  const canvas = $("#webgl");
+
+  let renderer;
+  let scene;
+  let camera;
+  let sculpture;
+  let animationFrame;
+
+  let threeReady = false;
+  let pageVisible = !document.hidden;
+
+  async function initialiseThree() {
+    if (!canvas || prefersReducedMotion) return;
+
+    try {
+      THREE = await import("three");
+
+      const { RectAreaLightUniformsLib: RectAreaModule } =
+        await import("three/addons/lights/RectAreaLightUniformsLib.js");
+
+      RectAreaLightUniformsLib = RectAreaModule;
+
+      RectAreaLightUniformsLib.init();
+
+      clock = new THREE.Clock();
+
+      scene = new THREE.Scene();
+
+      camera = new THREE.PerspectiveCamera(
+        35,
+        1,
+        0.1,
+        100
+      );
+
+      camera.position.set(0, 0, 8);
+
+      renderer = new THREE.WebGLRenderer({
+        canvas,
+        alpha: true,
+        antialias: true,
+        powerPreference: "high-performance"
+      });
+
+      renderer.setPixelRatio(
+        Math.min(window.devicePixelRatio, 1.75)
+      );
+
+      renderer.outputColorSpace = THREE.SRGBColorSpace;
+
+      renderer.toneMapping = THREE.ACESFilmicToneMapping;
+      renderer.toneMappingExposure = 1.15;
+
+      sculpture = new THREE.Group();
+
+      scene.add(sculpture);
+
+      /* MATERIALS */
+
+      const chromeMaterial = new THREE.MeshStandardMaterial({
+        color: 0xc8c9c7,
+        metalness: 1,
+        roughness: 0.19
+      });
+
+      const darkMetal = new THREE.MeshStandardMaterial({
+        color: 0x777b80,
+        metalness: 0.95,
+        roughness: 0.27
+      });
+
+      const champagneMaterial = new THREE.MeshStandardMaterial({
+        color: 0xc6b69a,
+        metalness: 0.9,
+        roughness: 0.25
+      });
+
+      /* ENVIRONMENT */
+
+      const environment = new THREE.PMREMGenerator(renderer);
+
+      const environmentScene = new THREE.Scene();
+
+      environmentScene.background = new THREE.Color(0x33343a);
+
+      const environmentLights = [
+        {
+          position: [4, 4, 4],
+          color: 0xffffff,
+          intensity: 3
+        },
+        {
+          position: [-4, 2, -3],
+          color: 0xc6b69a,
+          intensity: 2
+        },
+        {
+          position: [0, -4, 3],
+          color: 0x8e9aa8,
+          intensity: 2
+        }
+      ];
+
+      environmentLights.forEach(lightData => {
+        const light = new THREE.PointLight(
+          lightData.color,
+          lightData.intensity
+        );
+
+        light.position.set(...lightData.position);
+
+        environmentScene.add(light);
+      });
+
+      const environmentTexture =
+        environment.fromScene(environmentScene, 0.04).texture;
+
+      scene.environment = environmentTexture;
+
+      environment.dispose();
+
+      /* LIGHTING */
+
+      const ambient = new THREE.AmbientLight(
+        0xffffff,
+        0.55
+      );
+
+      scene.add(ambient);
+
+      const keyLight = new THREE.DirectionalLight(
+        0xffffff,
+        3
+      );
+
+      keyLight.position.set(4, 5, 6);
+      scene.add(keyLight);
+
+      const rimLight = new THREE.DirectionalLight(
+        0xc6b69a,
+        2.5
+      );
+
+      rimLight.position.set(-5, 1, -4);
+      scene.add(rimLight);
+
+      const lowerLight = new THREE.PointLight(
+        0x89939d,
+        25,
+        12
+      );
+
+      lowerLight.position.set(0, -3, 3);
+      scene.add(lowerLight);
+
+      const areaLight = new THREE.RectAreaLight(
+        0xffffff,
+        5,
+        5,
+        2
+      );
+
+      areaLight.position.set(0, 4, 4);
+      areaLight.lookAt(0, 0, 0);
+
+      scene.add(areaLight);
+
+      /* SCULPTURAL BLADES */
+
+      const bladeCount = 9;
+
+      for (let i = 0; i < bladeCount; i++) {
+        const angle = (i / bladeCount) * Math.PI * 2;
+
+        const blade = new THREE.Mesh(
+          new THREE.TorusGeometry(1.25, 0.105, 24, 120, Math.PI * 1.35),
+          i % 3 === 0 ? champagneMaterial : chromeMaterial
+        );
+
+        blade.rotation.x = Math.PI / 2.4;
+        blade.rotation.y = angle;
+        blade.rotation.z = angle * 0.55;
+
+        blade.scale.set(
+          1 + Math.sin(angle) * 0.08,
+          1.15,
+          0.8
+        );
+
+        sculpture.add(blade);
+      }
+
+      /* CENTRAL CORE */
+
+      const core = new THREE.Mesh(
+        new THREE.IcosahedronGeometry(0.58, 2),
+        darkMetal
+      );
+
+      core.scale.set(1, 1.15, 0.8);
+
+      sculpture.add(core);
+
+      /* CHROME CURVES */
+
+      for (let i = 0; i < 4; i++) {
+        const points = [];
+
+        for (let j = 0; j <= 100; j++) {
+          const t = j / 100;
+
+          const angle = t * Math.PI * 2;
+
+          const radius = 1.65 + Math.sin(angle * 3 + i) * 0.15;
+
+          points.push(
+            new THREE.Vector3(
+              Math.cos(angle + i) * radius,
+              Math.sin(angle * 2 + i) * 0.45,
+              Math.sin(angle + i) * radius
+            )
+          );
+        }
+
+        const curve = new THREE.CatmullRomCurve3(points);
+
+        const geometry = new THREE.TubeGeometry(
+          curve,
+          160,
+          0.012,
+          8,
+          false
+        );
+
+        const line = new THREE.Mesh(
+          geometry,
+          i % 2 === 0 ? chromeMaterial : champagneMaterial
+        );
+
+        sculpture.add(line);
+      }
+
+      /* PARTICLES */
+
+      const particleCount = 180;
+
+      const particlePositions = new Float32Array(
+        particleCount * 3
+      );
+
+      for (let i = 0; i < particleCount; i++) {
+        particlePositions[i * 3] =
+          (Math.random() - 0.5) * 7;
+
+        particlePositions[i * 3 + 1] =
+          (Math.random() - 0.5) * 7;
+
+        particlePositions[i * 3 + 2] =
+          (Math.random() - 0.5) * 5;
+      }
+
+      const particleGeometry = new THREE.BufferGeometry();
+
+      particleGeometry.setAttribute(
+        "position",
+        new THREE.BufferAttribute(particlePositions, 3)
+      );
+
+      const particleMaterial = new THREE.PointsMaterial({
+        color: 0xc6b69a,
+        size: 0.018,
+        transparent: true,
+        opacity: 0.55,
+        sizeAttenuation: true
+      });
+
+      const particles = new THREE.Points(
+        particleGeometry,
+        particleMaterial
+      );
+
+      scene.add(particles);
+
+      /* RESIZE */
+
+      function resizeRenderer() {
+        if (!renderer || !camera || !canvas) return;
+
+        const rect = canvas.getBoundingClientRect();
+
+        const width = Math.max(1, rect.width);
+        const height = Math.max(1, rect.height);
+
+        renderer.setSize(width, height, false);
+
+        camera.aspect = width / height;
+        camera.updateProjectionMatrix();
+      }
+
+      resizeRenderer();
+
+      const resizeObserver = new ResizeObserver(resizeRenderer);
+
+      resizeObserver.observe(canvas);
+
+      window.addEventListener("resize", resizeRenderer);
+
+      /* SCROLL INTERACTION */
+
+      let scrollRotation = 0;
+
+      window.addEventListener("scroll", () => {
+        scrollRotation = window.scrollY * 0.00015;
+      }, { passive: true });
+
+      /* ANIMATION */
+
+      let pointerX = 0;
+      let pointerY = 0;
+
+      if (!isTouchDevice) {
+        window.addEventListener("mousemove", event => {
+          pointerX =
+            (event.clientX / window.innerWidth - 0.5) * 0.4;
+
+          pointerY =
+            (event.clientY / window.innerHeight - 0.5) * 0.3;
+        });
+      }
+
+      function animate() {
+        if (!pageVisible) return;
+
+        animationFrame = requestAnimationFrame(animate);
+
+        const elapsed = clock.getElapsedTime();
+
+        sculpture.rotation.y += 0.0025;
+        sculpture.rotation.y +=
+          (scrollRotation - sculpture.rotation.y) * 0.0005;
+
+        sculpture.rotation.x =
+          Math.sin(elapsed * 0.25) * 0.13 + pointerY * 0.3;
+
+        sculpture.rotation.z =
+          Math.cos(elapsed * 0.2) * 0.08 + pointerX * 0.2;
+
+        sculpture.position.y =
+          Math.sin(elapsed * 0.5) * 0.08;
+
+        particles.rotation.y = elapsed * 0.025;
+        particles.rotation.x = elapsed * 0.012;
+
+        renderer.render(scene, camera);
+      }
+
+      threeReady = true;
+
+      animate();
+
+    } catch (error) {
+      console.error("MYRLORE Three.js initialisation failed:", error);
+
+      canvas.style.opacity = "0";
+    }
+  }
+
+  /* ==========================================
+     LAZY LOAD THREE.JS
+  ========================================== */
+
+  if (canvas) {
+    const hero = $(".hero");
+
+    if ("IntersectionObserver" in window && hero) {
+      const observer = new IntersectionObserver(entries => {
+        if (entries.some(entry => entry.isIntersecting)) {
+          observer.disconnect();
+          initialiseThree();
+        }
+      }, {
+        rootMargin: "200px"
+      });
+
+      observer.observe(hero);
+    } else {
+      initialiseThree();
+    }
+  }
+
+  /* ==========================================
+     TAB VISIBILITY PERFORMANCE
+  ========================================== */
+
+  document.addEventListener("visibilitychange", () => {
+    pageVisible = !document.hidden;
+
+    if (!renderer || !threeReady) return;
+
+    if (pageVisible) {
+      cancelAnimationFrame(animationFrame);
+      clock?.start();
+      animationFrame = requestAnimationFrame(() => {
+        renderer.render(scene, camera);
+      });
+    } else {
+      cancelAnimationFrame(animationFrame);
+    }
+  });
+
+  /* ==========================================
+     KONAMI CODE EASTER EGG
+  ========================================== */
+
+  const konamiSequence = [
     "ArrowUp",
     "ArrowUp",
     "ArrowDown",
@@ -1864,484 +1082,173 @@ document.addEventListener("visibilitychange", () => {
     "a"
   ];
 
-  let sequencePosition = 0;
-  let eggOpen = false;
-  let previousFocus = null;
+  let konamiPosition = 0;
 
-  // Audio state
+  document.addEventListener("keydown", event => {
+    const expected = konamiSequence[konamiPosition];
+
+    if (event.key.toLowerCase() === expected.toLowerCase()) {
+      konamiPosition++;
+
+      if (konamiPosition === konamiSequence.length) {
+        konamiPosition = 0;
+
+        body.classList.toggle("myrlore-secret");
+
+        console.log(
+          "%c MYRLORE® — STAY CURIOUS.",
+          "color:#c6b69a;font-size:18px;font-weight:bold;"
+        );
+      }
+    } else {
+      konamiPosition = 0;
+    }
+  });
+
+  /* ==========================================
+     OPTIONAL CHROME RESONANCE
+  ========================================== */
+
   let audioContext = null;
-  let soundEnabled = true;
+  let audioEnabled = false;
 
-  // ========================================
-  // CHROME RESONANCE SOUND
-  // GENERATED WITH WEB AUDIO API
-  // ========================================
-
-  function playChromeResonance() {
-    if (!soundEnabled) return;
-
-    const AudioContextClass =
-      window.AudioContext || window.webkitAudioContext;
-
-    if (!AudioContextClass) return;
+  function playResonance() {
+    if (!audioEnabled) return;
 
     try {
-      if (!audioContext) {
-        audioContext = new AudioContextClass();
-      }
+      audioContext ??= new (
+        window.AudioContext ||
+        window.webkitAudioContext
+      )();
 
       if (audioContext.state === "suspended") {
         audioContext.resume();
       }
 
-      const now = audioContext.currentTime;
+      const oscillator = audioContext.createOscillator();
+      const gain = audioContext.createGain();
 
-      const master = audioContext.createGain();
-      master.gain.setValueAtTime(0.0001, now);
-      master.gain.exponentialRampToValueAtTime(
-        0.16,
-        now + 0.035
+      oscillator.type = "sine";
+
+      oscillator.frequency.setValueAtTime(
+        440,
+        audioContext.currentTime
       );
-      master.gain.exponentialRampToValueAtTime(
+
+      oscillator.frequency.exponentialRampToValueAtTime(
+        660,
+        audioContext.currentTime + 0.35
+      );
+
+      gain.gain.setValueAtTime(
         0.0001,
-        now + 1.45
+        audioContext.currentTime
       );
-      master.connect(audioContext.destination);
 
-      // Main metallic tone
-      const tones = [
-        {
-          frequency: 880,
-          volume: 0.65,
-          duration: 1.25,
-          detune: -3
-        },
-        {
-          frequency: 1320,
-          volume: 0.28,
-          duration: 0.95,
-          detune: 4
-        },
-        {
-          frequency: 1760,
-          volume: 0.12,
-          duration: 0.72,
-          detune: -5
-        },
-        {
-          frequency: 440,
-          volume: 0.16,
-          duration: 1.35,
-          detune: 2
-        }
-      ];
+      gain.gain.exponentialRampToValueAtTime(
+        0.045,
+        audioContext.currentTime + 0.04
+      );
 
-      tones.forEach((tone, index) => {
-        const oscillator = audioContext.createOscillator();
-        const gain = audioContext.createGain();
+      gain.gain.exponentialRampToValueAtTime(
+        0.0001,
+        audioContext.currentTime + 0.7
+      );
 
-        oscillator.type = index === 3 ? "sine" : "triangle";
+      oscillator.connect(gain);
+      gain.connect(audioContext.destination);
 
-        oscillator.frequency.setValueAtTime(
-          tone.frequency,
-          now
-        );
-
-        oscillator.detune.setValueAtTime(
-          tone.detune,
-          now
-        );
-
-        const startTime = now + index * 0.012;
-
-        gain.gain.setValueAtTime(0.0001, startTime);
-
-        gain.gain.exponentialRampToValueAtTime(
-          tone.volume,
-          startTime + 0.018
-        );
-
-        gain.gain.exponentialRampToValueAtTime(
-          0.0001,
-          startTime + tone.duration
-        );
-
-        oscillator.connect(gain);
-        gain.connect(master);
-
-        oscillator.start(startTime);
-        oscillator.stop(startTime + tone.duration + 0.04);
-      });
+      oscillator.start();
+      oscillator.stop(audioContext.currentTime + 0.72);
 
     } catch (error) {
-      console.warn("MYRLORE audio could not be played:", error);
+      console.warn("Audio unavailable:", error);
     }
   }
 
+  // Sound remains off unless the visitor explicitly enables it.
+  const soundToggle = document.createElement("button");
 
-  // ========================================
-  // SECRET SCREEN STYLES
-  // ========================================
+  soundToggle.type = "button";
+  soundToggle.className = "sound-toggle";
+  soundToggle.textContent = "SOUND OFF";
+  soundToggle.setAttribute("aria-pressed", "false");
+  soundToggle.setAttribute("aria-label", "Enable interface sounds");
 
-  const style = document.createElement("style");
-
-  style.textContent = `
-    .myrlore-secret {
-      position: fixed;
-      inset: 0;
-      z-index: 999999;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 24px;
-      background: rgba(5, 6, 8, 0.97);
-      backdrop-filter: blur(22px);
-      -webkit-backdrop-filter: blur(22px);
-      opacity: 0;
-      visibility: hidden;
-      pointer-events: none;
-      transition:
-        opacity .6s ease,
-        visibility .6s ease;
-    }
-
-    .myrlore-secret.is-visible {
-      opacity: 1;
-      visibility: visible;
-      pointer-events: auto;
-    }
-
-    .myrlore-secret-inner {
-      width: min(680px, 100%);
-      text-align: center;
-      position: relative;
-    }
-
-    .myrlore-secret-label {
-      color: #85868a;
-      font: 10px "DM Mono", monospace;
-      letter-spacing: .28em;
-      margin-bottom: 42px;
-    }
-
-    .myrlore-secret-symbol {
-      font: 300 clamp(100px, 22vw, 190px) "Manrope", sans-serif;
-      line-height: 1;
-      letter-spacing: -.12em;
-      padding-right: .12em;
-      background: linear-gradient(
-        135deg,
-        #ffffff 5%,
-        #777d86 28%,
-        #f4f4f1 48%,
-        #737982 70%,
-        #ffffff 95%
-      );
-      background-size: 200% 200%;
-      background-clip: text;
-      -webkit-background-clip: text;
-      color: transparent;
-      animation: myrloreChrome 5s ease infinite;
-      filter: drop-shadow(0 15px 45px rgba(200,210,225,.12));
-    }
-
-    .myrlore-secret-title {
-      margin: 35px 0 12px;
-      color: #eeede8;
-      font: 400 clamp(20px, 4vw, 30px) "Manrope", sans-serif;
-      letter-spacing: -.045em;
-    }
-
-    .myrlore-secret-description {
-      color: #85868a;
-      font: 11px "DM Mono", monospace;
-      letter-spacing: .12em;
-      line-height: 1.8;
-    }
-
-    .myrlore-secret-controls {
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      gap: 12px;
-      margin-top: 38px;
-      flex-wrap: wrap;
-    }
-
-    .myrlore-secret-close,
-    .myrlore-secret-sound {
-      border: 1px solid rgba(235,232,222,.22);
-      background: transparent;
-      color: #eeede8;
-      padding: 14px 24px;
-      font: 10px "DM Mono", monospace;
-      letter-spacing: .18em;
-      cursor: pointer;
-      transition:
-        background .3s ease,
-        color .3s ease,
-        border-color .3s ease;
-    }
-
-    .myrlore-secret-close:hover,
-    .myrlore-secret-sound:hover {
-      background: #eeede8;
-      color: #08090b;
-      border-color: #eeede8;
-    }
-
-    .myrlore-secret-close:focus-visible,
-    .myrlore-secret-sound:focus-visible {
-      outline: 2px solid #c6b69a;
-      outline-offset: 5px;
-    }
-
-    .myrlore-secret-sound {
-      color: #a9abb0;
-      border-color: rgba(235,232,222,.12);
-    }
-
-    .myrlore-secret-corner {
-      position: absolute;
-      top: 25px;
-      right: 25px;
-      color: #85868a;
-      font: 10px "DM Mono", monospace;
-      letter-spacing: .12em;
-    }
-
-    @keyframes myrloreChrome {
-      0%, 100% {
-        background-position: 0% 50%;
-      }
-
-      50% {
-        background-position: 100% 50%;
-      }
-    }
-
-    @media (prefers-reduced-motion: reduce) {
-      .myrlore-secret,
-      .myrlore-secret-symbol {
-        animation: none;
-        transition: none;
-      }
-    }
-
-    @media (max-width: 480px) {
-      .myrlore-secret-label {
-        margin-bottom: 30px;
-      }
-
-      .myrlore-secret-title {
-        margin-top: 25px;
-      }
-
-      .myrlore-secret-controls {
-        margin-top: 30px;
-      }
-
-      .myrlore-secret-close,
-      .myrlore-secret-sound {
-        padding: 13px 17px;
-      }
-
-      .myrlore-secret-corner {
-        top: 16px;
-        right: 16px;
-      }
-    }
+  soundToggle.style.cssText = `
+    position: fixed;
+    left: 28px;
+    bottom: 25px;
+    z-index: 90;
+    padding: 10px 12px;
+    border: 1px solid rgba(198,182,154,.25);
+    background: rgba(8,9,11,.75);
+    color: #c6b69a;
+    font: 8px "DM Mono", monospace;
+    letter-spacing: .12em;
+    cursor: pointer;
+    backdrop-filter: blur(10px);
   `;
 
-  document.head.appendChild(style);
+  document.body.appendChild(soundToggle);
 
+  soundToggle.addEventListener("click", () => {
+    audioEnabled = !audioEnabled;
 
-  // ========================================
-  // SECRET SCREEN HTML
-  // ========================================
+    soundToggle.textContent =
+      audioEnabled ? "SOUND ON" : "SOUND OFF";
 
-  const overlay = document.createElement("div");
-
-  overlay.className = "myrlore-secret";
-  overlay.setAttribute("aria-hidden", "true");
-  overlay.setAttribute("role", "dialog");
-  overlay.setAttribute("aria-modal", "true");
-  overlay.setAttribute(
-    "aria-label",
-    "MYRLORE secret experience"
-  );
-
-  overlay.innerHTML = `
-    <span class="myrlore-secret-corner">
-      ACCESS / 001
-    </span>
-
-    <div class="myrlore-secret-inner">
-      <div class="myrlore-secret-label">
-        MYRLORE® — UNLISTED EXPERIENCE
-      </div>
-
-      <div class="myrlore-secret-symbol" aria-hidden="true">
-        M
-      </div>
-
-      <h2 class="myrlore-secret-title">
-        You found what was never advertised.
-      </h2>
-
-      <p class="myrlore-secret-description">
-        SOME THINGS ARE BETTER DISCOVERED.<br>
-        WELCOME TO THE OTHER SIDE.
-      </p>
-
-      <div class="myrlore-secret-controls">
-        <button
-          class="myrlore-secret-close"
-          type="button"
-        >
-          RETURN TO THE STUDIO
-        </button>
-
-        <button
-          class="myrlore-secret-sound"
-          type="button"
-          aria-pressed="true"
-        >
-          SOUND ON
-        </button>
-      </div>
-    </div>
-  `;
-
-  document.body.appendChild(overlay);
-
-  const closeButton = overlay.querySelector(
-    ".myrlore-secret-close"
-  );
-
-  const soundButton = overlay.querySelector(
-    ".myrlore-secret-sound"
-  );
-
-
-  // ========================================
-  // SOUND TOGGLE
-  // ========================================
-
-  function updateSoundButton() {
-    soundButton.textContent = soundEnabled
-      ? "SOUND ON"
-      : "SOUND OFF";
-
-    soundButton.setAttribute(
+    soundToggle.setAttribute(
       "aria-pressed",
-      String(soundEnabled)
+      String(audioEnabled)
     );
-  }
 
-  soundButton.addEventListener("click", () => {
-    soundEnabled = !soundEnabled;
-    updateSoundButton();
+    soundToggle.setAttribute(
+      "aria-label",
+      audioEnabled ? "Disable interface sounds" : "Enable interface sounds"
+    );
 
-    // No sound is played when switching sound back on.
-    // It plays on the next Easter egg activation.
-  });
-
-
-  // ========================================
-  // OPEN / CLOSE SECRET EXPERIENCE
-  // ========================================
-
-  function closeEgg() {
-    if (!eggOpen) return;
-
-    eggOpen = false;
-
-    overlay.classList.remove("is-visible");
-    overlay.setAttribute("aria-hidden", "true");
-
-    document.body.style.overflow = "";
-
-    if (previousFocus && previousFocus.isConnected) {
-      previousFocus.focus({ preventScroll: true });
-    }
-  }
-
-  function openEgg() {
-    if (eggOpen) return;
-
-    eggOpen = true;
-    previousFocus = document.activeElement;
-
-    overlay.classList.add("is-visible");
-    overlay.setAttribute("aria-hidden", "false");
-
-    document.body.style.overflow = "hidden";
-
-    closeButton.focus({ preventScroll: true });
-
-    // Play the sound only when the secret is discovered.
-    playChromeResonance();
-  }
-
-  closeButton.addEventListener("click", closeEgg);
-
-  overlay.addEventListener("click", (event) => {
-    if (event.target === overlay) {
-      closeEgg();
+    if (audioEnabled) {
+      playResonance();
     }
   });
 
+  if (isTouchDevice) {
+    soundToggle.style.display = "none";
+  }
 
-  // ========================================
-  // KONAMI CODE DETECTION
-  // ========================================
-
-  document.addEventListener("keydown", (event) => {
-    if (event.key === "Escape" && eggOpen) {
-      closeEgg();
-      return;
-    }
-
-    if (eggOpen) return;
-
-    if (
-      event.target instanceof HTMLElement &&
-      (
-        event.target.isContentEditable ||
-        ["INPUT", "TEXTAREA", "SELECT"].includes(
-          event.target.tagName
-        )
-      )
-    ) {
-      sequencePosition = 0;
-      return;
-    }
-
-    if (
-      event.ctrlKey ||
-      event.altKey ||
-      event.metaKey ||
-      event.repeat
-    ) {
-      sequencePosition = 0;
-      return;
-    }
-
-    const key = event.key.length === 1
-      ? event.key.toLowerCase()
-      : event.key;
-
-    if (key === sequence[sequencePosition]) {
-      sequencePosition++;
-
-      if (sequencePosition === sequence.length) {
-        sequencePosition = 0;
-        openEgg();
-      }
-    } else {
-      sequencePosition =
-        key === sequence[0] ? 1 : 0;
-    }
+  $$(".work-card, .round-link, .service-trigger").forEach(element => {
+    element.addEventListener("mouseenter", playResonance);
   });
+
+  /* ==========================================
+     FINAL INITIALISATION
+  ========================================== */
+
+  // Keep hidden overlays inaccessible on initial load.
+  if (caseModal && !caseModal.classList.contains("is-open")) {
+    caseModal.setAttribute("aria-hidden", "true");
+    caseModal.setAttribute("inert", "");
+  }
+
+  if (pageTransition && !pageTransition.classList.contains("active")) {
+    pageTransition.setAttribute("aria-hidden", "true");
+    pageTransition.setAttribute("inert", "");
+  }
+
+  if (menuPanel && !menuPanel.classList.contains("open")) {
+    menuPanel.setAttribute("aria-hidden", "true");
+    menuPanel.setAttribute("inert", "");
+  }
+
+  console.log(
+    "%c MYRLORE® ",
+    "background:#c6b69a;color:#08090b;padding:8px 12px;font-weight:bold;"
+  );
+
+  console.log(
+    "%c Independent by nature. Creative by design.",
+    "color:#85868a;font-size:10px;"
+  );
+
 })();
