@@ -817,8 +817,6 @@
     return texture;
   }
 
-  /* ONE SHARED THREE.JS ANIMATION LOOP */
-
   function animateThreeAgain() {
     if (!pageVisible || !threeReady) return;
 
@@ -1088,8 +1086,6 @@
     }
   }
 
-  /* LAZY LOAD SCULPTURE */
-
   if (canvas) {
     const hero = $(".hero");
 
@@ -1107,8 +1103,6 @@
     }
   }
 
-  /* TAB VISIBILITY */
-
   document.addEventListener("visibilitychange", () => {
     pageVisible = !document.hidden;
 
@@ -1125,8 +1119,11 @@
 
   /* ==========================================
      MYRLORE® — CAPRI SECRET ARCHIVE
-     LIVE CANVAS · REAL FRAGMENT DISPLACEMENT
-     IMAGE-SAMPLED COLOURS · SCREEN BREAKTHROUGH
+
+     REAL CANVAS FRAGMENTATION
+     IMAGE-SAMPLED CAPRI COLOURS
+     CHROMATIC GLITCH DISPLACEMENT
+     FINAL SCREEN BREAKTHROUGH
   ========================================== */
 
   const konamiSequence = [
@@ -1151,19 +1148,20 @@
   let capriImage = null;
   let capriCanvas = null;
   let capriContext = null;
-
-  let capriPalette = [
-    "rgb(144,0,48)",
-    "rgb(0,144,48)",
-    "rgb(96,0,72)"
-  ];
-
-  let capriTintCanvases = [];
+  let capriPalette = {
+    magenta: "#a01040",
+    green: "#009040",
+    violet: "#50005c"
+  };
 
   const secretStyle = document.createElement("style");
 
   secretStyle.textContent = `
     #myrloreSecretOverlay {
+      --capri-magenta: #a01040;
+      --capri-green: #009040;
+      --capri-violet: #50005c;
+
       position: fixed;
       inset: 0;
       z-index: 999999;
@@ -1172,20 +1170,25 @@
       overflow: hidden;
       padding: 24px;
       isolation: isolate;
-      perspective: 1200px;
+      perspective: 1100px;
       background:
         radial-gradient(
-          ellipse at 50% 48%,
-          rgba(144,0,48,.10),
-          transparent 48%
+          ellipse at 25% 48%,
+          rgba(160,16,64,.14),
+          transparent 38%
         ),
-        #050608;
+        radial-gradient(
+          ellipse at 70% 55%,
+          rgba(0,144,64,.055),
+          transparent 42%
+        ),
+        #030305;
       color: #eeeDE8;
       opacity: 0;
       visibility: hidden;
       transition:
-        opacity .4s ease,
-        visibility .4s ease;
+        opacity .35s ease,
+        visibility .35s ease;
       font-family: "Manrope", sans-serif;
     }
 
@@ -1200,7 +1203,7 @@
       inset: 0;
       z-index: 0;
       pointer-events: none;
-      opacity: .13;
+      opacity: .15;
       background-image:
         linear-gradient(rgba(255,255,255,.035) 1px, transparent 1px),
         linear-gradient(90deg, rgba(255,255,255,.035) 1px, transparent 1px);
@@ -1214,17 +1217,15 @@
       z-index: 8;
       pointer-events: none;
       opacity: 0;
-      background:
-        repeating-linear-gradient(
-          0deg,
-          transparent 0px,
-          transparent 3px,
-          rgba(144,0,48,.08) 4px
-        );
+      background: repeating-linear-gradient(
+        0deg,
+        transparent 0 3px,
+        rgba(160,16,64,.075) 4px
+      );
     }
 
     #myrloreSecretOverlay.active::after {
-      animation: capriScanlines 4.2s steps(1) both;
+      animation: capriScanlines 4.5s steps(1) both;
     }
 
     #myrloreSecretOverlay .secret-noise {
@@ -1232,13 +1233,12 @@
       inset: -50%;
       z-index: 1;
       pointer-events: none;
-      opacity: .075;
+      opacity: .07;
       background: repeating-linear-gradient(
-        transparent 0px,
-        transparent 3px,
-        rgba(255,255,255,.18) 4px
+        transparent 0 3px,
+        rgba(255,255,255,.16) 4px
       );
-      animation: capriNoise .16s steps(2) infinite;
+      animation: capriNoise .15s steps(2) infinite;
     }
 
     #myrloreSecretOverlay .secret-inner {
@@ -1249,8 +1249,8 @@
       opacity: 0;
       transform: translateY(18px);
       transition:
-        opacity .8s ease .5s,
-        transform .8s ease .5s;
+        opacity .7s ease .45s,
+        transform .7s ease .45s;
     }
 
     #myrloreSecretOverlay.active .secret-inner {
@@ -1259,7 +1259,7 @@
     }
 
     #myrloreSecretOverlay .secret-index {
-      color: #c6b69a;
+      color: #b5a6aa;
       font: 10px "DM Mono", monospace;
       letter-spacing: .3em;
       margin-bottom: 26px;
@@ -1287,9 +1287,9 @@
       z-index: 10;
       margin-top: 14px;
       padding: 13px 24px;
-      border: 1px solid rgba(198,182,154,.45);
-      background: transparent;
-      color: #c6b69a;
+      border: 1px solid rgba(160,16,64,.75);
+      background: rgba(160,16,64,.06);
+      color: #d6a1b4;
       font: 10px "DM Mono", monospace;
       letter-spacing: .16em;
       cursor: pointer;
@@ -1300,35 +1300,36 @@
     }
 
     #myrloreSecretOverlay button:hover {
-      background: #c6b69a;
-      color: #08090b;
-      border-color: #c6b69a;
+      background: var(--capri-magenta);
+      color: #fff;
+      border-color: var(--capri-magenta);
     }
 
     #myrloreSecretOverlay .secret-symbol {
       display: block;
-      color: #c6b69a;
+      color: var(--capri-green);
       font-size: 28px;
       margin-bottom: 20px;
+      text-shadow: 0 0 18px rgba(0,144,64,.45);
     }
 
-    /* THE CHARACTER CANVAS */
+    /* CAPRI CANVAS */
 
     #capriFlight {
       position: fixed;
       z-index: 5;
       left: 115%;
-      top: 20%;
-      width: clamp(190px, 29vw, 360px);
-      height: min(76vh, 490px);
+      top: 50%;
+      width: clamp(210px, 30vw, 390px);
+      height: min(78vh, 560px);
       opacity: 0;
       pointer-events: none;
-      transform:
-        translate(-50%, -50%)
-        scale(.5);
+      transform: translate(-50%, -50%) scale(.42);
       transform-origin: center;
       will-change: left, top, transform, opacity, filter;
-      filter: drop-shadow(0 0 20px rgba(144,0,48,.22));
+      filter:
+        drop-shadow(0 0 22px rgba(160,16,64,.25))
+        drop-shadow(0 0 12px rgba(0,144,64,.12));
     }
 
     #capriCanvas {
@@ -1336,6 +1337,7 @@
       width: 100%;
       height: 100%;
       overflow: visible;
+      image-rendering: auto;
     }
 
     #capriFlight.capri-visible {
@@ -1344,8 +1346,8 @@
 
     #capriFlight.capri-settled {
       filter:
-        drop-shadow(0 0 18px rgba(144,0,48,.22))
-        drop-shadow(0 0 12px rgba(0,144,48,.12));
+        drop-shadow(0 0 22px rgba(160,16,64,.27))
+        drop-shadow(0 0 12px rgba(0,144,64,.15));
     }
 
     .capri-glitch-flash {
@@ -1357,19 +1359,23 @@
       background:
         linear-gradient(
           90deg,
-          transparent 0 13%,
-          rgba(144,0,48,.2) 13% 16%,
-          transparent 16% 48%,
-          rgba(0,144,48,.16) 48% 51%,
-          transparent 51% 82%,
-          rgba(96,0,72,.18) 82% 85%,
-          transparent 85%
+          transparent 0 12%,
+          rgba(160,16,64,.22) 12% 15%,
+          transparent 15% 46%,
+          rgba(0,144,64,.17) 46% 49%,
+          transparent 49% 78%,
+          rgba(80,0,92,.2) 78% 82%,
+          transparent 82%
         );
       mix-blend-mode: screen;
     }
 
     #myrloreSecretOverlay.active .capri-glitch-flash {
-      animation: capriFlash 4.2s steps(1) both;
+      animation: capriFlash 4.5s steps(1) both;
+    }
+
+    #myrloreSecretOverlay.capri-impact .capri-glitch-flash {
+      animation: capriImpact .42s steps(1) both;
     }
 
     @keyframes capriNoise {
@@ -1380,35 +1386,51 @@
 
     @keyframes capriFlash {
       0%, 100% { opacity: 0; }
-      8%, 19%, 31%, 45%, 58%, 70%, 82% {
-        opacity: .8;
+      7%, 18%, 29%, 43%, 57%, 70%, 81% {
+        opacity: .85;
       }
-      9%, 20%, 32%, 46%, 59%, 71%, 83% {
+      8%, 19%, 30%, 44%, 58%, 71%, 82% {
         opacity: 0;
       }
+      86% { opacity: .25; }
       88% { opacity: 1; }
-      91% { opacity: 0; }
+      92% { opacity: 0; }
     }
 
     @keyframes capriScanlines {
       0%, 100% { opacity: 0; }
-      8%, 19%, 31%, 45%, 58%, 70%, 82% {
-        opacity: .4;
+      7%, 18%, 29%, 43%, 57%, 70%, 81% {
+        opacity: .38;
       }
-      9%, 20%, 32%, 46%, 59%, 71%, 83% {
+      8%, 19%, 30%, 44%, 58%, 71%, 82% {
         opacity: 0;
+      }
+    }
+
+    @keyframes capriImpact {
+      0% { opacity: 0; }
+      15% { opacity: .9; }
+      35% { opacity: .1; }
+      55% { opacity: .75; }
+      100% { opacity: 0; }
+    }
+
+    @media (min-width: 651px) {
+      #myrloreSecretOverlay .secret-inner {
+        width: min(560px, 48vw);
+        margin-left: 35vw;
       }
     }
 
     @media (max-width: 650px) {
       #capriFlight {
-        width: min(55vw, 230px);
-        height: min(43vh, 310px);
+        width: min(58vw, 245px);
+        height: min(46vh, 320px);
       }
 
       #myrloreSecretOverlay .secret-inner {
         width: 94vw;
-        padding-top: 155px;
+        padding-top: 170px;
       }
 
       #myrloreSecretOverlay h2 {
@@ -1481,24 +1503,31 @@
   });
 
   /* ==========================================
-     LOAD CAPRI IMAGE
+     CAPRI IMAGE + COLOUR EXTRACTION
   ========================================== */
+
+  function rgbToHex(r, g, b) {
+    return "#" + [r, g, b]
+      .map(value => Math.max(0, Math.min(255, value))
+        .toString(16).padStart(2, "0"))
+      .join("");
+  }
 
   function extractCapriPalette(image) {
     try {
       const sample = document.createElement("canvas");
 
-      sample.width = 100;
-      sample.height = 100;
+      sample.width = 120;
+      sample.height = 120;
 
       const context = sample.getContext("2d", {
         willReadFrequently: true
       });
 
-      context.drawImage(image, 0, 0, 100, 100);
+      context.drawImage(image, 0, 0, 120, 120);
 
       const pixels = context.getImageData(
-        0, 0, 100, 100
+        0, 0, 120, 120
       ).data;
 
       const colours = new Map();
@@ -1509,7 +1538,7 @@
         const b = pixels[i + 2];
         const a = pixels[i + 3];
 
-        if (a < 150) continue;
+        if (a < 140) continue;
 
         const max = Math.max(r, g, b);
         const min = Math.min(r, g, b);
@@ -1518,11 +1547,11 @@
           ? 0
           : (max - min) / max;
 
-        if (saturation < .4 || max < 55) continue;
+        if (saturation < .42 || max < 45) continue;
 
-        const qr = Math.round(r / 24) * 24;
-        const qg = Math.round(g / 24) * 24;
-        const qb = Math.round(b / 24) * 24;
+        const qr = Math.round(r / 16) * 16;
+        const qg = Math.round(g / 16) * 16;
+        const qb = Math.round(b / 16) * 16;
 
         const key = [
           Math.min(255, qr),
@@ -1530,10 +1559,7 @@
           Math.min(255, qb)
         ].join(",");
 
-        colours.set(
-          key,
-          (colours.get(key) || 0) + 1
-        );
+        colours.set(key, (colours.get(key) || 0) + 1);
       }
 
       const sorted = [...colours.entries()]
@@ -1551,56 +1577,39 @@
             (rgb[2] - existing[2]) ** 2
           );
 
-          return distance < 85;
+          return distance < 90;
         });
 
         if (!tooSimilar) selected.push(rgb);
         if (selected.length === 3) break;
       }
 
-      if (selected.length) {
-        capriPalette = selected.map(rgb =>
-          `rgb(${rgb.join(",")})`
-        );
+      if (selected.length >= 2) {
+        capriPalette.magenta = rgbToHex(...selected[0]);
+        capriPalette.green = rgbToHex(...selected[1]);
+        capriPalette.violet = selected[2]
+          ? rgbToHex(...selected[2])
+          : "#50005c";
       }
 
+      secretOverlay.style.setProperty(
+        "--capri-magenta",
+        capriPalette.magenta
+      );
+
+      secretOverlay.style.setProperty(
+        "--capri-green",
+        capriPalette.green
+      );
+
+      secretOverlay.style.setProperty(
+        "--capri-violet",
+        capriPalette.violet
+      );
+
     } catch (error) {
-      console.warn(
-        "Capri palette extraction unavailable:",
-        error
-      );
+      console.warn("Capri palette extraction failed:", error);
     }
-  }
-
-  function createTintLayers() {
-    capriTintCanvases = [];
-
-    if (!capriImage || !capriCanvas) return;
-
-    capriPalette.forEach(colour => {
-      const layer = document.createElement("canvas");
-
-      layer.width = capriImage.naturalWidth;
-      layer.height = capriImage.naturalHeight;
-
-      const context = layer.getContext("2d");
-
-      context.drawImage(
-        capriImage,
-        0,
-        0,
-        layer.width,
-        layer.height
-      );
-
-      context.globalCompositeOperation = "source-atop";
-      context.fillStyle = colour;
-      context.fillRect(0, 0, layer.width, layer.height);
-
-      context.globalCompositeOperation = "source-over";
-
-      capriTintCanvases.push(layer);
-    });
   }
 
   function loadCapri() {
@@ -1612,18 +1621,30 @@
     capriImage.onload = () => {
       if (!capriCanvas || !capriContext) return;
 
-      capriCanvas.width = capriImage.naturalWidth;
-      capriCanvas.height = capriImage.naturalHeight;
+      const maxDimension = 900;
+      const ratio = Math.min(
+        1,
+        maxDimension / Math.max(
+          capriImage.naturalWidth,
+          capriImage.naturalHeight
+        )
+      );
+
+      capriCanvas.width = Math.round(
+        capriImage.naturalWidth * ratio
+      );
+
+      capriCanvas.height = Math.round(
+        capriImage.naturalHeight * ratio
+      );
 
       extractCapriPalette(capriImage);
-      createTintLayers();
-
       drawCapriClean();
     };
 
     capriImage.onerror = () => {
       console.error(
-        "Capri could not load. Check that capri.png is in the website root folder."
+        "Capri could not load. Make sure capri.png is in the website root folder."
       );
     };
 
@@ -1631,7 +1652,11 @@
   }
 
   function drawCapriClean() {
-    if (!capriContext || !capriImage?.complete) return;
+    if (
+      !capriContext ||
+      !capriImage?.complete ||
+      !capriCanvas.width
+    ) return;
 
     capriContext.clearRect(
       0,
@@ -1639,6 +1664,9 @@
       capriCanvas.width,
       capriCanvas.height
     );
+
+    capriContext.globalAlpha = 1;
+    capriContext.globalCompositeOperation = "source-over";
 
     capriContext.drawImage(
       capriImage,
@@ -1652,15 +1680,41 @@
   loadCapri();
 
   /* ==========================================
-     LIVE GLITCH RENDERER
+     CANVAS GLITCH ENGINE
 
-     Each frame is redrawn from the original.
-     Individual horizontal fragments move
-     independently instead of moving copies
-     of the complete PNG.
+     The image is redrawn every frame.
+     Horizontal fragments are independently
+     displaced, torn, offset and colour split.
   ========================================== */
 
-  function drawCapriGlitch(intensity) {
+  function drawColourChannel(colour, offsetX, offsetY, alpha) {
+    if (!capriContext || !capriImage?.complete) return;
+
+    const ctx = capriContext;
+    const width = capriCanvas.width;
+    const height = capriCanvas.height;
+
+    ctx.save();
+
+    ctx.globalAlpha = alpha;
+    ctx.globalCompositeOperation = "screen";
+
+    ctx.drawImage(
+      capriImage,
+      offsetX,
+      offsetY,
+      width,
+      height
+    );
+
+    ctx.globalCompositeOperation = "source-atop";
+    ctx.fillStyle = colour;
+    ctx.fillRect(0, 0, width, height);
+
+    ctx.restore();
+  }
+
+  function drawCapriGlitch(intensity, phase = 0) {
     if (
       !capriContext ||
       !capriImage?.complete ||
@@ -1671,64 +1725,61 @@
     const width = capriCanvas.width;
     const height = capriCanvas.height;
 
+    const burst = Math.max(0, Math.min(1, intensity));
+
     ctx.clearRect(0, 0, width, height);
 
-    if (intensity <= .015) {
+    if (burst < .015) {
       drawCapriClean();
       return;
     }
 
-    const burst = intensity;
-    const sliceCount = 34;
+    /* Chromatic separation using Capri's colours */
+
+    const channelOffset = 3 + burst * 22;
+
+    drawColourChannel(
+      capriPalette.magenta,
+      -channelOffset,
+      0,
+      .08 + burst * .19
+    );
+
+    drawColourChannel(
+      capriPalette.green,
+      channelOffset * 1.25,
+      0,
+      .07 + burst * .17
+    );
+
+    drawColourChannel(
+      capriPalette.violet,
+      0,
+      channelOffset * .35,
+      .035 + burst * .09
+    );
+
+    /* Main image with independent horizontal slices */
+
+    const sliceCount = 38;
     const sliceHeight = height / sliceCount;
 
-    /* Palette-based colour separation */
-
-    if (capriTintCanvases.length) {
-      const ghostOffset = 5 + burst * 19;
-
-      ctx.globalAlpha = .16 + burst * .22;
-      ctx.globalCompositeOperation = "screen";
-
-      ctx.drawImage(
-        capriTintCanvases[0],
-        -ghostOffset,
-        0,
-        width,
-        height
-      );
-
-      if (capriTintCanvases[1]) {
-        ctx.globalAlpha = .12 + burst * .2;
-
-        ctx.drawImage(
-          capriTintCanvases[1],
-          ghostOffset * 1.3,
-          0,
-          width,
-          height
-        );
-      }
-
-      ctx.globalAlpha = 1;
-      ctx.globalCompositeOperation = "source-over";
-    }
-
-    /* Independently displaced image fragments */
+    ctx.globalCompositeOperation = "source-over";
+    ctx.globalAlpha = 1;
 
     for (let i = 0; i < sliceCount; i++) {
       const sy = i * sliceHeight;
       const sh = Math.min(sliceHeight + 1, height - sy);
 
-      const activeSlice = Math.random() < .72;
+      const activeSlice = Math.random() < (.32 + burst * .55);
 
       const displacement = activeSlice
-        ? (Math.random() - .5) * 2 * 48 * burst
+        ? (Math.random() - .5) * 2 * 72 * burst
         : 0;
 
       const verticalShift =
-        activeSlice && Math.random() < .12
-          ? (Math.random() - .5) * 12 * burst
+        activeSlice && Math.random() < .2
+          ? (Math.random() - .5) * 20 * burst
           : 0;
 
       ctx.drawImage(
@@ -1741,33 +1792,38 @@
       );
     }
 
-    /* Sharp coloured digital tears */
+    /* Sharp horizontal digital tears */
 
-    const tearCount = Math.floor(2 + burst * 12);
+    const tearCount = Math.floor(3 + burst * 18);
 
     for (let i = 0; i < tearCount; i++) {
       const y = Math.random() * height;
-      const tearHeight = 1 + Math.random() * 9 * burst;
-      const tearWidth = width * (.12 + Math.random() * .7);
+      const tearHeight = 1 + Math.random() * 10 * burst;
+      const tearWidth = width * (.08 + Math.random() * .72);
       const x = Math.random() * (width - tearWidth);
 
-      ctx.globalAlpha = .25 + Math.random() * .45;
+      const colours = [
+        capriPalette.magenta,
+        capriPalette.green,
+        capriPalette.violet
+      ];
 
-      ctx.fillStyle = capriPalette[
-        Math.floor(Math.random() * capriPalette.length)
+      ctx.globalAlpha = .2 + Math.random() * .65;
+      ctx.fillStyle = colours[
+        Math.floor(Math.random() * colours.length)
       ];
 
       ctx.fillRect(x, y, tearWidth, tearHeight);
     }
 
-    /* Sudden horizontal displacement */
+    /* Displaced image bands */
 
-    if (Math.random() < .35 * burst) {
+    if (Math.random() < .55 * burst) {
       const y = Math.random() * height;
-      const h = 3 + Math.random() * 22 * burst;
-      const shift = (Math.random() - .5) * 90 * burst;
+      const h = 3 + Math.random() * 30 * burst;
+      const shift = (Math.random() - .5) * 110 * burst;
 
-      ctx.globalAlpha = .9;
+      ctx.globalAlpha = .95;
 
       ctx.drawImage(
         capriImage,
@@ -1776,17 +1832,36 @@
       );
     }
 
-    /* Brief digital interruptions */
+    /* Black digital gaps */
 
-    if (Math.random() < .16 * burst) {
-      ctx.globalAlpha = .55;
-      ctx.fillStyle = "#050608";
+    if (Math.random() < .2 * burst) {
+      ctx.globalAlpha = .5 + Math.random() * .35;
+      ctx.fillStyle = "#030305";
 
       ctx.fillRect(
         Math.random() * width,
         Math.random() * height,
-        width * (.1 + Math.random() * .5),
-        2 + Math.random() * 8
+        width * (.12 + Math.random() * .48),
+        2 + Math.random() * 12
+      );
+    }
+
+    /* Small colour bars */
+
+    if (Math.random() < .45 * burst) {
+      const barY = Math.random() * height;
+      const barWidth = width * (.15 + Math.random() * .65);
+
+      ctx.globalAlpha = .65;
+      ctx.fillStyle = Math.random() > .5
+        ? capriPalette.magenta
+        : capriPalette.green;
+
+      ctx.fillRect(
+        Math.random() * (width - barWidth),
+        barY,
+        barWidth,
+        1 + Math.random() * 4
       );
     }
 
@@ -1795,21 +1870,25 @@
   }
 
   /* ==========================================
-     CAPRI MOVEMENT PATH
+     CAPRI MOVEMENT
+
+     Short, abrupt position changes during
+     the glitch sequence, followed by a
+     strong forward breakthrough.
   ========================================== */
 
   const capriWaypoints = [
-    { x: 115, y: 18, scale: .45, rotation: 18 },
-    { x: 88, y: 22, scale: .82, rotation: -13 },
-    { x: 18, y: 15, scale: .95, rotation: 12 },
-    { x: 9, y: 72, scale: .82, rotation: -17 },
-    { x: 68, y: 87, scale: 1.02, rotation: 15 },
-    { x: 93, y: 45, scale: .88, rotation: -12 },
-    { x: 54, y: 13, scale: 1.02, rotation: 10 },
-    { x: 40, y: 52, scale: 1.08, rotation: -8 },
-    { x: 50, y: 50, scale: 2.55, rotation: 0 },
-    { x: 30, y: 50, scale: 1.02, rotation: -3 },
-    { x: 30, y: 50, scale: 1, rotation: 0 }
+    { x: 112, y: 48, scale: .42, rotation: 9 },
+    { x: 84, y: 22, scale: .68, rotation: -8 },
+    { x: 17, y: 18, scale: .84, rotation: 5 },
+    { x: 8, y: 72, scale: .78, rotation: -7 },
+    { x: 72, y: 82, scale: .92, rotation: 6 },
+    { x: 94, y: 42, scale: .84, rotation: -5 },
+    { x: 53, y: 14, scale: 1.02, rotation: 4 },
+    { x: 38, y: 49, scale: 1.05, rotation: -3 },
+    { x: 50, y: 50, scale: 2.7, rotation: 0 },
+    { x: 24, y: 50, scale: 1.04, rotation: -2 },
+    { x: 24, y: 50, scale: 1, rotation: 0 }
   ];
 
   function smoothProgress(value) {
@@ -1818,7 +1897,6 @@
 
   function getCapriPosition(progress) {
     const segmentCount = capriWaypoints.length - 1;
-
     const scaled = progress * segmentCount;
 
     const index = Math.min(
@@ -1841,13 +1919,13 @@
 
   function getGlitchIntensity(progress) {
     const bursts = [
-      [0.02, 0.15],
-      [0.19, 0.25],
-      [0.31, 0.37],
-      [0.44, 0.51],
-      [0.57, 0.64],
-      [0.70, 0.76],
-      [0.81, 0.94]
+      [0.015, 0.12],
+      [0.17, 0.25],
+      [0.29, 0.38],
+      [0.42, 0.51],
+      [0.55, 0.64],
+      [0.68, 0.78],
+      [0.80, 0.96]
     ];
 
     let intensity = 0;
@@ -1864,6 +1942,12 @@
     return intensity;
   }
 
+  function easeOutExpo(value) {
+    return value >= 1
+      ? 1
+      : 1 - Math.pow(2, -10 * value);
+  }
+
   /* ==========================================
      CAPRI ANIMATION LOOP
   ========================================== */
@@ -1876,72 +1960,106 @@
     }
 
     const elapsed = timestamp - capriAnimationStart;
-    const duration = 4200;
+    const duration = 4500;
 
-    const progress = reducedMotion
-      ? 1
-      : Math.min(1, elapsed / duration);
-
-    const position = getCapriPosition(progress);
+    const progress = Math.min(1, elapsed / duration);
 
     const mobile = window.matchMedia(
       "(max-width: 650px)"
     ).matches;
 
-    const finalX = mobile ? 50 : 30;
+    const finalX = mobile ? 50 : 24;
     const finalY = mobile ? 27 : 50;
 
-    const adjustedX = progress >= .94
-      ? finalX
-      : position.x;
+    const position = getCapriPosition(progress);
 
-    const adjustedY = progress >= .94
-      ? finalY
-      : position.y;
-
+    let x = position.x;
+    let y = position.y;
     let scale = position.scale;
+    let rotation = position.rotation;
 
-    if (progress >= 1) {
-      scale = mobile ? .82 : .96;
+    /* Final pop-out phase */
+
+    if (progress >= .80 && progress <= .93) {
+      const popProgress = (progress - .80) / .13;
+      const pop = easeOutExpo(popProgress);
+
+      scale = 1.05 + pop * 1.85;
+
+      x = 50 + (finalX - 50) * pop;
+      y = 50 + (finalY - 50) * pop;
+
+      rotation *= 1 - pop;
     }
 
-    capriFlight.style.left = `${adjustedX}%`;
-    capriFlight.style.top = `${adjustedY}%`;
+    /* Settle after the breakthrough */
 
-    capriFlight.style.transform = `
-      translate(-50%, -50%)
-      scale(${scale})
-      rotate(${position.rotation}deg)
-    `;
+    if (progress > .93) {
+      const settle = smoothProgress(
+        (progress - .93) / .07
+      );
 
-    capriFlight.style.opacity =
-      progress < .015
-        ? String(progress / .015)
-        : "1";
+      scale = 2.9 + (.98 - 2.9) * settle;
+      x = finalX;
+      y = finalY;
+      rotation = 0;
+    }
 
     const intensity = reducedMotion
       ? 0
       : getGlitchIntensity(progress);
 
-    drawCapriGlitch(intensity);
+    /* Small independent screen jitters */
 
-    /* Screen breakthrough */
+    const jitterActive =
+      intensity > .12 && progress < .91;
 
-    if (progress > .84 && progress < .92) {
-      const pop = (progress - .84) / .08;
+    const jitterX = jitterActive
+      ? (Math.random() - .5) * 18 * intensity
+      : 0;
+
+    const jitterY = jitterActive
+      ? (Math.random() - .5) * 12 * intensity
+      : 0;
+
+    capriFlight.style.left = `${x + jitterX / 10}%`;
+    capriFlight.style.top = `${y + jitterY / 10}%`;
+
+    capriFlight.style.opacity =
+      progress < .02
+        ? String(progress / .02)
+        : "1";
+
+    capriFlight.style.transform = `
+      translate(-50%, -50%)
+      scale(${scale})
+      rotate(${rotation}deg)
+    `;
+
+    drawCapriGlitch(intensity, elapsed);
+
+    /* Strong impact flash at the breakthrough */
+
+    if (progress >= .84 && progress <= .94) {
+      const pop = (progress - .84) / .10;
 
       capriFlight.style.filter = `
-        blur(${pop * 1.5}px)
-        drop-shadow(0 0 ${20 + pop * 45}px ${capriPalette[0]})
+        blur(${Math.sin(pop * Math.PI) * 2.4}px)
+        drop-shadow(0 0 ${25 + pop * 70}px ${capriPalette.magenta})
+        drop-shadow(0 0 ${18 + pop * 40}px ${capriPalette.green})
       `;
-    } else if (progress >= .92) {
+
+      if (!secretOverlay.classList.contains("capri-impact")) {
+        secretOverlay.classList.add("capri-impact");
+      }
+    } else if (progress > .94) {
       capriFlight.style.filter = `
-        drop-shadow(0 0 18px ${capriPalette[0]})
-        drop-shadow(0 0 12px ${capriPalette[1] || "#009030"})
+        drop-shadow(0 0 22px ${capriPalette.magenta})
+        drop-shadow(0 0 12px ${capriPalette.green})
       `;
     } else {
       capriFlight.style.filter = `
-        drop-shadow(0 0 18px ${capriPalette[0]})
+        drop-shadow(0 0 18px ${capriPalette.magenta})
       `;
     }
 
@@ -1952,6 +2070,8 @@
     } else {
       capriFlight.classList.add("capri-settled");
 
+      secretOverlay.classList.remove("capri-impact");
+
       drawCapriClean();
 
       capriFlight.style.left = `${finalX}%`;
@@ -1960,7 +2080,12 @@
 
       capriFlight.style.transform = `
         translate(-50%, -50%)
-        scale(${mobile ? .82 : .96})
+        scale(${mobile ? .78 : .96})
+      `;
+
+      capriFlight.style.filter = `
+        drop-shadow(0 0 22px ${capriPalette.magenta})
+        drop-shadow(0 0 12px ${capriPalette.green})
       `;
     }
   }
@@ -1973,13 +2098,15 @@
     capriFlight.classList.remove("capri-settled");
     capriFlight.classList.add("capri-visible");
 
+    secretOverlay.classList.remove("capri-impact");
+
     capriFlight.style.left = "115%";
-    capriFlight.style.top = "18%";
+    capriFlight.style.top = "48%";
     capriFlight.style.opacity = "0";
     capriFlight.style.filter = "none";
 
     capriFlight.style.transform =
-      "translate(-50%, -50%) scale(.45)";
+      "translate(-50%, -50%) scale(.42)";
 
     drawCapriClean();
 
@@ -1988,12 +2115,12 @@
         "(max-width: 650px)"
       ).matches;
 
-      capriFlight.style.left = mobile ? "50%" : "30%";
+      capriFlight.style.left = mobile ? "50%" : "24%";
       capriFlight.style.top = mobile ? "27%" : "50%";
       capriFlight.style.opacity = "1";
 
       capriFlight.style.transform =
-        `translate(-50%, -50%) scale(${mobile ? .82 : .96})`;
+        `translate(-50%, -50%) scale(${mobile ? .78 : .96})`;
 
       return;
     }
@@ -2015,7 +2142,11 @@
     cancelAnimationFrame(capriAnimationFrame);
     capriAnimationFrame = null;
 
-    secretOverlay.classList.remove("active");
+    secretOverlay.classList.remove(
+      "active",
+      "capri-impact"
+    );
+
     secretOverlay.setAttribute("aria-hidden", "true");
 
     capriFlight.classList.remove(
@@ -2051,7 +2182,7 @@
 
     console.log(
       "%c MYRLORE® — CAPRI ARCHIVE UNLOCKED ",
-      "background:#900030;color:#ffffff;padding:10px;font-weight:bold;"
+      "background:#a01040;color:#ffffff;padding:10px;font-weight:bold;"
     );
   }
 
