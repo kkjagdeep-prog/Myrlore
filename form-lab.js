@@ -1,9 +1,8 @@
-
 import * as THREE from "three";
 
 /* ==========================================
-   MYRLORE® — FORM LAB
-   INTERACTIVE SCULPTURE ENGINE
+   MYRLORE® — FORM LAB 2.0
+   CUSTOM SCULPTURE EDITOR
 ========================================== */
 
 const viewport = document.querySelector("#viewport");
@@ -15,34 +14,56 @@ const lightingOptions = document.querySelector("#lightingOptions");
 
 const randomButton = document.querySelector("#randomButton");
 const resetButton = document.querySelector("#resetButton");
+const geometryReset = document.querySelector("#geometryReset");
 const autoRotateInput = document.querySelector("#autoRotate");
 
 const objectNumber = document.querySelector("#objectNumber");
 const currentYear = document.querySelector("#currentYear");
 
+const twistControl = document.querySelector("#twistControl");
+const scaleControl = document.querySelector("#scaleControl");
+const thicknessControl = document.querySelector("#thicknessControl");
+const complexityControl = document.querySelector("#complexityControl");
+
+const twistValue = document.querySelector("#twistValue");
+const scaleValue = document.querySelector("#scaleValue");
+const thicknessValue = document.querySelector("#thicknessValue");
+const complexityValue = document.querySelector("#complexityValue");
+
 currentYear.textContent = new Date().getFullYear();
 
 
 /* ==========================================
-   STATE
+   DEFAULT SETTINGS
 ========================================== */
 
 const defaults = {
   preset: "liquid",
   material: "chrome",
   lighting: "studio",
-  autoRotate: true
+  autoRotate: true,
+
+  twist: 0.35,
+  scale: 1,
+  thickness: 1,
+  complexity: 5
 };
 
 let currentPreset = defaults.preset;
 let currentMaterial = defaults.material;
 let currentLighting = defaults.lighting;
 
+let parameters = {
+  twist: defaults.twist,
+  scale: defaults.scale,
+  thickness: defaults.thickness,
+  complexity: defaults.complexity
+};
+
 let scene;
 let camera;
 let renderer;
 let sculptureGroup;
-let activeObject;
 
 let environmentTexture;
 
@@ -50,7 +71,11 @@ let animationFrame = null;
 let resizeObserver = null;
 
 let isDragging = false;
-let previousPointer = { x: 0, y: 0 };
+
+let previousPointer = {
+  x: 0,
+  y: 0
+};
 
 let targetRotationX = 0;
 let targetRotationY = 0;
@@ -87,8 +112,6 @@ function createEnvironment() {
 
   ctx.fillStyle = gradient;
   ctx.fillRect(0, 0, 1024, 512);
-
-  // Large softbox reflections
 
   ctx.fillStyle = "#ffffff";
   ctx.fillRect(85, 55, 115, 255);
@@ -150,6 +173,7 @@ function getMaterial() {
   });
 }
 
+
 function getDarkMaterial() {
   return new THREE.MeshPhysicalMaterial({
     color: 0x242932,
@@ -190,6 +214,7 @@ function createLighting() {
 
   applyLighting(currentLighting);
 }
+
 
 function applyLighting(mode) {
   const presets = {
@@ -249,23 +274,103 @@ function applyLighting(mode) {
    GEOMETRY HELPERS
 ========================================== */
 
-function createMesh(geometry, material = getMaterial()) {
+function createMesh(
+  geometry,
+  material = getMaterial()
+) {
   const mesh = new THREE.Mesh(geometry, material);
+
   mesh.castShadow = true;
   mesh.receiveShadow = true;
+
   return mesh;
 }
 
-function addRing(group, radius, tube, rotation, material) {
+
+function addRing(
+  group,
+  radius,
+  tube,
+  rotation,
+  material
+) {
   const ring = createMesh(
-    new THREE.TorusGeometry(radius, tube, 24, 180),
+    new THREE.TorusGeometry(
+      radius,
+      tube * parameters.thickness,
+      20 + parameters.complexity * 3,
+      100 + parameters.complexity * 15
+    ),
     material
   );
 
   ring.rotation.set(...rotation);
+
   group.add(ring);
 
   return ring;
+}
+
+
+/* ==========================================
+   CUSTOM GEOMETRY DEFORMATION
+========================================== */
+
+function deformGeometry(geometry) {
+  const position = geometry.attributes.position;
+
+  const twistAmount = parameters.twist;
+  const thicknessAmount = parameters.thickness;
+
+  for (let i = 0; i < position.count; i++) {
+    let x = position.getX(i);
+    let y = position.getY(i);
+    let z = position.getZ(i);
+
+    // Twist the geometry around its vertical axis.
+
+    const angle = twistAmount * y * 0.48;
+
+    const cos = Math.cos(angle);
+    const sin = Math.sin(angle);
+
+    const twistedX = x * cos - z * sin;
+    const twistedZ = x * sin + z * cos;
+
+    x = twistedX;
+    z = twistedZ;
+
+    // Adjust the thickness of the form.
+
+    x *= thicknessAmount;
+    z *= thicknessAmount;
+
+    position.setXYZ(i, x, y, z);
+  }
+
+  position.needsUpdate = true;
+
+  geometry.computeVertexNormals();
+
+  geometry.computeBoundingSphere();
+
+  return geometry;
+}
+
+
+function applyCustomParameters() {
+  if (!sculptureGroup) return;
+
+  sculptureGroup.traverse(object => {
+    if (
+      object.isMesh &&
+      object.geometry
+    ) {
+      deformGeometry(object.geometry);
+    }
+  });
+
+  sculptureGroup.scale.setScalar(parameters.scale);
 }
 
 
@@ -274,12 +379,14 @@ function addRing(group, radius, tube, rotation, material) {
 ========================================== */
 
 function createLiquidKnot(group) {
+  const detail = parameters.complexity;
+
   const main = createMesh(
     new THREE.TorusKnotGeometry(
       0.95,
-      0.29,
-      300,
-      48,
+      0.29 * parameters.thickness,
+      180 + detail * 30,
+      20 + detail * 5,
       2,
       3
     )
@@ -293,9 +400,9 @@ function createLiquidKnot(group) {
   const inner = createMesh(
     new THREE.TorusKnotGeometry(
       0.48,
-      0.075,
-      180,
-      24,
+      0.075 * parameters.thickness,
+      120 + detail * 15,
+      16 + detail * 2,
       3,
       5
     ),
@@ -308,7 +415,10 @@ function createLiquidKnot(group) {
   group.add(inner);
 
   const core = createMesh(
-    new THREE.IcosahedronGeometry(0.23, 3),
+    new THREE.IcosahedronGeometry(
+      0.23,
+      Math.min(2 + detail / 2, 6)
+    ),
     getMaterial()
   );
 
@@ -356,7 +466,10 @@ function createOrbital(group) {
   );
 
   const center = createMesh(
-    new THREE.IcosahedronGeometry(0.23, 3),
+    new THREE.IcosahedronGeometry(
+      0.23,
+      Math.min(2 + parameters.complexity / 2, 6)
+    ),
     new THREE.MeshPhysicalMaterial({
       color: 0xc6b69a,
       metalness: 0.95,
@@ -388,23 +501,30 @@ function createMonolith(group) {
   shape.closePath();
 
   const geometry = new THREE.ExtrudeGeometry(shape, {
-    depth: 0.34,
+    depth: 0.34 * parameters.thickness,
     bevelEnabled: true,
-    bevelSegments: 5,
+    bevelSegments: parameters.complexity,
     bevelSize: 0.1,
     bevelThickness: 0.1,
-    steps: 1
+    steps: 1,
+    curveSegments: 4 + parameters.complexity * 2
   });
 
   geometry.center();
 
   const body = createMesh(geometry, material);
+
   body.rotation.set(0.15, -0.3, 0.08);
 
   group.add(body);
 
   const slash = createMesh(
-    new THREE.TorusGeometry(0.85, 0.035, 20, 160),
+    new THREE.TorusGeometry(
+      0.85,
+      0.035 * parameters.thickness,
+      20 + parameters.complexity * 2,
+      100 + parameters.complexity * 12
+    ),
     getDarkMaterial()
   );
 
@@ -414,7 +534,12 @@ function createMonolith(group) {
   group.add(slash);
 
   const base = createMesh(
-    new THREE.CylinderGeometry(0.55, 0.7, 0.12, 96),
+    new THREE.CylinderGeometry(
+      0.55,
+      0.7,
+      0.12 * parameters.thickness,
+      32 + parameters.complexity * 12
+    ),
     getDarkMaterial()
   );
 
@@ -429,23 +554,39 @@ function createMonolith(group) {
 ========================================== */
 
 function createFluidWave(group) {
+  const detail = parameters.complexity;
   const material = getMaterial();
 
   const points = [];
 
-  for (let i = 0; i <= 100; i++) {
-    const t = i / 100;
-    const x = (t - 0.5) * 3.2;
-    const y = Math.sin(t * Math.PI * 3) * 0.55;
-    const z = Math.cos(t * Math.PI * 2) * 0.25;
+  const pointCount = 35 + detail * 12;
 
-    points.push(new THREE.Vector3(x, y, z));
+  for (let i = 0; i <= pointCount; i++) {
+    const t = i / pointCount;
+
+    const x = (t - 0.5) * 3.2;
+
+    const y =
+      Math.sin(t * Math.PI * 3) * 0.55;
+
+    const z =
+      Math.cos(t * Math.PI * 2) * 0.25;
+
+    points.push(
+      new THREE.Vector3(x, y, z)
+    );
   }
 
   const curve = new THREE.CatmullRomCurve3(points);
 
   const wave = createMesh(
-    new THREE.TubeGeometry(curve, 240, 0.17, 32, false),
+    new THREE.TubeGeometry(
+      curve,
+      100 + detail * 30,
+      0.17 * parameters.thickness,
+      12 + detail * 3,
+      false
+    ),
     material
   );
 
@@ -453,11 +594,16 @@ function createFluidWave(group) {
 
   const secondaryPoints = [];
 
-  for (let i = 0; i <= 100; i++) {
-    const t = i / 100;
+  for (let i = 0; i <= pointCount; i++) {
+    const t = i / pointCount;
+
     const x = (t - 0.5) * 2.9;
-    const y = Math.sin(t * Math.PI * 3 + 1.1) * 0.45;
-    const z = -0.42 + Math.cos(t * Math.PI * 2) * 0.2;
+
+    const y =
+      Math.sin(t * Math.PI * 3 + 1.1) * 0.45;
+
+    const z =
+      -0.42 + Math.cos(t * Math.PI * 2) * 0.2;
 
     secondaryPoints.push(
       new THREE.Vector3(x, y, z)
@@ -471,9 +617,9 @@ function createFluidWave(group) {
   const secondary = createMesh(
     new THREE.TubeGeometry(
       secondaryCurve,
-      240,
-      0.055,
-      20,
+      100 + detail * 30,
+      0.055 * parameters.thickness,
+      10 + detail * 2,
       false
     ),
     getDarkMaterial()
@@ -490,17 +636,26 @@ function createFluidWave(group) {
 function createChromeBloom(group) {
   const material = getMaterial();
 
-  const petalCount = 8;
+  const petalCount = 5 + parameters.complexity;
 
   for (let i = 0; i < petalCount; i++) {
-    const angle = (i / petalCount) * Math.PI * 2;
+    const angle =
+      (i / petalCount) * Math.PI * 2;
 
     const petal = createMesh(
-      new THREE.SphereGeometry(0.55, 64, 48),
+      new THREE.SphereGeometry(
+        0.55,
+        24 + parameters.complexity * 5,
+        20 + parameters.complexity * 4
+      ),
       material
     );
 
-    petal.scale.set(0.35, 0.95, 0.19);
+    petal.scale.set(
+      0.35,
+      0.95,
+      0.19
+    );
 
     petal.position.set(
       Math.cos(angle) * 0.62,
@@ -514,14 +669,23 @@ function createChromeBloom(group) {
   }
 
   const center = createMesh(
-    new THREE.SphereGeometry(0.4, 64, 64),
+    new THREE.SphereGeometry(
+      0.4,
+      32 + parameters.complexity * 4,
+      32 + parameters.complexity * 4
+    ),
     getDarkMaterial()
   );
 
   group.add(center);
 
   const outerRing = createMesh(
-    new THREE.TorusGeometry(1.25, 0.025, 20, 160),
+    new THREE.TorusGeometry(
+      1.25,
+      0.025 * parameters.thickness,
+      20 + parameters.complexity * 2,
+      100 + parameters.complexity * 12
+    ),
     getMaterial()
   );
 
@@ -532,7 +696,7 @@ function createChromeBloom(group) {
 
 
 /* ==========================================
-   BUILD OBJECT
+   PRESET REGISTRY
 ========================================== */
 
 const presetBuilders = {
@@ -543,6 +707,11 @@ const presetBuilders = {
   bloom: createChromeBloom
 };
 
+
+/* ==========================================
+   OBJECT CLEANUP
+========================================== */
+
 function clearGroup(group) {
   group.traverse(object => {
     if (object.geometry) {
@@ -551,7 +720,9 @@ function clearGroup(group) {
 
     if (object.material) {
       if (Array.isArray(object.material)) {
-        object.material.forEach(material => material.dispose());
+        object.material.forEach(material => {
+          material.dispose();
+        });
       } else {
         object.material.dispose();
       }
@@ -563,23 +734,29 @@ function clearGroup(group) {
   }
 }
 
+
+/* ==========================================
+   BUILD SCULPTURE
+========================================== */
+
 function buildSculpture(preset) {
-  if (activeObject) {
-    clearGroup(sculptureGroup);
-  }
+  if (!sculptureGroup) return;
+
+  clearGroup(sculptureGroup);
 
   presetBuilders[preset](sculptureGroup);
 
-  activeObject = sculptureGroup;
+  currentPreset = preset;
+
+  applyCustomParameters();
 
   sculptureGroup.rotation.set(0, 0, 0);
 
   targetRotationX = 0;
   targetRotationY = 0;
 
-  currentPreset = preset;
-
-  const presetIndex = Object.keys(presetBuilders).indexOf(preset) + 1;
+  const presetIndex =
+    Object.keys(presetBuilders).indexOf(preset) + 1;
 
   objectNumber.textContent =
     `OBJECT / ${String(presetIndex).padStart(3, "0")}`;
@@ -589,15 +766,82 @@ function buildSculpture(preset) {
 
 
 /* ==========================================
+   GEOMETRY CONTROL SYSTEM
+========================================== */
+
+function updateParameterDisplays() {
+  twistValue.textContent =
+    Number(parameters.twist).toFixed(2);
+
+  scaleValue.textContent =
+    Number(parameters.scale).toFixed(2);
+
+  thicknessValue.textContent =
+    Number(parameters.thickness).toFixed(2);
+
+  complexityValue.textContent =
+    String(parameters.complexity);
+}
+
+
+function readGeometryControls() {
+  parameters.twist = Number(twistControl.value);
+  parameters.scale = Number(scaleControl.value);
+  parameters.thickness = Number(thicknessControl.value);
+  parameters.complexity = Number(complexityControl.value);
+
+  updateParameterDisplays();
+}
+
+
+function syncGeometryControls() {
+  twistControl.value = parameters.twist;
+  scaleControl.value = parameters.scale;
+  thicknessControl.value = parameters.thickness;
+  complexityControl.value = parameters.complexity;
+
+  updateParameterDisplays();
+}
+
+
+function updateGeometry() {
+  readGeometryControls();
+
+  // Rebuild from the original geometry so that
+  // slider changes never accumulate deformation.
+
+  buildSculpture(currentPreset);
+}
+
+
+[
+  twistControl,
+  scaleControl,
+  thicknessControl,
+  complexityControl
+].forEach(control => {
+  control.addEventListener("input", updateGeometry);
+});
+
+
+geometryReset.addEventListener("click", () => {
+  parameters.twist = defaults.twist;
+  parameters.scale = defaults.scale;
+  parameters.thickness = defaults.thickness;
+  parameters.complexity = defaults.complexity;
+
+  syncGeometryControls();
+
+  buildSculpture(currentPreset);
+});
+
+
+/* ==========================================
    MATERIAL UPDATE
 ========================================== */
 
 function updateMaterial() {
-  clearGroup(sculptureGroup);
-  presetBuilders[currentPreset](sculptureGroup);
-  activeObject = sculptureGroup;
-
-  renderOnce();
+  buildSculpture(currentPreset);
 }
 
 
@@ -654,9 +898,12 @@ function initialise() {
 
   createLighting();
 
+  syncGeometryControls();
+
   buildSculpture(currentPreset);
 
   resizeObserver = new ResizeObserver(resizeRenderer);
+
   resizeObserver.observe(viewport);
 
   loadingMessage.classList.add("hidden");
@@ -676,6 +923,7 @@ function renderOnce() {
 
   renderer.render(scene, camera);
 }
+
 
 function animate() {
   animationFrame = null;
@@ -701,6 +949,7 @@ function animate() {
   animationFrame = requestAnimationFrame(animate);
 }
 
+
 function startAnimation() {
   if (animationFrame !== null || reducedMotion) return;
 
@@ -719,6 +968,7 @@ function resizeRenderer() {
   const height = Math.max(viewport.clientHeight, 1);
 
   camera.aspect = width / height;
+
   camera.updateProjectionMatrix();
 
   renderer.setSize(width, height);
@@ -728,14 +978,12 @@ function resizeRenderer() {
 
 
 /* ==========================================
-   POINTER ROTATION
+   POINTER ROTATION AND ZOOM
 ========================================== */
 
-rendererPointerEvents();
-
-function rendererPointerEvents() {
+function setupPointerEvents() {
   viewport.addEventListener("pointerdown", event => {
-    if (event.target !== renderer?.domElement) return;
+    if (event.target !== renderer.domElement) return;
 
     isDragging = true;
 
@@ -756,6 +1004,13 @@ function rendererPointerEvents() {
 
     previousPointer.x = event.clientX;
     previousPointer.y = event.clientY;
+
+    if (reducedMotion) {
+      sculptureGroup.rotation.y = targetRotationY;
+      sculptureGroup.rotation.x = targetRotationX;
+
+      renderOnce();
+    }
   });
 
   viewport.addEventListener("pointerup", () => {
@@ -770,12 +1025,19 @@ function rendererPointerEvents() {
     event.preventDefault();
 
     zoom += event.deltaY * 0.003;
-    zoom = THREE.MathUtils.clamp(zoom, 3.2, 8);
+
+    zoom = THREE.MathUtils.clamp(
+      zoom,
+      3.2,
+      8
+    );
 
     camera.position.z = zoom;
 
     renderOnce();
-  }, { passive: false });
+  }, {
+    passive: false
+  });
 }
 
 
@@ -788,9 +1050,7 @@ presetList.addEventListener("click", event => {
 
   if (!button) return;
 
-  const preset = button.dataset.preset;
-
-  buildSculpture(preset);
+  buildSculpture(button.dataset.preset);
 
   presetList.querySelectorAll(".preset-button").forEach(item => {
     item.classList.toggle("active", item === button);
@@ -844,20 +1104,61 @@ lightingOptions.addEventListener("click", event => {
 
 randomButton.addEventListener("click", () => {
   const presets = Object.keys(presetBuilders);
-  const materials = ["chrome", "titanium", "champagne"];
-  const lightingModes = ["studio", "contrast", "warm"];
 
-  const randomItem = array =>
-    array[Math.floor(Math.random() * array.length)];
+  const materials = [
+    "chrome",
+    "titanium",
+    "champagne"
+  ];
+
+  const lightingModes = [
+    "studio",
+    "contrast",
+    "warm"
+  ];
+
+  const randomItem = array => {
+    return array[
+      Math.floor(Math.random() * array.length)
+    ];
+  };
 
   currentPreset = randomItem(presets);
   currentMaterial = randomItem(materials);
   currentLighting = randomItem(lightingModes);
 
+  parameters.twist = Number(
+    (Math.random() * 3.2 - 1.6).toFixed(2)
+  );
+
+  parameters.scale = Number(
+    (0.75 + Math.random() * 0.65).toFixed(2)
+  );
+
+  parameters.thickness = Number(
+    (0.65 + Math.random() * 0.75).toFixed(2)
+  );
+
+  parameters.complexity =
+    Math.floor(Math.random() * 7) + 2;
+
+  syncGeometryControls();
+
   buildSculpture(currentPreset);
 
   applyLighting(currentLighting);
 
+  updateActiveControls();
+
+  renderOnce();
+});
+
+
+/* ==========================================
+   ACTIVE CONTROL STATES
+========================================== */
+
+function updateActiveControls() {
   presetList.querySelectorAll(".preset-button").forEach(button => {
     button.classList.toggle(
       "active",
@@ -878,9 +1179,7 @@ randomButton.addEventListener("click", () => {
       button.dataset.lighting === currentLighting
     );
   });
-
-  renderOnce();
-});
+}
 
 
 /* ==========================================
@@ -897,7 +1196,7 @@ autoRotateInput.addEventListener("change", () => {
 
 
 /* ==========================================
-   RESET
+   RESET ALL SETTINGS
 ========================================== */
 
 resetButton.addEventListener("click", () => {
@@ -905,9 +1204,15 @@ resetButton.addEventListener("click", () => {
   currentMaterial = defaults.material;
   currentLighting = defaults.lighting;
 
+  parameters.twist = defaults.twist;
+  parameters.scale = defaults.scale;
+  parameters.thickness = defaults.thickness;
+  parameters.complexity = defaults.complexity;
+
   autoRotateInput.checked = defaults.autoRotate;
 
   zoom = 5.2;
+
   camera.position.z = zoom;
 
   targetRotationX = 0;
@@ -915,29 +1220,13 @@ resetButton.addEventListener("click", () => {
 
   sculptureGroup.rotation.set(0, 0, 0);
 
+  syncGeometryControls();
+
   buildSculpture(currentPreset);
+
   applyLighting(currentLighting);
 
-  presetList.querySelectorAll(".preset-button").forEach(button => {
-    button.classList.toggle(
-      "active",
-      button.dataset.preset === currentPreset
-    );
-  });
-
-  materialOptions.querySelectorAll(".material-button").forEach(button => {
-    button.classList.toggle(
-      "active",
-      button.dataset.material === currentMaterial
-    );
-  });
-
-  lightingOptions.querySelectorAll(".lighting-button").forEach(button => {
-    button.classList.toggle(
-      "active",
-      button.dataset.lighting === currentLighting
-    );
-  });
+  updateActiveControls();
 
   renderOnce();
 });
@@ -967,11 +1256,15 @@ window.addEventListener("beforeunload", () => {
 ========================================== */
 
 try {
+  setupPointerEvents();
   initialise();
+
 } catch (error) {
-  console.error("MYRLORE Form Lab failed to initialise:", error);
+  console.error(
+    "MYRLORE Form Lab failed to initialise:",
+    error
+  );
 
   loadingMessage.textContent =
     "3D INITIALISATION FAILED — PLEASE CHECK WEBGL SUPPORT";
 }
-
