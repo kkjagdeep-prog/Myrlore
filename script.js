@@ -1843,3 +1843,311 @@ document.addEventListener("visibilitychange", () => {
     animateCursor();
   }
 });
+
+
+// ============================================
+// MYRLORE® — SECRET KEYBOARD EASTER EGG
+// KONAMI CODE
+// ============================================
+
+(() => {
+  const sequence = [
+    "ArrowUp",
+    "ArrowUp",
+    "ArrowDown",
+    "ArrowDown",
+    "ArrowLeft",
+    "ArrowRight",
+    "ArrowLeft",
+    "ArrowRight",
+    "b",
+    "a"
+  ];
+
+  let sequencePosition = 0;
+  let eggOpen = false;
+  let previousFocus = null;
+
+  const style = document.createElement("style");
+
+  style.textContent = `
+    .myrlore-secret {
+      position: fixed;
+      inset: 0;
+      z-index: 999999;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      background: rgba(5, 6, 8, 0.97);
+      backdrop-filter: blur(22px);
+      -webkit-backdrop-filter: blur(22px);
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+      transition:
+        opacity .6s ease,
+        visibility .6s ease;
+    }
+
+    .myrlore-secret.is-visible {
+      opacity: 1;
+      visibility: visible;
+      pointer-events: auto;
+    }
+
+    .myrlore-secret-inner {
+      width: min(680px, 100%);
+      text-align: center;
+      position: relative;
+    }
+
+    .myrlore-secret-label {
+      color: #85868a;
+      font: 10px "DM Mono", monospace;
+      letter-spacing: .28em;
+      margin-bottom: 42px;
+    }
+
+    .myrlore-secret-symbol {
+      font: 300 clamp(100px, 22vw, 190px) "Manrope", sans-serif;
+      line-height: 1;
+      letter-spacing: -.12em;
+      padding-right: .12em;
+      background: linear-gradient(
+        135deg,
+        #ffffff 5%,
+        #777d86 28%,
+        #f4f4f1 48%,
+        #737982 70%,
+        #ffffff 95%
+      );
+      background-size: 200% 200%;
+      background-clip: text;
+      -webkit-background-clip: text;
+      color: transparent;
+      animation: myrloreChrome 5s ease infinite;
+      filter: drop-shadow(0 15px 45px rgba(200,210,225,.12));
+    }
+
+    .myrlore-secret-title {
+      margin: 35px 0 12px;
+      color: #eeede8;
+      font: 400 clamp(20px, 4vw, 30px) "Manrope", sans-serif;
+      letter-spacing: -.045em;
+    }
+
+    .myrlore-secret-description {
+      color: #85868a;
+      font: 11px "DM Mono", monospace;
+      letter-spacing: .12em;
+      line-height: 1.8;
+    }
+
+    .myrlore-secret-close {
+      margin-top: 48px;
+      border: 1px solid rgba(235,232,222,.22);
+      background: transparent;
+      color: #eeede8;
+      padding: 14px 24px;
+      font: 10px "DM Mono", monospace;
+      letter-spacing: .18em;
+      cursor: pointer;
+      transition:
+        background .3s ease,
+        color .3s ease;
+    }
+
+    .myrlore-secret-close:hover {
+      background: #eeede8;
+      color: #08090b;
+    }
+
+    .myrlore-secret-close:focus-visible {
+      outline: 2px solid #c6b69a;
+      outline-offset: 5px;
+    }
+
+    .myrlore-secret-corner {
+      position: absolute;
+      top: 25px;
+      right: 25px;
+      color: #85868a;
+      font: 10px "DM Mono", monospace;
+      letter-spacing: .12em;
+    }
+
+    @keyframes myrloreChrome {
+      0%, 100% {
+        background-position: 0% 50%;
+      }
+
+      50% {
+        background-position: 100% 50%;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .myrlore-secret,
+      .myrlore-secret-symbol {
+        animation: none;
+        transition: none;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .myrlore-secret-label {
+        margin-bottom: 30px;
+      }
+
+      .myrlore-secret-title {
+        margin-top: 25px;
+      }
+
+      .myrlore-secret-close {
+        margin-top: 35px;
+      }
+
+      .myrlore-secret-corner {
+        top: 16px;
+        right: 16px;
+      }
+    }
+  `;
+
+  document.head.appendChild(style);
+
+  const overlay = document.createElement("div");
+
+  overlay.className = "myrlore-secret";
+  overlay.setAttribute("aria-hidden", "true");
+  overlay.setAttribute("role", "dialog");
+  overlay.setAttribute("aria-modal", "true");
+  overlay.setAttribute(
+    "aria-label",
+    "MYRLORE secret experience"
+  );
+
+  overlay.innerHTML = `
+    <span class="myrlore-secret-corner">
+      ACCESS / 001
+    </span>
+
+    <div class="myrlore-secret-inner">
+      <div class="myrlore-secret-label">
+        MYRLORE® — UNLISTED EXPERIENCE
+      </div>
+
+      <div class="myrlore-secret-symbol" aria-hidden="true">
+        M
+      </div>
+
+      <h2 class="myrlore-secret-title">
+        You found what was never advertised.
+      </h2>
+
+      <p class="myrlore-secret-description">
+        SOME THINGS ARE BETTER DISCOVERED.<br>
+        WELCOME TO THE OTHER SIDE.
+      </p>
+
+      <button
+        class="myrlore-secret-close"
+        type="button"
+      >
+        RETURN TO THE STUDIO
+      </button>
+    </div>
+  `;
+
+  document.body.appendChild(overlay);
+
+  const closeButton = overlay.querySelector(
+    ".myrlore-secret-close"
+  );
+
+  function closeEgg() {
+    if (!eggOpen) return;
+
+    eggOpen = false;
+
+    overlay.classList.remove("is-visible");
+    overlay.setAttribute("aria-hidden", "true");
+
+    document.body.style.overflow = "";
+
+    if (previousFocus && previousFocus.isConnected) {
+      previousFocus.focus({ preventScroll: true });
+    }
+  }
+
+  function openEgg() {
+    if (eggOpen) return;
+
+    eggOpen = true;
+    previousFocus = document.activeElement;
+
+    overlay.classList.add("is-visible");
+    overlay.setAttribute("aria-hidden", "false");
+
+    document.body.style.overflow = "hidden";
+
+    closeButton.focus({ preventScroll: true });
+  }
+
+  closeButton.addEventListener("click", closeEgg);
+
+  overlay.addEventListener("click", (event) => {
+    if (event.target === overlay) {
+      closeEgg();
+    }
+  });
+
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape" && eggOpen) {
+      closeEgg();
+      return;
+    }
+
+    if (eggOpen) return;
+
+    if (
+      event.target instanceof HTMLElement &&
+      (
+        event.target.isContentEditable ||
+        ["INPUT", "TEXTAREA", "SELECT"].includes(
+          event.target.tagName
+        )
+      )
+    ) {
+      sequencePosition = 0;
+      return;
+    }
+
+    if (
+      event.ctrlKey ||
+      event.altKey ||
+      event.metaKey ||
+      event.repeat
+    ) {
+      sequencePosition = 0;
+      return;
+    }
+
+    const key = event.key.length === 1
+      ? event.key.toLowerCase()
+      : event.key;
+
+    if (key === sequence[sequencePosition]) {
+      sequencePosition++;
+
+      if (sequencePosition === sequence.length) {
+        sequencePosition = 0;
+        openEgg();
+      }
+    } else {
+      sequencePosition =
+        key === sequence[0] ? 1 : 0;
+    }
+  });
+})();
