@@ -1,1 +1,261 @@
 
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#08090b">
+
+  <title>Form Lab — MYRLORE®</title>
+  <meta name="description" content="An interactive 3D sculpture playground by MYRLORE independent creative studio.">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Manrope:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="form-lab.css">
+
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js"
+      }
+    }
+  </script>
+
+  <script type="module" src="form-lab.js"></script>
+</head>
+
+<body>
+  <div class="noise"></div>
+
+  <header class="lab-header">
+    <a class="wordmark" href="index.html">MYRLORE<span>®</span></a>
+
+    <div class="header-center">INDEPENDENT CREATIVE STUDIO</div>
+
+    <a class="back-link" href="index.html">
+      BACK TO STUDIO <span>↗</span>
+    </a>
+  </header>
+
+  <main class="lab-main">
+
+    <section class="lab-intro">
+      <div class="eyebrow">
+        <span class="status-dot"></span>
+        EXPERIMENTAL DIVISION / 001
+      </div>
+
+      <div class="intro-row">
+        <div>
+          <h1>Form <span>Lab.</span></h1>
+          <p>
+            An open space for material, motion and form.
+            Explore the relationship between geometry and light.
+          </p>
+        </div>
+
+        <div class="intro-index">
+          <span>MYRLORE®</span>
+          <strong>FL—001</strong>
+        </div>
+      </div>
+    </section>
+
+    <section class="workspace">
+
+      <div class="viewport-panel">
+
+        <div class="viewport-topbar">
+          <div>
+            <span class="panel-label">LIVE OBJECT VIEWPORT</span>
+            <span class="viewport-status">
+              <i></i> REAL-TIME RENDER
+            </span>
+          </div>
+
+          <span class="viewport-coordinate">X / Y / Z</span>
+        </div>
+
+        <div id="viewport" class="viewport">
+          <div class="viewport-grid"></div>
+
+          <div class="viewport-crosshair crosshair-one"></div>
+          <div class="viewport-crosshair crosshair-two"></div>
+
+          <div class="viewport-loading" id="loadingMessage">
+            INITIALISING FORM LAB...
+          </div>
+
+          <div class="viewport-bottom-left">
+            <span>DRAG TO ROTATE</span>
+            <span>SCROLL TO ZOOM</span>
+          </div>
+
+          <div class="viewport-bottom-right">
+            <span id="objectNumber">OBJECT / 001</span>
+          </div>
+        </div>
+
+        <div class="viewport-footer">
+          <span>THREE-DIMENSIONAL OBJECT STUDY</span>
+          <span>INTERACTIVE ENVIRONMENT</span>
+        </div>
+
+      </div>
+
+      <aside class="control-panel">
+
+        <div class="control-heading">
+          <div>
+            <span class="panel-label">CONTROL DECK</span>
+            <h2>Adjust form.</h2>
+          </div>
+          <span class="control-number">01—05</span>
+        </div>
+
+        <div class="control-section">
+          <div class="section-heading">
+            <span>01 / GEOMETRY</span>
+            <span>SELECT FORM</span>
+          </div>
+
+          <div class="preset-list" id="presetList">
+            <button class="preset-button active" data-preset="liquid">
+              <span class="preset-index">01</span>
+              <span>Liquid Knot</span>
+              <span class="preset-arrow">↗</span>
+            </button>
+
+            <button class="preset-button" data-preset="orbit">
+              <span class="preset-index">02</span>
+              <span>Orbital Rings</span>
+              <span class="preset-arrow">↗</span>
+            </button>
+
+            <button class="preset-button" data-preset="spire">
+              <span class="preset-index">03</span>
+              <span>Monolith</span>
+              <span class="preset-arrow">↗</span>
+            </button>
+
+            <button class="preset-button" data-preset="wave">
+              <span class="preset-index">04</span>
+              <span>Fluid Wave</span>
+              <span class="preset-arrow">↗</span>
+            </button>
+
+            <button class="preset-button" data-preset="bloom">
+              <span class="preset-index">05</span>
+              <span>Chrome Bloom</span>
+              <span class="preset-arrow">↗</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="control-section">
+          <div class="section-heading">
+            <span>02 / MATERIAL</span>
+            <span>SURFACE FINISH</span>
+          </div>
+
+          <div class="material-options" id="materialOptions">
+            <button class="material-button active" data-material="chrome">
+              <span class="material-swatch swatch-chrome"></span>
+              <span>Chrome</span>
+            </button>
+
+            <button class="material-button" data-material="titanium">
+              <span class="material-swatch swatch-titanium"></span>
+              <span>Titanium</span>
+            </button>
+
+            <button class="material-button" data-material="champagne">
+              <span class="material-swatch swatch-champagne"></span>
+              <span>Champagne</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="control-section">
+          <div class="section-heading">
+            <span>03 / ILLUMINATION</span>
+            <span>LIGHT ENVIRONMENT</span>
+          </div>
+
+          <div class="lighting-options" id="lightingOptions">
+            <button class="lighting-button active" data-lighting="studio">
+              Studio
+            </button>
+            <button class="lighting-button" data-lighting="contrast">
+              Contrast
+            </button>
+            <button class="lighting-button" data-lighting="warm">
+              Warm
+            </button>
+          </div>
+        </div>
+
+        <div class="control-section motion-section">
+          <div class="section-heading">
+            <span>04 / MOVEMENT</span>
+            <span>ROTATION</span>
+          </div>
+
+          <label class="motion-toggle">
+            <span>
+              <strong>Auto rotation</strong>
+              <small>Continuous object movement</small>
+            </span>
+
+            <input type="checkbox" id="autoRotate" checked>
+            <span class="toggle-track"></span>
+          </label>
+        </div>
+
+        <div class="control-actions">
+          <button class="random-button" id="randomButton">
+            <span>↻</span> GENERATE RANDOM FORM
+          </button>
+
+          <button class="reset-button" id="resetButton">
+            RESET ENVIRONMENT
+          </button>
+        </div>
+
+        <div class="control-note">
+          <span class="note-dot"></span>
+          <p>Every form is generated in real time. No two experiments need to look alike.</p>
+        </div>
+
+      </aside>
+
+    </section>
+
+    <section class="lab-bottom">
+      <div>
+        <span class="panel-label">THE EXPERIMENT</span>
+        <p>
+          Form is never static. It changes with perspective,
+          material and the way light moves across its surface.
+        </p>
+      </div>
+
+      <div class="bottom-signature">
+        <span>MYRLORE®</span>
+        <strong>FORM / MATTER / LIGHT</strong>
+      </div>
+    </section>
+
+  </main>
+
+  <footer class="lab-footer">
+    <span>© <span id="currentYear"></span> MYRLORE®</span>
+    <span>FORM LAB / EXPERIMENTAL DIVISION</span>
+    <a href="index.html">RETURN TO STUDIO ↗</a>
+  </footer>
+
+</body>
+</html>
+
