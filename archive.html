@@ -1,0 +1,242 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#08090b">
+
+  <title>Studio Archive — MYRLORE®</title>
+
+  <meta
+    name="description"
+    content="The MYRLORE Studio Archive. A collection of visual studies, material explorations and creative experiments."
+  >
+
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+  <link
+    href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Manrope:wght@300;400;500;600;700&display=swap"
+    rel="stylesheet"
+  >
+
+  <link rel="stylesheet" href="archive.css">
+
+  <script src="archive.js" defer></script>
+</head>
+
+<body>
+
+  <div class="archive-noise"></div>
+
+  <!-- HEADER -->
+  <header class="archive-header">
+
+    <a href="index.html" class="archive-logo">
+      MYRLORE<span>®</span>
+    </a>
+
+    <div class="header-label">
+      INDEPENDENT CREATIVE STUDIO
+    </div>
+
+    <a href="index.html" class="back-link">
+      <span class="back-arrow">↗</span>
+      BACK TO STUDIO
+    </a>
+
+  </header>
+
+
+  <main>
+
+    <!-- INTRODUCTION -->
+    <section class="archive-hero">
+
+      <div class="archive-overline">
+        <span class="status-dot"></span>
+        MYRLORE® / CREATIVE RECORDS
+      </div>
+
+      <div class="hero-content">
+
+        <div class="hero-title-wrap">
+          <h1>
+            Studio<br>
+            <span>Archive.</span>
+          </h1>
+        </div>
+
+        <div class="hero-description">
+          <p>
+            A record of things explored.
+            Ideas tested, forms discovered and
+            visual directions considered.
+          </p>
+
+          <div class="hero-index">
+            <span>EST. 2026</span>
+            <span>INDEPENDENT COLLECTION</span>
+          </div>
+        </div>
+
+      </div>
+
+      <div class="hero-bottom">
+        <span>VISUAL STUDIES / EXPERIMENTS / OBJECTS</span>
+        <span>SCROLL TO EXPLORE ↓</span>
+      </div>
+
+    </section>
+
+
+    <!-- ARCHIVE INDEX -->
+    <section class="archive-section" id="archive">
+
+      <div class="section-heading">
+
+        <div>
+          <span class="section-kicker">THE COLLECTION / 001—</span>
+          <h2>Selected explorations</h2>
+        </div>
+
+        <span class="collection-count" id="collectionCount">
+          00 ENTRIES
+        </span>
+
+      </div>
+
+
+      <!-- FILTERS -->
+      <div class="archive-toolbar">
+
+        <div class="filter-list" id="filterList">
+
+          <button class="filter-button active" data-filter="all">
+            ALL
+          </button>
+
+          <button class="filter-button" data-filter="objects">
+            OBJECTS
+          </button>
+
+          <button class="filter-button" data-filter="materials">
+            MATERIALS
+          </button>
+
+          <button class="filter-button" data-filter="typography">
+            TYPOGRAPHY
+          </button>
+
+        </div>
+
+        <span class="toolbar-label">
+          AN INDEX OF IDEAS
+        </span>
+
+      </div>
+
+
+      <!-- ENTRIES ARE CREATED BY archive.js -->
+      <div class="archive-grid" id="archiveGrid"></div>
+
+    </section>
+
+
+    <!-- CLOSING STATEMENT -->
+    <section class="archive-closing">
+
+      <span class="section-kicker">END OF CURRENT INDEX</span>
+
+      <h2>
+        The archive<br>
+        <span>remains open.</span>
+      </h2>
+
+      <p>
+        Not everything needs to become something.
+        Some ideas are worth keeping simply because
+        they were explored.
+      </p>
+
+      <a href="index.html" class="closing-link">
+        RETURN TO MYRLORE <span>↗</span>
+      </a>
+
+    </section>
+
+  </main>
+
+
+  <!-- ENTRY DETAIL MODAL -->
+  <div class="entry-modal" id="entryModal" aria-hidden="true">
+
+    <div class="modal-backdrop" data-close-modal></div>
+
+    <div
+      class="modal-panel"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="modalTitle"
+    >
+
+      <div class="modal-top">
+
+        <span id="modalNumber">ENTRY / 001</span>
+
+        <button
+          class="modal-close"
+          id="modalClose"
+          aria-label="Close entry"
+        >
+          ×
+        </button>
+
+      </div>
+
+      <div class="modal-artwork" id="modalArtwork"></div>
+
+      <div class="modal-information">
+
+        <div>
+          <span class="modal-category" id="modalCategory">
+            OBJECT STUDY
+          </span>
+
+          <h2 id="modalTitle">Untitled Study</h2>
+        </div>
+
+        <p id="modalDescription"></p>
+
+      </div>
+
+      <div class="modal-bottom">
+        <span>MYRLORE® / STUDIO ARCHIVE</span>
+        <span id="modalDate">2026</span>
+      </div>
+
+    </div>
+
+  </div>
+
+
+  <!-- FOOTER -->
+  <footer class="archive-footer">
+
+    <a href="index.html" class="footer-logo">
+      MYRLORE<span>®</span>
+    </a>
+
+    <span>INDEPENDENT BY DESIGN.</span>
+
+    <span>
+      © <span id="archiveYear"></span> MYRLORE
+    </span>
+
+  </footer>
+
+</body>
+</html>
