@@ -2,8 +2,8 @@
 import * as THREE from "three";
 
 /* ==========================================
-   MYRLORE® — FORM LAB 3.0
-   EXPANDED SCULPTURE COLLECTION
+   MYRLORE® — FORM LAB 3.1
+   SMOOTH SCULPTURE RENDERING
 ========================================== */
 
 const viewport = document.querySelector("#viewport");
@@ -33,7 +33,6 @@ const complexityValue = document.querySelector("#complexityValue");
 
 currentYear.textContent = new Date().getFullYear();
 
-
 /* ==========================================
    DEFAULT SETTINGS
 ========================================== */
@@ -43,7 +42,6 @@ const defaults = {
   material: "chrome",
   lighting: "studio",
   autoRotate: true,
-
   twist: 0.35,
   scale: 1,
   thickness: 1,
@@ -86,54 +84,71 @@ const reducedMotion = window.matchMedia(
   "(prefers-reduced-motion: reduce)"
 ).matches;
 
-
 /* ==========================================
-   ENVIRONMENT REFLECTION
+   HIGH QUALITY ENVIRONMENT REFLECTION
 ========================================== */
 
 function createEnvironment() {
   const canvas = document.createElement("canvas");
 
-  canvas.width = 1024;
-  canvas.height = 512;
+  canvas.width = 2048;
+  canvas.height = 1024;
 
   const ctx = canvas.getContext("2d");
 
-  const gradient = ctx.createLinearGradient(0, 0, 0, 512);
+  const gradient = ctx.createLinearGradient(0, 0, 0, 1024);
 
-  gradient.addColorStop(0, "#e7e9ec");
-  gradient.addColorStop(0.16, "#747b84");
-  gradient.addColorStop(0.35, "#252a32");
-  gradient.addColorStop(0.53, "#090b0e");
-  gradient.addColorStop(0.72, "#6c737c");
-  gradient.addColorStop(1, "#d5d8dc");
+  gradient.addColorStop(0, "#f0f1f3");
+  gradient.addColorStop(0.12, "#9ba2ab");
+  gradient.addColorStop(0.28, "#353c46");
+  gradient.addColorStop(0.48, "#11151b");
+  gradient.addColorStop(0.65, "#555e69");
+  gradient.addColorStop(0.83, "#d3d6da");
+  gradient.addColorStop(1, "#f2f2ef");
 
   ctx.fillStyle = gradient;
-  ctx.fillRect(0, 0, 1024, 512);
+  ctx.fillRect(0, 0, 2048, 1024);
 
-  ctx.fillStyle = "#ffffff";
-  ctx.fillRect(85, 55, 115, 255);
+  // Soft studio reflection panels
+  ctx.save();
+  ctx.filter = "blur(28px)";
 
-  ctx.fillStyle = "#d9dce0";
-  ctx.fillRect(300, 20, 65, 210);
+  const panels = [
+    { x: 145, y: 90, w: 180, h: 520, color: "rgba(255,255,255,0.95)" },
+    { x: 480, y: 30, w: 100, h: 420, color: "rgba(225,231,239,0.85)" },
+    { x: 850, y: 100, w: 210, h: 480, color: "rgba(255,255,255,0.95)" },
+    { x: 1300, y: 50, w: 130, h: 500, color: "rgba(210,218,228,0.9)" },
+    { x: 1700, y: 130, w: 190, h: 420, color: "rgba(255,255,255,0.9)" }
+  ];
 
-  ctx.fillStyle = "#f5f5f2";
-  ctx.fillRect(585, 65, 145, 260);
+  panels.forEach(panel => {
+    ctx.fillStyle = panel.color;
+    ctx.fillRect(panel.x, panel.y, panel.w, panel.h);
+  });
 
-  ctx.fillStyle = "#aab0b8";
-  ctx.fillRect(840, 100, 75, 230);
+  ctx.restore();
 
-  ctx.fillStyle = "rgba(255,255,255,0.45)";
-  ctx.fillRect(0, 420, 1024, 14);
+  // Dark studio bands for chrome contrast
+  const darkGradient = ctx.createLinearGradient(0, 0, 0, 1024);
+
+  darkGradient.addColorStop(0, "rgba(10,13,18,0.05)");
+  darkGradient.addColorStop(0.38, "rgba(8,10,14,0.55)");
+  darkGradient.addColorStop(0.55, "rgba(8,10,14,0.75)");
+  darkGradient.addColorStop(0.72, "rgba(10,13,18,0.05)");
+
+  ctx.fillStyle = darkGradient;
+  ctx.fillRect(0, 0, 2048, 1024);
 
   const texture = new THREE.CanvasTexture(canvas);
 
   texture.mapping = THREE.EquirectangularReflectionMapping;
   texture.colorSpace = THREE.SRGBColorSpace;
+  texture.generateMipmaps = true;
+  texture.minFilter = THREE.LinearMipmapLinearFilter;
+  texture.magFilter = THREE.LinearFilter;
 
   return texture;
 }
-
 
 /* ==========================================
    MATERIAL SYSTEM
@@ -142,24 +157,24 @@ function createEnvironment() {
 function getMaterial() {
   const settings = {
     chrome: {
-      color: 0xe2e5e8,
+      color: 0xe6e9ed,
       metalness: 1,
-      roughness: 0.13,
-      envMapIntensity: 2
+      roughness: 0.11,
+      envMapIntensity: 2.35
     },
 
     titanium: {
-      color: 0x626b78,
+      color: 0x78818e,
       metalness: 1,
-      roughness: 0.25,
-      envMapIntensity: 1.65
+      roughness: 0.2,
+      envMapIntensity: 1.9
     },
 
     champagne: {
       color: 0xc6b69a,
       metalness: 0.96,
-      roughness: 0.19,
-      envMapIntensity: 1.8
+      roughness: 0.16,
+      envMapIntensity: 2.1
     }
   };
 
@@ -167,22 +182,24 @@ function getMaterial() {
     ...settings[currentMaterial],
     envMap: environmentTexture,
     clearcoat: 1,
-    clearcoatRoughness: 0.1
+    clearcoatRoughness: 0.075,
+    reflectivity: 1,
+    ior: 1.5,
+    side: THREE.DoubleSide
   });
 }
-
 
 function getDarkMaterial() {
   return new THREE.MeshPhysicalMaterial({
     color: 0x242932,
     metalness: 0.95,
-    roughness: 0.22,
+    roughness: 0.2,
     envMap: environmentTexture,
-    envMapIntensity: 1.5,
-    clearcoat: 1
+    envMapIntensity: 1.8,
+    clearcoat: 1,
+    clearcoatRoughness: 0.1
   });
 }
-
 
 /* ==========================================
    LIGHTING SYSTEM
@@ -212,7 +229,6 @@ function createLighting() {
 
   applyLighting(currentLighting);
 }
-
 
 function applyLighting(mode) {
   const presets = {
@@ -269,7 +285,6 @@ function applyLighting(mode) {
   scene.background = new THREE.Color(p.background);
 }
 
-
 /* ==========================================
    GEOMETRY HELPERS
 ========================================== */
@@ -286,7 +301,6 @@ function createMesh(
   return mesh;
 }
 
-
 function addRing(
   group,
   radius,
@@ -298,8 +312,8 @@ function addRing(
     new THREE.TorusGeometry(
       radius,
       tube * parameters.thickness,
-      20 + parameters.complexity * 3,
-      100 + parameters.complexity * 15
+      32 + parameters.complexity * 4,
+      160 + parameters.complexity * 20
     ),
     material
   );
@@ -311,16 +325,19 @@ function addRing(
   return ring;
 }
 
-
 function addCurveTube(
   group,
   points,
   radius,
   material,
-  segments = 180,
-  radialSegments = 16
+  segments = 220,
+  radialSegments = 24
 ) {
-  const curve = new THREE.CatmullRomCurve3(points);
+  const curve = new THREE.CatmullRomCurve3(
+    points,
+    false,
+    "centripetal"
+  );
 
   const tube = createMesh(
     new THREE.TubeGeometry(
@@ -337,7 +354,6 @@ function addCurveTube(
 
   return tube;
 }
-
 
 /* ==========================================
    CUSTOM GEOMETRY DEFORMATION
@@ -364,11 +380,8 @@ function deformGeometry(geometry) {
     const twistedX = x * cos - z * sin;
     const twistedZ = x * sin + z * cos;
 
-    x = twistedX;
-    z = twistedZ;
-
-    x *= thicknessAmount;
-    z *= thicknessAmount;
+    x = twistedX * thicknessAmount;
+    z = twistedZ * thicknessAmount;
 
     position.setXYZ(i, x, y, z);
   }
@@ -381,22 +394,17 @@ function deformGeometry(geometry) {
   return geometry;
 }
 
-
 function applyCustomParameters() {
   if (!sculptureGroup) return;
 
   sculptureGroup.traverse(object => {
-    if (
-      object.isMesh &&
-      object.geometry
-    ) {
+    if (object.isMesh && object.geometry) {
       deformGeometry(object.geometry);
     }
   });
 
   sculptureGroup.scale.setScalar(parameters.scale);
 }
-
 
 /* ==========================================
    PRESET 01 — LIQUID KNOT
@@ -409,8 +417,8 @@ function createLiquidKnot(group) {
     new THREE.TorusKnotGeometry(
       0.95,
       0.29 * parameters.thickness,
-      180 + detail * 30,
-      20 + detail * 5,
+      300 + detail * 35,
+      32 + detail * 5,
       2,
       3
     )
@@ -425,8 +433,8 @@ function createLiquidKnot(group) {
     new THREE.TorusKnotGeometry(
       0.48,
       0.075 * parameters.thickness,
-      120 + detail * 15,
-      16 + detail * 2,
+      220 + detail * 25,
+      24 + detail * 3,
       3,
       5
     ),
@@ -439,16 +447,12 @@ function createLiquidKnot(group) {
   group.add(inner);
 
   const core = createMesh(
-    new THREE.IcosahedronGeometry(
-      0.23,
-      Math.min(2 + Math.floor(detail / 2), 6)
-    ),
+    new THREE.SphereGeometry(0.23, 64, 48),
     getMaterial()
   );
 
   group.add(core);
 }
-
 
 /* ==========================================
    PRESET 02 — ORBITAL RINGS
@@ -470,22 +474,19 @@ function createOrbital(group) {
   );
 
   const center = createMesh(
-    new THREE.IcosahedronGeometry(
-      0.23,
-      Math.min(2 + Math.floor(parameters.complexity / 2), 6)
-    ),
+    new THREE.SphereGeometry(0.23, 64, 48),
     new THREE.MeshPhysicalMaterial({
       color: 0xc6b69a,
       metalness: 0.95,
-      roughness: 0.15,
+      roughness: 0.13,
       envMap: environmentTexture,
-      envMapIntensity: 2
+      envMapIntensity: 2.2,
+      clearcoat: 1
     })
   );
 
   group.add(center);
 }
-
 
 /* ==========================================
    PRESET 03 — MONOLITH
@@ -507,11 +508,11 @@ function createMonolith(group) {
   const geometry = new THREE.ExtrudeGeometry(shape, {
     depth: 0.34 * parameters.thickness,
     bevelEnabled: true,
-    bevelSegments: parameters.complexity,
+    bevelSegments: 8 + parameters.complexity * 2,
     bevelSize: 0.1,
     bevelThickness: 0.1,
     steps: 1,
-    curveSegments: 4 + parameters.complexity * 2
+    curveSegments: 16 + parameters.complexity * 3
   });
 
   geometry.center();
@@ -526,8 +527,8 @@ function createMonolith(group) {
     new THREE.TorusGeometry(
       0.85,
       0.035 * parameters.thickness,
-      20 + parameters.complexity * 2,
-      100 + parameters.complexity * 12
+      32,
+      180
     ),
     getDarkMaterial()
   );
@@ -542,7 +543,8 @@ function createMonolith(group) {
       0.55,
       0.7,
       0.12 * parameters.thickness,
-      32 + parameters.complexity * 12
+      96,
+      8
     ),
     getDarkMaterial()
   );
@@ -551,7 +553,6 @@ function createMonolith(group) {
 
   group.add(base);
 }
-
 
 /* ==========================================
    PRESET 04 — FLUID WAVE
@@ -562,7 +563,7 @@ function createFluidWave(group) {
   const material = getMaterial();
 
   const points = [];
-  const pointCount = 35 + detail * 12;
+  const pointCount = 60 + detail * 16;
 
   for (let i = 0; i <= pointCount; i++) {
     const t = i / pointCount;
@@ -581,8 +582,8 @@ function createFluidWave(group) {
     points,
     0.17,
     material,
-    100 + detail * 30,
-    12 + detail * 3
+    280 + detail * 35,
+    28 + detail * 3
   );
 
   const secondaryPoints = [];
@@ -604,11 +605,10 @@ function createFluidWave(group) {
     secondaryPoints,
     0.055,
     getDarkMaterial(),
-    100 + detail * 30,
-    10 + detail * 2
+    280 + detail * 35,
+    24
   );
 }
-
 
 /* ==========================================
    PRESET 05 — CHROME BLOOM
@@ -625,8 +625,8 @@ function createChromeBloom(group) {
     const petal = createMesh(
       new THREE.SphereGeometry(
         0.55,
-        24 + parameters.complexity * 5,
-        20 + parameters.complexity * 4
+        64,
+        48
       ),
       material
     );
@@ -645,11 +645,7 @@ function createChromeBloom(group) {
   }
 
   const center = createMesh(
-    new THREE.SphereGeometry(
-      0.4,
-      32 + parameters.complexity * 4,
-      32 + parameters.complexity * 4
-    ),
+    new THREE.SphereGeometry(0.4, 64, 48),
     getDarkMaterial()
   );
 
@@ -659,8 +655,8 @@ function createChromeBloom(group) {
     new THREE.TorusGeometry(
       1.25,
       0.025 * parameters.thickness,
-      20 + parameters.complexity * 2,
-      100 + parameters.complexity * 12
+      32,
+      180
     ),
     getMaterial()
   );
@@ -669,7 +665,6 @@ function createChromeBloom(group) {
 
   group.add(outerRing);
 }
-
 
 /* ==========================================
    PRESET 06 — HELIX
@@ -680,7 +675,7 @@ function createHelix(group) {
   const material = getMaterial();
 
   const turns = 2.4 + detail * 0.16;
-  const pointCount = 100 + detail * 25;
+  const pointCount = 160 + detail * 30;
 
   for (let strand = 0; strand < 2; strand++) {
     const points = [];
@@ -705,8 +700,8 @@ function createHelix(group) {
       points,
       strand === 0 ? 0.085 : 0.055,
       strand === 0 ? material : getDarkMaterial(),
-      180 + detail * 35,
-      12 + detail * 2
+      300 + detail * 35,
+      24
     );
   }
 
@@ -735,12 +730,14 @@ function createHelix(group) {
         0.018 * parameters.thickness,
         0.018 * parameters.thickness,
         start.distanceTo(end),
-        10
+        24,
+        4
       ),
       getDarkMaterial()
     );
 
     connector.position.copy(start).add(end).multiplyScalar(0.5);
+
     connector.quaternion.setFromUnitVectors(
       new THREE.Vector3(0, 1, 0),
       new THREE.Vector3().subVectors(end, start).normalize()
@@ -750,7 +747,6 @@ function createHelix(group) {
   }
 }
 
-
 /* ==========================================
    PRESET 07 — MÖBIUS FORM
 ========================================== */
@@ -758,8 +754,8 @@ function createHelix(group) {
 function createMobius(group) {
   const detail = parameters.complexity;
 
-  const segments = 48 + detail * 12;
-  const widthSegments = 8 + detail * 2;
+  const segments = 100 + detail * 20;
+  const widthSegments = 20 + detail * 3;
 
   const positions = [];
   const uvs = [];
@@ -774,7 +770,6 @@ function createMobius(group) {
       const v = (j / widthSegments - 0.5) * width * 2;
 
       const half = u / 2;
-
       const radius = 0.95 + v * Math.cos(half);
 
       const x = radius * Math.cos(u);
@@ -816,23 +811,15 @@ function createMobius(group) {
   const surface = createMesh(
     geometry,
     new THREE.MeshPhysicalMaterial({
-      ...{
-        color: 0xe2e5e8,
-        metalness: 1,
-        roughness: 0.18,
-        envMap: environmentTexture,
-        envMapIntensity: 2,
-        side: THREE.DoubleSide,
-        clearcoat: 1
-      },
-      ...(currentMaterial === "titanium" ? {
-        color: 0x626b78,
-        roughness: 0.25
-      } : {}),
-      ...(currentMaterial === "champagne" ? {
-        color: 0xc6b69a,
-        roughness: 0.2
-      } : {})
+      color: currentMaterial === "titanium" ? 0x78818e :
+        currentMaterial === "champagne" ? 0xc6b69a : 0xe6e9ed,
+      metalness: 1,
+      roughness: 0.14,
+      envMap: environmentTexture,
+      envMapIntensity: 2.2,
+      side: THREE.DoubleSide,
+      clearcoat: 1,
+      clearcoatRoughness: 0.08
     })
   );
 
@@ -841,13 +828,12 @@ function createMobius(group) {
   group.add(surface);
 
   const center = createMesh(
-    new THREE.SphereGeometry(0.19, 32, 32),
+    new THREE.SphereGeometry(0.19, 48, 36),
     getDarkMaterial()
   );
 
   group.add(center);
 }
-
 
 /* ==========================================
    PRESET 08 — VORONOI STRUCTURE
@@ -861,13 +847,14 @@ function createVoronoi(group) {
     Math.min(1 + Math.floor(detail / 3), 3)
   );
 
+  // This preset intentionally keeps a faceted structure.
   const coreMaterial = new THREE.MeshPhysicalMaterial({
     color: currentMaterial === "champagne" ? 0xc6b69a :
-      currentMaterial === "titanium" ? 0x626b78 : 0xe2e5e8,
+      currentMaterial === "titanium" ? 0x78818e : 0xe6e9ed,
     metalness: 0.95,
-    roughness: 0.22,
+    roughness: 0.2,
     envMap: environmentTexture,
-    envMapIntensity: 1.8,
+    envMapIntensity: 2,
     flatShading: true,
     clearcoat: 1
   });
@@ -885,7 +872,7 @@ function createVoronoi(group) {
     new THREE.LineBasicMaterial({
       color: 0x242932,
       transparent: true,
-      opacity: 0.9
+      opacity: 0.75
     })
   );
 
@@ -924,7 +911,6 @@ function createVoronoi(group) {
   }
 }
 
-
 /* ==========================================
    PRESET 09 — PARAMETRIC WAVE
 ========================================== */
@@ -932,8 +918,8 @@ function createVoronoi(group) {
 function createParametricWave(group) {
   const detail = parameters.complexity;
 
-  const widthSegments = 24 + detail * 8;
-  const heightSegments = 24 + detail * 8;
+  const widthSegments = 70 + detail * 12;
+  const heightSegments = 70 + detail * 12;
 
   const geometry = new THREE.PlaneGeometry(
     2.8,
@@ -965,13 +951,14 @@ function createParametricWave(group) {
 
   const surfaceMaterial = new THREE.MeshPhysicalMaterial({
     color: currentMaterial === "champagne" ? 0xc6b69a :
-      currentMaterial === "titanium" ? 0x626b78 : 0xe2e5e8,
+      currentMaterial === "titanium" ? 0x78818e : 0xe6e9ed,
     metalness: 0.95,
-    roughness: 0.2,
+    roughness: 0.16,
     envMap: environmentTexture,
-    envMapIntensity: 1.8,
+    envMapIntensity: 2,
     side: THREE.DoubleSide,
-    clearcoat: 1
+    clearcoat: 1,
+    clearcoatRoughness: 0.08
   });
 
   const surface = createMesh(geometry, surfaceMaterial);
@@ -980,6 +967,7 @@ function createParametricWave(group) {
 
   group.add(surface);
 
+  // Keep the wire detail subtle so it does not dominate the smooth surface.
   const wireGeometry = new THREE.WireframeGeometry(geometry);
 
   const wire = new THREE.LineSegments(
@@ -987,7 +975,7 @@ function createParametricWave(group) {
     new THREE.LineBasicMaterial({
       color: 0x343b46,
       transparent: true,
-      opacity: 0.55
+      opacity: 0.12
     })
   );
 
@@ -996,7 +984,6 @@ function createParametricWave(group) {
   group.add(wire);
 }
 
-
 /* ==========================================
    PRESET 10 — LIQUID SPHERE
 ========================================== */
@@ -1004,9 +991,11 @@ function createParametricWave(group) {
 function createLiquidSphere(group) {
   const detail = parameters.complexity;
 
-  const geometry = new THREE.IcosahedronGeometry(
+  // SphereGeometry provides smooth indexed vertex normals.
+  const geometry = new THREE.SphereGeometry(
     0.95,
-    Math.min(2 + Math.floor(detail / 2), 5)
+    96 + detail * 12,
+    72 + detail * 10
   );
 
   const position = geometry.attributes.position;
@@ -1019,11 +1008,11 @@ function createLiquidSphere(group) {
     const wave = (
       Math.sin(x * 5.5 + y * 3.2) *
       Math.cos(z * 4.8 - y * 2.1)
-    ) * 0.09;
+    ) * 0.045;
 
     const ripple = Math.sin(
       (x + y + z) * 8
-    ) * 0.035;
+    ) * 0.018;
 
     const factor = 1 + wave + ripple;
 
@@ -1048,8 +1037,8 @@ function createLiquidSphere(group) {
     new THREE.TorusGeometry(
       0.48,
       0.018 * parameters.thickness,
-      16,
-      100
+      32,
+      180
     ),
     getDarkMaterial()
   );
@@ -1062,8 +1051,8 @@ function createLiquidSphere(group) {
     new THREE.TorusGeometry(
       1.15,
       0.022 * parameters.thickness,
-      16,
-      120
+      32,
+      200
     ),
     getMaterial()
   );
@@ -1072,7 +1061,6 @@ function createLiquidSphere(group) {
 
   group.add(outerRing);
 }
-
 
 /* ==========================================
    PRESET REGISTRY
@@ -1084,7 +1072,6 @@ const presetBuilders = {
   spire: createMonolith,
   wave: createFluidWave,
   bloom: createChromeBloom,
-
   helix: createHelix,
   mobius: createMobius,
   voronoi: createVoronoi,
@@ -1092,33 +1079,35 @@ const presetBuilders = {
   sphere: createLiquidSphere
 };
 
-
 /* ==========================================
    OBJECT CLEANUP
 ========================================== */
 
 function clearGroup(group) {
+  const geometries = new Set();
+  const materials = new Set();
+
   group.traverse(object => {
     if (object.geometry) {
-      object.geometry.dispose();
+      geometries.add(object.geometry);
     }
 
     if (object.material) {
       if (Array.isArray(object.material)) {
-        object.material.forEach(material => {
-          material.dispose();
-        });
+        object.material.forEach(material => materials.add(material));
       } else {
-        object.material.dispose();
+        materials.add(object.material);
       }
     }
   });
+
+  geometries.forEach(geometry => geometry.dispose());
+  materials.forEach(material => material.dispose());
 
   while (group.children.length) {
     group.remove(group.children[0]);
   }
 }
-
 
 /* ==========================================
    BUILD SCULPTURE
@@ -1156,7 +1145,6 @@ function buildSculpture(preset) {
   renderOnce();
 }
 
-
 /* ==========================================
    GEOMETRY CONTROL SYSTEM
 ========================================== */
@@ -1167,7 +1155,6 @@ function updateParameterDisplays() {
   thicknessValue.textContent = Number(parameters.thickness).toFixed(2);
   complexityValue.textContent = String(parameters.complexity);
 }
-
 
 function readGeometryControls() {
   parameters.twist = Number(twistControl.value);
@@ -1181,7 +1168,6 @@ function readGeometryControls() {
   updateParameterDisplays();
 }
 
-
 function syncGeometryControls() {
   twistControl.value = parameters.twist;
   scaleControl.value = parameters.scale;
@@ -1191,12 +1177,10 @@ function syncGeometryControls() {
   updateParameterDisplays();
 }
 
-
 function updateGeometry() {
   readGeometryControls();
   buildSculpture(currentPreset);
 }
-
 
 [
   twistControl,
@@ -1206,7 +1190,6 @@ function updateGeometry() {
 ].forEach(control => {
   control.addEventListener("input", updateGeometry);
 });
-
 
 geometryReset.addEventListener("click", () => {
   parameters.twist = defaults.twist;
@@ -1218,7 +1201,6 @@ geometryReset.addEventListener("click", () => {
   buildSculpture(currentPreset);
 });
 
-
 /* ==========================================
    MATERIAL UPDATE
 ========================================== */
@@ -1226,7 +1208,6 @@ geometryReset.addEventListener("click", () => {
 function updateMaterial() {
   buildSculpture(currentPreset);
 }
-
 
 /* ==========================================
    SCENE INITIALISATION
@@ -1252,18 +1233,24 @@ function initialise() {
   renderer = new THREE.WebGLRenderer({
     antialias: true,
     alpha: false,
-    powerPreference: "high-performance"
+    powerPreference: "high-performance",
+    precision: "highp",
+    stencil: false,
+    depth: true
   });
 
+  // Higher pixel density produces cleaner curved edges.
   renderer.setPixelRatio(
-    Math.min(window.devicePixelRatio || 1, 1.75)
+    Math.min(window.devicePixelRatio || 1, 2)
   );
 
   renderer.setSize(width, height);
 
   renderer.outputColorSpace = THREE.SRGBColorSpace;
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
-  renderer.toneMappingExposure = 1.15;
+  renderer.toneMappingExposure = 1.05;
+
+  renderer.setClearColor(0x111419, 1);
 
   renderer.domElement.setAttribute(
     "aria-label",
@@ -1295,7 +1282,6 @@ function initialise() {
   }
 }
 
-
 /* ==========================================
    RENDERING
 ========================================== */
@@ -1305,7 +1291,6 @@ function renderOnce() {
 
   renderer.render(scene, camera);
 }
-
 
 function animate() {
   animationFrame = null;
@@ -1331,13 +1316,11 @@ function animate() {
   animationFrame = requestAnimationFrame(animate);
 }
 
-
 function startAnimation() {
   if (animationFrame !== null || reducedMotion) return;
 
   animationFrame = requestAnimationFrame(animate);
 }
-
 
 /* ==========================================
    RESIZE
@@ -1350,14 +1333,12 @@ function resizeRenderer() {
   const height = Math.max(viewport.clientHeight, 1);
 
   camera.aspect = width / height;
-
   camera.updateProjectionMatrix();
 
   renderer.setSize(width, height);
 
   renderOnce();
 }
-
 
 /* ==========================================
    POINTER ROTATION AND ZOOM
@@ -1420,7 +1401,6 @@ function setupPointerEvents() {
   });
 }
 
-
 /* ==========================================
    PRESET CONTROLS
 ========================================== */
@@ -1436,7 +1416,6 @@ presetList.addEventListener("click", event => {
     item.classList.toggle("active", item === button);
   });
 });
-
 
 /* ==========================================
    MATERIAL CONTROLS
@@ -1455,7 +1434,6 @@ materialOptions.addEventListener("click", event => {
 
   updateMaterial();
 });
-
 
 /* ==========================================
    LIGHTING CONTROLS
@@ -1476,7 +1454,6 @@ lightingOptions.addEventListener("click", event => {
 
   renderOnce();
 });
-
 
 /* ==========================================
    RANDOM GENERATOR
@@ -1530,7 +1507,6 @@ randomButton.addEventListener("click", () => {
   renderOnce();
 });
 
-
 /* ==========================================
    ACTIVE CONTROL STATES
 ========================================== */
@@ -1558,7 +1534,6 @@ function updateActiveControls() {
   });
 }
 
-
 /* ==========================================
    AUTO ROTATION
 ========================================== */
@@ -1570,7 +1545,6 @@ autoRotateInput.addEventListener("change", () => {
     renderOnce();
   }
 });
-
 
 /* ==========================================
    RESET ALL SETTINGS
@@ -1612,7 +1586,6 @@ resetButton.addEventListener("click", () => {
   }
 });
 
-
 /* ==========================================
    CLEANUP
 ========================================== */
@@ -1630,7 +1603,6 @@ window.addEventListener("beforeunload", () => {
 
   environmentTexture?.dispose();
 });
-
 
 /* ==========================================
    START FORM LAB
