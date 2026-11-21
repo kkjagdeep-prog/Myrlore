@@ -114,7 +114,6 @@
   if (cursorGlow && !touchDevice && !reducedMotion) {
     let mouseX = innerWidth / 2;
     let mouseY = innerHeight / 2;
-
     let currentX = mouseX;
     let currentY = mouseY;
 
@@ -141,8 +140,10 @@
       });
 
       element.addEventListener("mouseleave", () => {
-        cursorGlow.classList.remove("cursor-hover");
-        cursorGlow.classList.remove("cursor-project");
+        cursorGlow.classList.remove(
+          "cursor-hover",
+          "cursor-project"
+        );
         cursorGlow.removeAttribute("data-label");
       });
     });
@@ -267,7 +268,6 @@
 
     trigger.setAttribute("aria-expanded", "true");
     item.classList.add("is-active");
-
     panel.hidden = false;
 
     if (gsapInstance && !reducedMotion) {
@@ -298,11 +298,9 @@
         if (other !== item) closeService(other, otherIndex);
       });
 
-      if (active) {
-        closeService(item, index);
-      } else {
-        openService(item, index);
-      }
+      active
+        ? closeService(item, index)
+        : openService(item, index);
     });
   });
 
@@ -648,8 +646,6 @@
   const BLADE_SEGMENTS = 84;
   const RADIAL_SEGMENTS = 24;
 
-  /* BLADE GEOMETRY */
-
   function createBladeGeometry(options = {}) {
     const {
       length = 2.8,
@@ -664,7 +660,6 @@
     const positions = [];
     const uvs = [];
     const indices = [];
-
     const curvePoints = [];
 
     for (let i = 0; i <= BLADE_SEGMENTS; i++) {
@@ -708,7 +703,6 @@
       );
 
       const twistAngle = twist * t;
-
       const normal = frames.normals[i];
       const binormal = frames.binormals[i];
 
@@ -777,8 +771,6 @@
     return geometry;
   }
 
-  /* CHROME CURVES */
-
   function createChromeCurve(points, material, radius = 0.018) {
     const curve = new THREE.CatmullRomCurve3(points);
 
@@ -793,10 +785,8 @@
     return new THREE.Mesh(geometry, material);
   }
 
-  /* ENVIRONMENT REFLECTIONS */
-
-  function createEnvironment(renderer) {
-    const pmrem = new THREE.PMREMGenerator(renderer);
+  function createEnvironment(rendererInstance) {
+    const pmrem = new THREE.PMREMGenerator(rendererInstance);
 
     const environmentScene = new THREE.Scene();
     environmentScene.background = new THREE.Color(0x17191e);
@@ -826,7 +816,30 @@
     return texture;
   }
 
-  /* INITIALISE THREE.JS */
+  /* ONE SHARED THREE.JS ANIMATION LOOP */
+
+  function animateThreeAgain() {
+    if (!pageVisible || !threeReady) return;
+
+    animationFrame = requestAnimationFrame(animateThreeAgain);
+
+    const elapsed = clock.getElapsedTime();
+
+    sculpture.rotation.y = elapsed * 0.13 + scrollRotation;
+
+    sculpture.rotation.x =
+      Math.sin(elapsed * 0.25) * 0.13 + pointerY * 0.3;
+
+    sculpture.rotation.z =
+      Math.cos(elapsed * 0.2) * 0.08 + pointerX * 0.2;
+
+    sculpture.position.y = Math.sin(elapsed * 0.5) * 0.08;
+
+    particleSystem.rotation.y = elapsed * 0.025;
+    particleSystem.rotation.x = elapsed * 0.012;
+
+    renderer.render(scene, camera);
+  }
 
   async function initialiseThree() {
     if (!canvas || threeReady || reducedMotion) return;
@@ -1060,32 +1073,12 @@
         scrollRotation = window.scrollY * 0.00015;
       }, { passive: true });
 
-      function animate() {
-        if (!pageVisible || !threeReady) return;
-
-        animationFrame = requestAnimationFrame(animate);
-
-        const elapsed = clock.getElapsedTime();
-
-        sculpture.rotation.y = elapsed * 0.13 + scrollRotation;
-
-        sculpture.rotation.x =
-          Math.sin(elapsed * 0.25) * 0.13 + pointerY * 0.3;
-
-        sculpture.rotation.z =
-          Math.cos(elapsed * 0.2) * 0.08 + pointerX * 0.2;
-
-        sculpture.position.y = Math.sin(elapsed * 0.5) * 0.08;
-
-        particleSystem.rotation.y = elapsed * 0.025;
-        particleSystem.rotation.x = elapsed * 0.012;
-
-        renderer.render(scene, camera);
-      }
-
       threeReady = true;
 
-      if (pageVisible) animate();
+      if (pageVisible) {
+        clock.start();
+        animateThreeAgain();
+      }
 
     } catch (error) {
       console.error("MYRLORE sculpture initialisation failed:", error);
@@ -1113,47 +1106,25 @@
     }
   }
 
-  /* TAB VISIBILITY — FIXED RESUME */
+  /* TAB VISIBILITY */
 
   document.addEventListener("visibilitychange", () => {
     pageVisible = !document.hidden;
 
     if (!renderer || !threeReady) return;
 
-    cancelAnimationFrame(animationFrame);
-
-    if (pageVisible) {
-      clock.start();
-      animateThreeAgain();
+    if (!pageVisible) {
+      cancelAnimationFrame(animationFrame);
+      return;
     }
+
+    clock.start();
+    animateThreeAgain();
   });
-
-  function animateThreeAgain() {
-    if (!pageVisible || !threeReady) return;
-
-    animationFrame = requestAnimationFrame(animateThreeAgain);
-
-    const elapsed = clock.getElapsedTime();
-
-    sculpture.rotation.y = elapsed * 0.13 + scrollRotation;
-
-    sculpture.rotation.x =
-      Math.sin(elapsed * 0.25) * 0.13 + pointerY * 0.3;
-
-    sculpture.rotation.z =
-      Math.cos(elapsed * 0.2) * 0.08 + pointerX * 0.2;
-
-    sculpture.position.y = Math.sin(elapsed * 0.5) * 0.08;
-
-    particleSystem.rotation.y = elapsed * 0.025;
-    particleSystem.rotation.x = elapsed * 0.012;
-
-    renderer.render(scene, camera);
-  }
 
   /* ==========================================
      MYRLORE® — CAPRI SECRET ARCHIVE
-     Glitch entrance · orbit · final position
+     FLIGHT · RGB GLITCH · SCREEN POP-OUT
   ========================================== */
 
   const konamiSequence = [
@@ -1184,11 +1155,19 @@
       place-items: center;
       overflow: hidden;
       padding: 24px;
-      background: #050608;
+      isolation: isolate;
+      perspective: 1100px;
+      background:
+        radial-gradient(ellipse at 50% 48%,
+          rgba(198,182,154,.075),
+          transparent 48%),
+        #050608;
       color: #eeeDE8;
       opacity: 0;
       visibility: hidden;
-      transition: opacity .45s ease, visibility .45s ease;
+      transition:
+        opacity .4s ease,
+        visibility .4s ease;
       font-family: "Manrope", sans-serif;
     }
 
@@ -1201,19 +1180,44 @@
       content: "";
       position: absolute;
       inset: 0;
+      z-index: 0;
       pointer-events: none;
-      opacity: .12;
+      opacity: .13;
       background-image:
         linear-gradient(rgba(255,255,255,.035) 1px, transparent 1px),
         linear-gradient(90deg, rgba(255,255,255,.035) 1px, transparent 1px);
       background-size: 4px 4px;
     }
 
+    #myrloreSecretOverlay::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      z-index: 7;
+      pointer-events: none;
+      opacity: 0;
+      background:
+        linear-gradient(
+          90deg,
+          transparent 0 18%,
+          rgba(198,182,154,.13) 18% 18.2%,
+          transparent 18.2% 64%,
+          rgba(35,220,205,.12) 64% 64.2%,
+          transparent 64.2%
+        );
+      mix-blend-mode: screen;
+    }
+
+    #myrloreSecretOverlay.active::after {
+      animation: capriScreenFlash 3.9s steps(1) both;
+    }
+
     #myrloreSecretOverlay .secret-noise {
       position: absolute;
       inset: -50%;
+      z-index: 1;
       pointer-events: none;
-      opacity: .08;
+      opacity: .075;
       background: repeating-linear-gradient(
         transparent 0px,
         transparent 3px,
@@ -1229,7 +1233,9 @@
       text-align: center;
       opacity: 0;
       transform: translateY(18px);
-      transition: opacity .8s ease .5s, transform .8s ease .5s;
+      transition:
+        opacity .8s ease .5s,
+        transform .8s ease .5s;
     }
 
     #myrloreSecretOverlay.active .secret-inner {
@@ -1246,6 +1252,7 @@
 
     #myrloreSecretOverlay h2 {
       margin: 0;
+      color: #eeeDE8;
       font-size: clamp(42px, 8vw, 84px);
       font-weight: 500;
       letter-spacing: -.075em;
@@ -1271,25 +1278,40 @@
       font: 10px "DM Mono", monospace;
       letter-spacing: .16em;
       cursor: pointer;
-      transition: background .3s ease, color .3s ease;
+      transition:
+        background .3s ease,
+        color .3s ease,
+        border-color .3s ease;
     }
 
     #myrloreSecretOverlay button:hover {
       background: #c6b69a;
       color: #08090b;
+      border-color: #c6b69a;
     }
+
+    /* ======================================
+       CAPRI CHARACTER LAYER
+    ====================================== */
 
     #capriFlight {
       position: fixed;
       z-index: 5;
       left: 50%;
       top: 50%;
-      width: clamp(150px, 24vw, 290px);
-      aspect-ratio: 1;
+      width: clamp(170px, 25vw, 310px);
+      height: min(70vh, 440px);
       opacity: 0;
       pointer-events: none;
-      transform: translate(100vw, -50%) scale(.7);
-      filter: drop-shadow(0 0 22px rgba(255,35,130,.25));
+      transform-style: preserve-3d;
+      transform:
+        translate(-50%, -50%)
+        translate3d(110vw, 0, -300px)
+        scale(.35);
+      filter:
+        drop-shadow(0 0 16px rgba(198,182,154,.18))
+        drop-shadow(0 0 30px rgba(35,220,205,.12));
+      will-change: left, top, transform, filter, opacity;
     }
 
     #capriFlight img {
@@ -1300,52 +1322,98 @@
       object-fit: contain;
       user-select: none;
       -webkit-user-drag: none;
+      pointer-events: none;
     }
 
     #capriFlight .capri-main {
       z-index: 3;
-      filter: drop-shadow(0 0 12px rgba(255,55,150,.28));
+      filter:
+        drop-shadow(0 0 12px rgba(198,182,154,.24));
+    }
+
+    /* Cyan and magenta colour separation */
+
+    #capriFlight .capri-ghost-one,
+    #capriFlight .capri-ghost-two {
+      z-index: 2;
+      opacity: 0;
+      mix-blend-mode: screen;
     }
 
     #capriFlight .capri-ghost-one {
-      z-index: 2;
-      opacity: 0;
-      filter: brightness(1.8) sepia(1) saturate(5) hue-rotate(285deg);
-      animation: capriGhostOne .2s steps(2) 3;
+      filter:
+        brightness(1.5)
+        sepia(1)
+        saturate(5)
+        hue-rotate(285deg);
     }
 
     #capriFlight .capri-ghost-two {
       z-index: 1;
-      opacity: 0;
-      filter: brightness(1.7) sepia(1) saturate(5) hue-rotate(95deg);
-      animation: capriGhostTwo .22s steps(2) 3;
+      filter:
+        brightness(1.45)
+        sepia(1)
+        saturate(5)
+        hue-rotate(125deg);
     }
 
-    #capriFlight::after {
+    #capriFlight .capri-main {
+      animation: none;
+    }
+
+    /* Glitch slices over the character */
+
+    #capriFlight .capri-slice {
+      position: absolute;
+      z-index: 4;
+      inset: 0;
+      overflow: hidden;
+      opacity: 0;
+      pointer-events: none;
+      background: transparent;
+    }
+
+    #capriFlight .capri-slice::before,
+    #capriFlight .capri-slice::after {
       content: "";
       position: absolute;
-      inset: 10%;
-      z-index: 4;
-      pointer-events: none;
-      opacity: 0;
-      background: repeating-linear-gradient(
-        0deg,
-        transparent 0px,
-        transparent 8px,
-        rgba(255,40,140,.45) 9px,
-        transparent 11px
-      );
+      left: -15%;
+      width: 130%;
+      height: 12%;
+      background: rgba(198,182,154,.2);
       mix-blend-mode: screen;
-      animation: capriScan 3.7s linear both;
+    }
+
+    #capriFlight .capri-slice::before {
+      top: 30%;
+    }
+
+    #capriFlight .capri-slice::after {
+      top: 64%;
+      background: rgba(35,220,205,.2);
     }
 
     #myrloreSecretOverlay.active #capriFlight {
-      animation: capriFlightPath 3.7s cubic-bezier(.2,.75,.25,1) both;
+      animation: capriFlightPath 4.15s cubic-bezier(.18,.72,.18,1) both;
     }
 
     #myrloreSecretOverlay.active #capriFlight .capri-main {
-      animation: capriIdle 2.8s ease-in-out 3.7s infinite;
+      animation: capriFinalIdle 3s ease-in-out 4.15s infinite;
     }
+
+    #myrloreSecretOverlay.active #capriFlight .capri-ghost-one {
+      animation: capriGhostOne .24s steps(2) 0s 8;
+    }
+
+    #myrloreSecretOverlay.active #capriFlight .capri-ghost-two {
+      animation: capriGhostTwo .28s steps(2) .08s 7;
+    }
+
+    #myrloreSecretOverlay.active #capriFlight .capri-slice {
+      animation: capriSlice 4.15s steps(1) both;
+    }
+
+    /* Full-screen glitch flashes */
 
     .capri-glitch-flash {
       position: absolute;
@@ -1353,19 +1421,22 @@
       inset: 0;
       pointer-events: none;
       opacity: 0;
-      background: linear-gradient(
-        90deg,
-        transparent 0 15%,
-        rgba(255,40,140,.18) 15% 18%,
-        transparent 18% 65%,
-        rgba(30,220,190,.15) 65% 68%,
-        transparent 68%
-      );
+      background:
+        linear-gradient(
+          90deg,
+          transparent 0 12%,
+          rgba(35,220,205,.15) 12% 15%,
+          transparent 15% 48%,
+          rgba(198,182,154,.16) 48% 52%,
+          transparent 52% 80%,
+          rgba(255,55,145,.12) 80% 83%,
+          transparent 83%
+        );
       mix-blend-mode: screen;
     }
 
     #myrloreSecretOverlay.active .capri-glitch-flash {
-      animation: capriFlash 3.7s steps(1) both;
+      animation: capriFlash 4.15s steps(1) both;
     }
 
     #myrloreSecretOverlay .secret-symbol {
@@ -1373,102 +1444,292 @@
       color: #c6b69a;
       font-size: 28px;
       margin-bottom: 20px;
+      text-shadow: 0 0 20px rgba(198,182,154,.2);
     }
+
+    /* ======================================
+       THE FLIGHT
+       Smooth screen movement, then a
+       perspective pop directly at the viewer.
+    ====================================== */
 
     @keyframes capriFlightPath {
       0% {
         left: 115%;
         top: 18%;
         opacity: 0;
-        transform: translate(-50%,-50%) rotate(25deg) scale(.55);
+        filter: blur(12px);
+        transform:
+          translate(-50%, -50%)
+          translate3d(0, 0, -400px)
+          rotate(22deg)
+          scale(.35);
       }
-      9% {
+
+      7% {
         opacity: 1;
-        left: 83%;
+        left: 88%;
         top: 20%;
-        transform: translate(-50%,-50%) rotate(-18deg) scale(.85);
+        filter: blur(0);
+        transform:
+          translate(-50%, -50%)
+          translate3d(0, 0, 0)
+          rotate(-14deg)
+          scale(.82);
       }
+
       19% {
         left: 17%;
-        top: 12%;
-        transform: translate(-50%,-50%) rotate(16deg) scale(1.05);
+        top: 13%;
+        transform:
+          translate(-50%, -50%)
+          translate3d(0, 0, 50px)
+          rotate(13deg)
+          scale(1.05);
       }
-      29% {
+
+      31% {
         left: 9%;
         top: 73%;
-        transform: translate(-50%,-50%) rotate(-22deg) scale(.88);
+        transform:
+          translate(-50%, -50%)
+          translate3d(0, 0, 20px)
+          rotate(-18deg)
+          scale(.9);
       }
-      40% {
-        left: 67%;
-        top: 89%;
-        transform: translate(-50%,-50%) rotate(18deg) scale(1.12);
+
+      43% {
+        left: 68%;
+        top: 88%;
+        transform:
+          translate(-50%, -50%)
+          translate3d(0, 0, 80px)
+          rotate(17deg)
+          scale(1.08);
       }
-      51% {
+
+      54% {
         left: 92%;
-        top: 45%;
-        transform: translate(-50%,-50%) rotate(-12deg) scale(.92);
+        top: 43%;
+        transform:
+          translate(-50%, -50%)
+          translate3d(0, 0, 30px)
+          rotate(-12deg)
+          scale(.92);
       }
-      63% {
-        left: 52%;
+
+      65% {
+        left: 53%;
         top: 12%;
-        transform: translate(-50%,-50%) rotate(13deg) scale(1.05);
+        transform:
+          translate(-50%, -50%)
+          translate3d(0, 0, 70px)
+          rotate(12deg)
+          scale(1.08);
       }
-      76% {
-        left: 38%;
-        top: 53%;
-        transform: translate(-50%,-50%) rotate(-7deg) scale(1.15);
+
+      75% {
+        left: 39%;
+        top: 52%;
+        transform:
+          translate(-50%, -50%)
+          translate3d(0, 0, 110px)
+          rotate(-8deg)
+          scale(1.12);
       }
-      88% {
-        left: 33%;
+
+      /* She rushes straight at the viewer */
+
+      83% {
+        left: 50%;
         top: 50%;
-        transform: translate(-50%,-50%) rotate(4deg) scale(1.02);
         opacity: 1;
+        filter:
+          blur(0)
+          drop-shadow(0 0 35px rgba(35,220,205,.45))
+          drop-shadow(0 0 55px rgba(255,55,145,.3));
+        transform:
+          translate(-50%, -50%)
+          translate3d(0, 0, 220px)
+          rotate(0deg)
+          scale(1.5);
       }
+
+      /* THE SCREEN POP-OUT */
+
+      89% {
+        left: 50%;
+        top: 50%;
+        opacity: 1;
+        filter:
+          blur(1px)
+          drop-shadow(0 0 65px rgba(198,182,154,.7))
+          drop-shadow(0 0 90px rgba(35,220,205,.35));
+        transform:
+          translate(-50%, -50%)
+          translate3d(0, 0, 620px)
+          rotate(0deg)
+          scale(2.65);
+      }
+
+      /* Snap back into the composition */
+
+      94% {
+        left: 30%;
+        top: 50%;
+        opacity: 1;
+        filter:
+          blur(0)
+          drop-shadow(0 0 28px rgba(198,182,154,.3));
+        transform:
+          translate(-50%, -50%)
+          translate3d(0, 0, 90px)
+          rotate(-5deg)
+          scale(1.12);
+      }
+
+      97% {
+        left: 30%;
+        top: 50%;
+        transform:
+          translate(-50%, -50%)
+          translate3d(0, 0, -18px)
+          rotate(2deg)
+          scale(.94);
+      }
+
       100% {
-        left: 31%;
+        left: 30%;
         top: 50%;
-        transform: translate(-50%,-50%) rotate(0deg) scale(1);
         opacity: 1;
+        filter:
+          blur(0)
+          drop-shadow(0 0 22px rgba(198,182,154,.2))
+          drop-shadow(0 0 18px rgba(35,220,205,.1));
+        transform:
+          translate(-50%, -50%)
+          translate3d(0, 0, 0)
+          rotate(0deg)
+          scale(1);
       }
     }
 
+    /* ======================================
+       CHARACTER RGB AFTERIMAGES
+    ====================================== */
+
     @keyframes capriGhostOne {
-      0%, 100% { opacity: 0; transform: translateX(0); }
-      35% { opacity: .55; transform: translateX(-12px); }
-      55% { opacity: .3; transform: translateX(10px); }
+      0%, 100% {
+        opacity: 0;
+        transform: translate(0, 0);
+      }
+      15% {
+        opacity: .7;
+        transform: translate(-12px, 1px);
+      }
+      30% {
+        opacity: .15;
+        transform: translate(8px, -2px);
+      }
+      48% {
+        opacity: .55;
+        transform: translate(-7px, 0);
+      }
+      65% {
+        opacity: .1;
+        transform: translate(10px, 2px);
+      }
+      82% {
+        opacity: .65;
+        transform: translate(-5px, -1px);
+      }
     }
 
     @keyframes capriGhostTwo {
-      0%, 100% { opacity: 0; transform: translateX(0); }
-      40% { opacity: .45; transform: translateX(14px); }
-      65% { opacity: .2; transform: translateX(-8px); }
+      0%, 100% {
+        opacity: 0;
+        transform: translate(0, 0);
+      }
+      20% {
+        opacity: .6;
+        transform: translate(12px, -1px);
+      }
+      38% {
+        opacity: .12;
+        transform: translate(-9px, 2px);
+      }
+      57% {
+        opacity: .5;
+        transform: translate(8px, 0);
+      }
+      75% {
+        opacity: .18;
+        transform: translate(-10px, -2px);
+      }
     }
 
-    @keyframes capriScan {
-      0%, 12%, 30%, 48%, 100% { opacity: 0; }
-      14%, 17%, 50%, 53% { opacity: .8; }
+    @keyframes capriSlice {
+      0%, 12%, 25%, 39%, 53%, 68%, 82%, 100% {
+        opacity: 0;
+      }
+      13%, 15%, 40%, 42%, 69%, 71%, 83%, 85% {
+        opacity: .9;
+      }
     }
 
-    @keyframes capriIdle {
-      0%, 100% { transform: translateY(0) rotate(0deg); }
-      50% { transform: translateY(-9px) rotate(1deg); }
+    @keyframes capriFinalIdle {
+      0%, 100% {
+        transform: translateY(0) rotate(0deg);
+      }
+      50% {
+        transform: translateY(-8px) rotate(1deg);
+      }
     }
 
     @keyframes capriNoise {
-      0% { transform: translate(0,0); }
-      50% { transform: translate(-2%,1%); }
-      100% { transform: translate(1%,-1%); }
+      0% { transform: translate(0, 0); }
+      50% { transform: translate(-2%, 1%); }
+      100% { transform: translate(1%, -1%); }
     }
 
     @keyframes capriFlash {
-      0%, 8%, 15%, 26%, 38%, 50%, 62%, 100% { opacity: 0; }
-      9%, 16%, 39%, 63% { opacity: .8; }
-      10%, 17%, 40%, 64% { opacity: 0; }
+      0%, 7%, 18%, 29%, 42%, 55%, 68%, 80%, 100% {
+        opacity: 0;
+      }
+      8%, 19%, 30%, 43%, 56%, 69%, 81% {
+        opacity: .85;
+      }
+      9%, 20%, 31%, 44%, 57%, 70%, 82% {
+        opacity: 0;
+      }
+      89% {
+        opacity: 1;
+      }
+      91%, 100% {
+        opacity: 0;
+      }
     }
+
+    @keyframes capriScreenFlash {
+      0%, 8%, 18%, 30%, 43%, 56%, 69%, 82%, 100% {
+        opacity: 0;
+      }
+      9%, 19%, 31%, 44%, 57%, 70%, 83% {
+        opacity: .65;
+      }
+      10%, 20%, 32%, 45%, 58%, 71%, 84% {
+        opacity: 0;
+      }
+    }
+
+    /* ======================================
+       MOBILE COMPOSITION
+    ====================================== */
 
     @media (max-width: 650px) {
       #capriFlight {
-        width: min(46vw, 210px);
+        width: min(48vw, 205px);
+        height: min(43vh, 300px);
       }
 
       #myrloreSecretOverlay.active #capriFlight {
@@ -1476,42 +1737,115 @@
       }
 
       #myrloreSecretOverlay .secret-inner {
-        padding-top: 100px;
+        width: 94vw;
+        padding-top: 145px;
       }
 
       #myrloreSecretOverlay h2 {
         font-size: clamp(38px, 12vw, 62px);
       }
-    }
 
-    @keyframes capriFlightMobile {
-      0% {
-        left: 120%;
-        top: 15%;
-        opacity: 0;
-        transform: translate(-50%,-50%) rotate(25deg) scale(.5);
+      #myrloreSecretOverlay p {
+        font-size: 9px;
       }
-      20% {
-        left: 12%;
-        top: 20%;
-        opacity: 1;
-        transform: translate(-50%,-50%) rotate(-15deg) scale(1);
-      }
-      40% {
-        left: 85%;
-        top: 70%;
-        transform: translate(-50%,-50%) rotate(20deg) scale(.9);
-      }
-      65% {
-        left: 18%;
-        top: 75%;
-        transform: translate(-50%,-50%) rotate(-12deg) scale(1.05);
-      }
-      100% {
-        left: 50%;
-        top: 25%;
-        opacity: 1;
-        transform: translate(-50%,-50%) rotate(0deg) scale(.85);
+
+      @keyframes capriFlightMobile {
+        0% {
+          left: 120%;
+          top: 14%;
+          opacity: 0;
+          transform:
+            translate(-50%, -50%)
+            translateZ(-300px)
+            rotate(22deg)
+            scale(.3);
+        }
+
+        10% {
+          left: 85%;
+          top: 15%;
+          opacity: 1;
+          transform:
+            translate(-50%, -50%)
+            rotate(-15deg)
+            scale(.85);
+        }
+
+        24% {
+          left: 13%;
+          top: 17%;
+          transform:
+            translate(-50%, -50%)
+            rotate(14deg)
+            scale(1);
+        }
+
+        40% {
+          left: 88%;
+          top: 70%;
+          transform:
+            translate(-50%, -50%)
+            rotate(-18deg)
+            scale(.9);
+        }
+
+        56% {
+          left: 15%;
+          top: 76%;
+          transform:
+            translate(-50%, -50%)
+            rotate(15deg)
+            scale(1.05);
+        }
+
+        72% {
+          left: 50%;
+          top: 38%;
+          transform:
+            translate(-50%, -50%)
+            translateZ(100px)
+            rotate(-5deg)
+            scale(1.15);
+        }
+
+        84% {
+          left: 50%;
+          top: 38%;
+          transform:
+            translate(-50%, -50%)
+            translateZ(250px)
+            scale(2.25);
+        }
+
+        90% {
+          left: 50%;
+          top: 38%;
+          transform:
+            translate(-50%, -50%)
+            translateZ(500px)
+            scale(2.8);
+        }
+
+        95% {
+          left: 50%;
+          top: 27%;
+          transform:
+            translate(-50%, -50%)
+            translateZ(60px)
+            rotate(-3deg)
+            scale(.95);
+        }
+
+        100% {
+          left: 50%;
+          top: 27%;
+          opacity: 1;
+          transform:
+            translate(-50%, -50%)
+            translateZ(0)
+            rotate(0)
+            scale(.88);
+        }
       }
     }
 
@@ -1523,10 +1857,10 @@
 
       #myrloreSecretOverlay.active #capriFlight {
         animation: none;
-        left: 31%;
+        left: 30%;
         top: 50%;
         opacity: 1;
-        transform: translate(-50%,-50%);
+        transform: translate(-50%, -50%);
       }
 
       #capriFlight .capri-main {
@@ -1535,6 +1869,7 @@
 
       #capriFlight .capri-ghost-one,
       #capriFlight .capri-ghost-two,
+      #capriFlight .capri-slice,
       #capriFlight::after,
       .capri-glitch-flash {
         display: none;
@@ -1557,17 +1892,23 @@
       <img class="capri-ghost-one" src="capri.png" alt="">
       <img class="capri-ghost-two" src="capri.png" alt="">
       <img class="capri-main" src="capri.png" alt="">
-
+      <div class="capri-slice"></div>
     </div>
 
     <div class="secret-inner">
-      <div class="secret-index">MYRLORE® / RESTRICTED ARCHIVE</div>
+      <div class="secret-index">
+        MYRLORE® / RESTRICTED ARCHIVE
+      </div>
+
       <span class="secret-symbol">✳</span>
+
       <h2>Stay curious.</h2>
+
       <p>
         YOU FOUND SOMETHING THAT WASN'T MEANT TO BE FOUND.<br>
         INDEPENDENT BY NATURE. CREATIVE BY DESIGN.
       </p>
+
       <button type="button" id="secretClose">
         RETURN TO THE STUDIO
       </button>
@@ -1603,12 +1944,27 @@
 
     const capri = $("#capriFlight", secretOverlay);
 
+    /*
+      Reset the animation so it plays from the beginning
+      every time the Easter egg is activated.
+    */
+
     secretOverlay.classList.remove("active");
 
     if (capri) {
       capri.style.animation = "none";
+
+      $$("img", capri).forEach(image => {
+        image.style.animation = "none";
+      });
+
       void capri.offsetWidth;
+
       capri.style.animation = "";
+
+      $$("img", capri).forEach(image => {
+        image.style.animation = "";
+      });
     }
 
     void secretOverlay.offsetWidth;
