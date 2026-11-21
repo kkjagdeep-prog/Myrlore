@@ -1,3 +1,7 @@
+/* ==========================================
+   MYRLORE® — STUDIO ARCHIVE
+   3D OBJECT EDITION
+========================================== */
 
 :root {
   --bg: #08090b;
@@ -344,198 +348,71 @@ button {
 .artwork-scene {
   position: absolute;
   inset: 0;
-
-  display: flex;
-  align-items: center;
-  justify-content: center;
-
   overflow: hidden;
-  transition: transform 0.8s cubic-bezier(.2, .7, .2, 1);
+
+  background:
+    radial-gradient(
+      ellipse at 50% 45%,
+      #292d32 0%,
+      #15181c 48%,
+      #090a0c 100%
+    );
+}
+
+.artwork-scene::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+
+  background:
+    linear-gradient(
+      135deg,
+      rgba(255,255,255,0.035),
+      transparent 40%,
+      rgba(0,0,0,0.2)
+    );
+}
+
+.three-host {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.three-host canvas,
+.modal-artwork canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  outline: none;
+}
+
+
+/* ENTRY HOVER */
+
+.archive-entry .artwork-scene {
+  transition: filter 0.6s ease;
 }
 
 .archive-entry:hover .artwork-scene {
-  transform: scale(1.045);
+  filter: brightness(1.13);
 }
 
-
-/* ARTWORK 001 — CHROME OBJECT */
-
-.art-chrome {
-  background:
-    radial-gradient(ellipse at 50% 50%, #30343a 0%, #171a1f 40%, #0c0e11 100%);
+.archive-entry:hover .three-host {
+  cursor: grab;
 }
 
-.chrome-object {
-  width: 180px;
-  height: 180px;
-
-  border-radius: 42% 58% 62% 38% / 50% 42% 58% 50%;
-
-  background:
-    linear-gradient(135deg,
-      #ffffff 0%,
-      #a7a9ac 13%,
-      #45494e 28%,
-      #e5e5e2 42%,
-      #55595f 57%,
-      #f5f5f2 72%,
-      #777a7d 88%,
-      #d9d9d6 100%);
-
-  box-shadow:
-    inset -20px -18px 35px rgba(0, 0, 0, 0.7),
-    inset 15px 12px 25px rgba(255, 255, 255, 0.7),
-    0 25px 60px rgba(0, 0, 0, 0.65);
-
-  transform: rotate(-22deg);
+.archive-entry:active .three-host {
+  cursor: grabbing;
 }
 
-.chrome-object::after {
-  content: "";
-  position: absolute;
-
-  width: 110px;
-  height: 110px;
-
-  border-radius: 50%;
-  background: radial-gradient(circle at 30% 30%, #fff, #85898e 55%, #22262b);
-
-  filter: blur(1px);
-  opacity: 0.55;
-}
-
-
-/* ARTWORK 002 — MATERIAL STUDY */
-
-.art-material {
-  background:
-    linear-gradient(135deg, #202328, #090a0c);
-}
-
-.material-object {
-  width: 220px;
-  height: 125px;
-
-  border-radius: 5px;
-
-  background:
-    linear-gradient(115deg,
-      #f1f1ef 0%,
-      #72767c 15%,
-      #202329 30%,
-      #b9b9b5 47%,
-      #383b40 60%,
-      #e3e2de 80%,
-      #44474b 100%);
-
-  transform: rotate(-25deg) skewY(8deg);
-
-  box-shadow:
-    0 35px 55px rgba(0, 0, 0, 0.7),
-    inset 0 1px 3px rgba(255, 255, 255, 0.8);
-}
-
-
-/* ARTWORK 003 — TYPOGRAPHY */
-
-.art-type {
-  background: #deded9;
-}
-
-.type-object {
-  color: #111216;
-  font-family: var(--font);
-  font-size: clamp(65px, 11vw, 130px);
-  font-weight: 700;
-  letter-spacing: -0.12em;
-  transform: rotate(-8deg);
-}
-
-.type-object span {
-  color: #777a7b;
-}
-
-
-/* ARTWORK 004 — GEOMETRY */
-
-.art-geometry {
-  background:
-    radial-gradient(circle at 50% 50%, #2a2d31, #0a0b0d 75%);
-}
-
-.geometry-object {
-  width: 170px;
-  height: 170px;
-
-  border: 1px solid #c6c8c8;
-  border-radius: 50%;
-
-  position: relative;
-
-  box-shadow:
-    0 0 35px rgba(200, 201, 199, 0.08),
-    inset 0 0 25px rgba(200, 201, 199, 0.05);
-}
-
-.geometry-object::before,
-.geometry-object::after {
-  content: "";
-  position: absolute;
-  inset: 20px;
-  border: 1px solid rgba(220, 221, 220, 0.65);
-  border-radius: 50%;
-  transform: rotate(55deg) scaleX(0.55);
-}
-
-.geometry-object::after {
-  transform: rotate(-55deg) scaleX(0.55);
-}
-
-
-/* ARTWORK 005 — LIGHT STUDY */
-
-.art-light {
-  background:
-    radial-gradient(ellipse at 50% 60%, #4b4e51, #111316 70%);
-}
-
-.light-object {
-  width: 3px;
-  height: 230px;
-
-  background: linear-gradient(
-    to bottom,
-    transparent,
-    #f1f1ed 45%,
-    #aeb0b0 55%,
-    transparent
-  );
-
-  box-shadow: 0 0 35px rgba(220, 220, 215, 0.45);
-
-  transform: rotate(30deg);
-}
-
-
-/* ARTWORK 006 — FORM STUDY */
-
-.art-form {
-  background:
-    linear-gradient(145deg, #202328, #090a0c);
-}
-
-.form-object {
-  width: 190px;
-  height: 120px;
-
-  border: 2px solid #c5c7c6;
-  border-radius: 50%;
-
-  transform: rotate(-35deg) scaleY(0.6);
-
-  box-shadow:
-    0 0 20px rgba(255, 255, 255, 0.1),
-    inset 0 0 20px rgba(255, 255, 255, 0.1);
+.archive-entry:focus-visible {
+  outline: 1px solid var(--champagne);
+  outline-offset: 7px;
 }
 
 
@@ -545,6 +422,7 @@ button {
   content: "OPEN ENTRY ↗";
 
   position: absolute;
+  z-index: 3;
   bottom: 18px;
   right: 18px;
 
@@ -557,6 +435,8 @@ button {
 
   transform: translateY(5px);
   transition: 0.3s ease;
+
+  pointer-events: none;
 }
 
 .archive-entry:hover .entry-artwork::after {
@@ -742,10 +622,21 @@ button {
 
   position: relative;
   overflow: hidden;
+
+  background:
+    radial-gradient(
+      ellipse at 50% 45%,
+      #292d32 0%,
+      #15181c 48%,
+      #090a0c 100%
+    );
+
+  border: 1px solid rgba(255,255,255,0.07);
 }
 
-.modal-artwork .artwork-scene {
+.modal-artwork canvas {
   position: absolute;
+  inset: 0;
 }
 
 .modal-information {
