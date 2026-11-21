@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -6,12 +5,13 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="theme-color" content="#08090b">
 
+  <meta name="description" content="MYRLORE Form Lab — an interactive 3D sculpture and material experimentation studio.">
+
   <title>Form Lab — MYRLORE®</title>
-  <meta name="description" content="An interactive 3D sculpture playground by MYRLORE independent creative studio.">
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Manrope:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
   <link rel="stylesheet" href="form-lab.css">
 
@@ -27,15 +27,16 @@
 </head>
 
 <body>
-  <div class="noise"></div>
 
   <header class="lab-header">
-    <a class="wordmark" href="index.html">MYRLORE<span>®</span></a>
+    <a href="index.html" class="wordmark">MYRLORE<span>®</span></a>
 
-    <div class="header-center">INDEPENDENT CREATIVE STUDIO</div>
+    <div class="header-center">
+      FORM LAB <span>/</span> EXPERIMENTAL DIVISION
+    </div>
 
-    <a class="back-link" href="index.html">
-      BACK TO STUDIO <span>↗</span>
+    <a href="index.html" class="back-link">
+      Back to Studio <span>↗</span>
     </a>
   </header>
 
@@ -44,84 +45,90 @@
     <section class="lab-intro">
       <div class="eyebrow">
         <span class="status-dot"></span>
-        EXPERIMENTAL DIVISION / 001
+        INTERACTIVE OBJECT GENERATOR
       </div>
 
       <div class="intro-row">
         <div>
-          <h1>Form <span>Lab.</span></h1>
+          <h1>Form Lab<span>.</span></h1>
           <p>
-            An open space for material, motion and form.
-            Explore the relationship between geometry and light.
+            Explore material, geometry and light.
+            Shape your own digital object in real time.
           </p>
         </div>
 
         <div class="intro-index">
-          <span>MYRLORE®</span>
-          <strong>FL—001</strong>
+          EXPERIMENTAL DIVISION
+          <strong>002 / CUSTOM EDITION</strong>
         </div>
       </div>
     </section>
 
     <section class="workspace">
 
+      <!-- 3D VIEWPORT -->
+
       <div class="viewport-panel">
 
         <div class="viewport-topbar">
-          <div>
-            <span class="panel-label">LIVE OBJECT VIEWPORT</span>
-            <span class="viewport-status">
-              <i></i> REAL-TIME RENDER
-            </span>
-          </div>
-
-          <span class="viewport-coordinate">X / Y / Z</span>
+          <span>LIVE OBJECT PREVIEW</span>
+          <span class="viewport-status">
+            <span class="status-dot"></span>
+            RENDER ACTIVE
+          </span>
         </div>
 
-        <div id="viewport" class="viewport">
-          <div class="viewport-grid"></div>
+        <div class="viewport" id="viewport">
 
-          <div class="viewport-crosshair crosshair-one"></div>
-          <div class="viewport-crosshair crosshair-two"></div>
+          <div class="viewport-grid"></div>
+          <div class="viewport-crosshair"></div>
 
           <div class="viewport-loading" id="loadingMessage">
-            INITIALISING FORM LAB...
+            INITIALISING FORM ENGINE...
           </div>
 
           <div class="viewport-bottom-left">
-            <span>DRAG TO ROTATE</span>
-            <span>SCROLL TO ZOOM</span>
+            <span>MYRLORE® / FORM STUDY</span>
+            <strong id="objectNumber">OBJECT / 001</strong>
           </div>
 
           <div class="viewport-bottom-right">
-            <span id="objectNumber">OBJECT / 001</span>
+            DRAG TO ROTATE
+            <span>SCROLL TO ZOOM</span>
           </div>
+
         </div>
 
         <div class="viewport-footer">
-          <span>THREE-DIMENSIONAL OBJECT STUDY</span>
-          <span>INTERACTIVE ENVIRONMENT</span>
+          <span>REAL-TIME GEOMETRY ENGINE</span>
+          <span>THREE.JS / WEBGL</span>
         </div>
 
       </div>
+
+      <!-- CONTROL PANEL -->
 
       <aside class="control-panel">
 
         <div class="control-heading">
           <div>
-            <span class="panel-label">CONTROL DECK</span>
-            <h2>Adjust form.</h2>
+            <span class="eyebrow">OBJECT CONFIGURATION</span>
+            <h2>Studio Controls</h2>
           </div>
-          <span class="control-number">01—05</span>
+          <span class="control-number">01 — 04</span>
         </div>
 
-        <div class="control-section">
+        <!-- PRESETS -->
+
+        <section class="control-section">
+
           <div class="section-heading">
-            <span>01 / GEOMETRY</span>
-            <span>SELECT FORM</span>
+            <span>01 / BASE FORM</span>
+            <span>SELECT OBJECT</span>
           </div>
 
           <div class="preset-list" id="presetList">
+
             <button class="preset-button active" data-preset="liquid">
               <span class="preset-index">01</span>
               <span>Liquid Knot</span>
@@ -151,59 +158,169 @@
               <span>Chrome Bloom</span>
               <span class="preset-arrow">↗</span>
             </button>
-          </div>
-        </div>
 
-        <div class="control-section">
+          </div>
+        </section>
+
+        <!-- CUSTOM GEOMETRY -->
+
+        <section class="control-section geometry-section">
+
           <div class="section-heading">
-            <span>02 / MATERIAL</span>
+            <span>02 / CUSTOM GEOMETRY</span>
+            <span>LIVE EDIT</span>
+          </div>
+
+          <div class="slider-control">
+            <div class="slider-label">
+              <label for="twistControl">Twist</label>
+              <output id="twistValue">0.35</output>
+            </div>
+
+            <input
+              type="range"
+              id="twistControl"
+              min="-2"
+              max="2"
+              step="0.05"
+              value="0.35"
+            >
+
+            <div class="slider-range">
+              <span>STRAIGHT</span>
+              <span>TWISTED</span>
+            </div>
+          </div>
+
+          <div class="slider-control">
+            <div class="slider-label">
+              <label for="scaleControl">Scale</label>
+              <output id="scaleValue">1.00</output>
+            </div>
+
+            <input
+              type="range"
+              id="scaleControl"
+              min="0.60"
+              max="1.60"
+              step="0.01"
+              value="1"
+            >
+
+            <div class="slider-range">
+              <span>COMPACT</span>
+              <span>EXPANDED</span>
+            </div>
+          </div>
+
+          <div class="slider-control">
+            <div class="slider-label">
+              <label for="thicknessControl">Thickness</label>
+              <output id="thicknessValue">1.00</output>
+            </div>
+
+            <input
+              type="range"
+              id="thicknessControl"
+              min="0.50"
+              max="1.60"
+              step="0.01"
+              value="1"
+            >
+
+            <div class="slider-range">
+              <span>SLIM</span>
+              <span>HEAVY</span>
+            </div>
+          </div>
+
+          <div class="slider-control">
+            <div class="slider-label">
+              <label for="complexityControl">Complexity</label>
+              <output id="complexityValue">5</output>
+            </div>
+
+            <input
+              type="range"
+              id="complexityControl"
+              min="2"
+              max="8"
+              step="1"
+              value="5"
+            >
+
+            <div class="slider-range">
+              <span>MINIMAL</span>
+              <span>DETAILED</span>
+            </div>
+          </div>
+
+          <button class="geometry-reset" id="geometryReset">
+            RESET GEOMETRY PARAMETERS <span>↺</span>
+          </button>
+
+        </section>
+
+        <!-- MATERIALS -->
+
+        <section class="control-section">
+
+          <div class="section-heading">
+            <span>03 / MATERIAL</span>
             <span>SURFACE FINISH</span>
           </div>
 
           <div class="material-options" id="materialOptions">
+
             <button class="material-button active" data-material="chrome">
-              <span class="material-swatch swatch-chrome"></span>
-              <span>Chrome</span>
+              <span class="material-swatch chrome-swatch"></span>
+              Chrome
             </button>
 
             <button class="material-button" data-material="titanium">
-              <span class="material-swatch swatch-titanium"></span>
-              <span>Titanium</span>
+              <span class="material-swatch titanium-swatch"></span>
+              Titanium
             </button>
 
             <button class="material-button" data-material="champagne">
-              <span class="material-swatch swatch-champagne"></span>
-              <span>Champagne</span>
+              <span class="material-swatch champagne-swatch"></span>
+              Champagne
             </button>
-          </div>
-        </div>
 
-        <div class="control-section">
+          </div>
+        </section>
+
+        <!-- LIGHTING -->
+
+        <section class="control-section">
+
           <div class="section-heading">
-            <span>03 / ILLUMINATION</span>
-            <span>LIGHT ENVIRONMENT</span>
+            <span>04 / ENVIRONMENT</span>
+            <span>LIGHTING</span>
           </div>
 
           <div class="lighting-options" id="lightingOptions">
+
             <button class="lighting-button active" data-lighting="studio">
               Studio
             </button>
+
             <button class="lighting-button" data-lighting="contrast">
               Contrast
             </button>
+
             <button class="lighting-button" data-lighting="warm">
               Warm
             </button>
-          </div>
-        </div>
 
-        <div class="control-section motion-section">
-          <div class="section-heading">
-            <span>04 / MOVEMENT</span>
-            <span>ROTATION</span>
           </div>
+        </section>
 
-          <label class="motion-toggle">
+        <!-- MOTION -->
+
+        <section class="motion-section">
+
+          <label class="motion-toggle" for="autoRotate">
             <span>
               <strong>Auto rotation</strong>
               <small>Continuous object movement</small>
@@ -212,22 +329,27 @@
             <input type="checkbox" id="autoRotate" checked>
             <span class="toggle-track"></span>
           </label>
-        </div>
+
+        </section>
+
+        <!-- ACTIONS -->
 
         <div class="control-actions">
+
           <button class="random-button" id="randomButton">
-            <span>↻</span> GENERATE RANDOM FORM
+            GENERATE RANDOM FORM <span>✳</span>
           </button>
 
           <button class="reset-button" id="resetButton">
-            RESET ENVIRONMENT
+            RESET ALL SETTINGS
           </button>
+
         </div>
 
-        <div class="control-note">
-          <span class="note-dot"></span>
-          <p>Every form is generated in real time. No two experiments need to look alike.</p>
-        </div>
+        <p class="control-note">
+          Changes are rendered locally in real time.
+          Experiment freely with form, surface and light.
+        </p>
 
       </aside>
 
@@ -235,27 +357,23 @@
 
     <section class="lab-bottom">
       <div>
-        <span class="panel-label">THE EXPERIMENT</span>
-        <p>
-          Form is never static. It changes with perspective,
-          material and the way light moves across its surface.
-        </p>
+        <span class="eyebrow">THE EXPERIMENTAL DIVISION</span>
+        <h2>Every form begins<br>with an idea<span>.</span></h2>
       </div>
 
-      <div class="bottom-signature">
-        <span>MYRLORE®</span>
-        <strong>FORM / MATTER / LIGHT</strong>
-      </div>
+      <p>
+        An interactive space for exploring digital sculpture,
+        reflective materials and abstract geometry.
+      </p>
     </section>
 
   </main>
 
   <footer class="lab-footer">
     <span>© <span id="currentYear"></span> MYRLORE®</span>
-    <span>FORM LAB / EXPERIMENTAL DIVISION</span>
+    <span>INDEPENDENT CREATIVE STUDIO</span>
     <a href="index.html">RETURN TO STUDIO ↗</a>
   </footer>
 
 </body>
 </html>
-
