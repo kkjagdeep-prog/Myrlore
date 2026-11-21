@@ -1,7 +1,8 @@
+
 /* ==========================================
    MYRLORE® — MAIN INTERACTION SYSTEM
    A2 CHROME SCULPTURE · GSAP · UI
-   CAPRI SECRET ARCHIVE
+   CAPRI CINEMATIC SECRET ARCHIVE
 ========================================== */
 
 (() => {
@@ -1120,11 +1121,10 @@
   /* ==========================================
      MYRLORE® — CAPRI SECRET ARCHIVE
 
-     FIXED POSITION
-     REAL CANVAS FRAGMENTATION
-     IMAGE-SAMPLED COLOURS
-     CHROMATIC DISTORTION
-     FINAL FORWARD BREAKTHROUGH
+     ONE IMAGE.
+     ONE CANVAS.
+     REAL SCREEN MOVEMENT.
+     NO SLIDESHOW.
   ========================================== */
 
   const konamiSequence = [
@@ -1150,7 +1150,6 @@
   let capriCanvas = null;
   let capriContext = null;
 
-  // Neutral fallback only. Real colours are extracted from capri.png.
   let capriPalette = {
     magenta: "#c5c5c5",
     green: "#858585",
@@ -1173,7 +1172,6 @@
       overflow: hidden;
       padding: 24px;
       isolation: isolate;
-      perspective: 1100px;
       background:
         radial-gradient(
           ellipse at 25% 48%,
@@ -1189,9 +1187,7 @@
       color: #eeeDE8;
       opacity: 0;
       visibility: hidden;
-      transition:
-        opacity .35s ease,
-        visibility .35s ease;
+      transition: opacity .45s ease, visibility .45s ease;
       font-family: "Manrope", sans-serif;
     }
 
@@ -1206,29 +1202,11 @@
       inset: 0;
       z-index: 0;
       pointer-events: none;
-      opacity: .15;
+      opacity: .13;
       background-image:
         linear-gradient(rgba(255,255,255,.035) 1px, transparent 1px),
         linear-gradient(90deg, rgba(255,255,255,.035) 1px, transparent 1px);
       background-size: 4px 4px;
-    }
-
-    #myrloreSecretOverlay::after {
-      content: "";
-      position: absolute;
-      inset: 0;
-      z-index: 8;
-      pointer-events: none;
-      opacity: 0;
-      background: repeating-linear-gradient(
-        0deg,
-        transparent 0 3px,
-        color-mix(in srgb, var(--capri-magenta) 9%, transparent) 4px
-      );
-    }
-
-    #myrloreSecretOverlay.active::after {
-      animation: capriScanlines 4.8s steps(1) both;
     }
 
     #myrloreSecretOverlay .secret-noise {
@@ -1236,12 +1214,12 @@
       inset: -50%;
       z-index: 1;
       pointer-events: none;
-      opacity: .07;
+      opacity: .045;
       background: repeating-linear-gradient(
         transparent 0 3px,
-        rgba(255,255,255,.16) 4px
+        rgba(255,255,255,.13) 4px
       );
-      animation: capriNoise .15s steps(2) infinite;
+      animation: capriNoise .18s steps(2) infinite;
     }
 
     #myrloreSecretOverlay .secret-inner {
@@ -1250,13 +1228,13 @@
       width: min(650px, 90vw);
       text-align: center;
       opacity: 0;
-      transform: translateY(18px);
+      transform: translateY(20px);
       transition:
-        opacity .7s ease .45s,
-        transform .7s ease .45s;
+        opacity .8s ease,
+        transform .8s cubic-bezier(.16,1,.3,1);
     }
 
-    #myrloreSecretOverlay.active .secret-inner {
+    #myrloreSecretOverlay .secret-inner.capri-text-visible {
       opacity: 1;
       transform: translateY(0);
     }
@@ -1304,16 +1282,12 @@
       font: 10px "DM Mono", monospace;
       letter-spacing: .16em;
       cursor: pointer;
-      transition:
-        background .3s ease,
-        color .3s ease,
-        border-color .3s ease;
+      transition: background .3s ease, color .3s ease;
     }
 
     #myrloreSecretOverlay button:hover {
       background: var(--capri-magenta);
       color: #fff;
-      border-color: var(--capri-magenta);
     }
 
     #myrloreSecretOverlay .secret-symbol {
@@ -1324,34 +1298,21 @@
       text-shadow: 0 0 18px var(--capri-green);
     }
 
-    /* ======================================
-       CAPRI — FIXED SCREEN POSITION
-    ====================================== */
-
     #capriFlight {
       position: fixed;
       z-index: 5;
-
-      /* Position is assigned once.
-         The animation never changes left or top. */
-
-      left: 24%;
-      top: 50%;
-
+      left: 0;
+      top: 0;
       width: clamp(210px, 30vw, 390px);
       height: min(78vh, 560px);
-
       opacity: 0;
       pointer-events: none;
-
-      transform: translate(-50%, -50%) scale(.72);
+      transform: translate3d(-50%, -50%, 0);
       transform-origin: center center;
-
       will-change: transform, opacity, filter;
-
       filter:
-        drop-shadow(0 0 22px var(--capri-magenta))
-        drop-shadow(0 0 12px var(--capri-green));
+        drop-shadow(0 0 18px var(--capri-magenta))
+        drop-shadow(0 0 10px var(--capri-green));
     }
 
     #capriCanvas {
@@ -1359,17 +1320,6 @@
       width: 100%;
       height: 100%;
       overflow: visible;
-      image-rendering: auto;
-    }
-
-    #capriFlight.capri-visible {
-      opacity: 1;
-    }
-
-    #capriFlight.capri-settled {
-      filter:
-        drop-shadow(0 0 22px var(--capri-magenta))
-        drop-shadow(0 0 12px var(--capri-green));
     }
 
     .capri-glitch-flash {
@@ -1378,26 +1328,20 @@
       inset: 0;
       pointer-events: none;
       opacity: 0;
-      background:
-        linear-gradient(
-          90deg,
-          transparent 0 12%,
-          color-mix(in srgb, var(--capri-magenta) 28%, transparent) 12% 15%,
-          transparent 15% 46%,
-          color-mix(in srgb, var(--capri-green) 24%, transparent) 46% 49%,
-          transparent 49% 78%,
-          color-mix(in srgb, var(--capri-violet) 25%, transparent) 78% 82%,
-          transparent 82%
-        );
+      background: linear-gradient(
+        90deg,
+        transparent 10%,
+        color-mix(in srgb, var(--capri-magenta) 25%, transparent) 12%,
+        transparent 16%,
+        transparent 70%,
+        color-mix(in srgb, var(--capri-green) 20%, transparent) 73%,
+        transparent 78%
+      );
       mix-blend-mode: screen;
     }
 
-    #myrloreSecretOverlay.active .capri-glitch-flash {
-      animation: capriFlash 4.8s steps(1) both;
-    }
-
     #myrloreSecretOverlay.capri-impact .capri-glitch-flash {
-      animation: capriImpact .42s steps(1) both;
+      animation: capriImpact .38s steps(1) both;
     }
 
     @keyframes capriNoise {
@@ -1406,34 +1350,11 @@
       100% { transform: translate(1%, -1%); }
     }
 
-    @keyframes capriFlash {
-      0%, 100% { opacity: 0; }
-      7%, 18%, 29%, 43%, 57%, 70%, 81% {
-        opacity: .85;
-      }
-      8%, 19%, 30%, 44%, 58%, 71%, 82% {
-        opacity: 0;
-      }
-      86% { opacity: .25; }
-      88% { opacity: 1; }
-      92% { opacity: 0; }
-    }
-
-    @keyframes capriScanlines {
-      0%, 100% { opacity: 0; }
-      7%, 18%, 29%, 43%, 57%, 70%, 81% {
-        opacity: .38;
-      }
-      8%, 19%, 30%, 44%, 58%, 71%, 82% {
-        opacity: 0;
-      }
-    }
-
     @keyframes capriImpact {
       0% { opacity: 0; }
-      15% { opacity: .9; }
-      35% { opacity: .1; }
-      55% { opacity: .75; }
+      15% { opacity: .8; }
+      35% { opacity: .08; }
+      55% { opacity: .55; }
       100% { opacity: 0; }
     }
 
@@ -1446,8 +1367,6 @@
 
     @media (max-width: 650px) {
       #capriFlight {
-        left: 50%;
-        top: 27%;
         width: min(58vw, 245px);
         height: min(46vh, 320px);
       }
@@ -1472,9 +1391,7 @@
         transition: none;
       }
 
-      #myrloreSecretOverlay .secret-noise,
-      #myrloreSecretOverlay.active::after,
-      #myrloreSecretOverlay.active .capri-glitch-flash {
+      #myrloreSecretOverlay .secret-noise {
         animation: none;
       }
     }
@@ -1518,6 +1435,7 @@
   document.body.appendChild(secretOverlay);
 
   const capriFlight = $("#capriFlight", secretOverlay);
+  const secretInner = $(".secret-inner", secretOverlay);
   const secretCloseButton = $("#secretClose", secretOverlay);
 
   capriCanvas = $("#capriCanvas", secretOverlay);
@@ -1710,44 +1628,13 @@
   loadCapri();
 
   /* ==========================================
-     CANVAS GLITCH ENGINE
+     CAPRI GLITCH ENGINE
 
-     One image.
-     One canvas.
-     No moving PNG copies.
-
-     The illusion of movement is created
-     through image distortion and slicing.
+     The same image is drawn every frame.
+     No frame swapping or image duplication.
   ========================================== */
 
-  function drawColourChannel(colour, offsetX, offsetY, alpha) {
-    if (!capriContext || !capriImage?.complete) return;
-
-    const ctx = capriContext;
-    const width = capriCanvas.width;
-    const height = capriCanvas.height;
-
-    ctx.save();
-
-    ctx.globalAlpha = alpha;
-    ctx.globalCompositeOperation = "screen";
-
-    ctx.drawImage(
-      capriImage,
-      offsetX,
-      offsetY,
-      width,
-      height
-    );
-
-    ctx.globalCompositeOperation = "source-atop";
-    ctx.fillStyle = colour;
-    ctx.fillRect(0, 0, width, height);
-
-    ctx.restore();
-  }
-
-  function drawCapriGlitch(intensity, phase = 0) {
+  function drawCapriGlitch(intensity) {
     if (
       !capriContext ||
       !capriImage?.complete ||
@@ -1760,238 +1647,247 @@
 
     const burst = Math.max(0, Math.min(1, intensity));
 
-    ctx.clearRect(0, 0, width, height);
-
-    if (burst < .015) {
+    if (burst < .025) {
       drawCapriClean();
       return;
     }
 
-    /* Chromatic separation */
+    ctx.clearRect(0, 0, width, height);
 
-    const channelOffset = 3 + burst * 24;
+    ctx.globalCompositeOperation = "screen";
+    ctx.globalAlpha = .12 * burst;
 
-    drawColourChannel(
-      capriPalette.magenta,
-      -channelOffset,
+    ctx.drawImage(
+      capriImage,
+      -5 * burst,
       0,
-      .08 + burst * .22
+      width,
+      height
     );
 
-    drawColourChannel(
-      capriPalette.green,
-      channelOffset * 1.25,
+    ctx.globalAlpha = .1 * burst;
+
+    ctx.drawImage(
+      capriImage,
+      5 * burst,
       0,
-      .07 + burst * .2
+      width,
+      height
     );
-
-    drawColourChannel(
-      capriPalette.violet,
-      0,
-      channelOffset * .35,
-      .04 + burst * .12
-    );
-
-    /* Main image horizontal slices */
-
-    const sliceCount = 48;
-    const sliceHeight = height / sliceCount;
 
     ctx.globalCompositeOperation = "source-over";
     ctx.globalAlpha = 1;
 
+    ctx.drawImage(
+      capriImage,
+      0,
+      0,
+      width,
+      height
+    );
+
+    const sliceCount = Math.floor(5 + burst * 12);
+    const sliceHeight = height / sliceCount;
+
     for (let i = 0; i < sliceCount; i++) {
+      if (Math.random() > .35 + burst * .4) continue;
+
       const sy = i * sliceHeight;
       const sh = Math.min(sliceHeight + 1, height - sy);
-
-      const activeSlice =
-        Math.random() < (.3 + burst * .62);
-
-      const displacement = activeSlice
-        ? (Math.random() - .5) * 2 * 85 * burst
-        : 0;
-
-      const verticalShift =
-        activeSlice && Math.random() < .24
-          ? (Math.random() - .5) * 24 * burst
-          : 0;
+      const shift = (Math.random() - .5) * 28 * burst;
 
       ctx.drawImage(
         capriImage,
         0, sy, width, sh,
-        displacement,
-        sy + verticalShift,
-        width,
-        sh
-      );
-    }
-
-    /* Larger displaced image fragments */
-
-    const fragmentCount = Math.floor(4 + burst * 22);
-
-    for (let i = 0; i < fragmentCount; i++) {
-      const y = Math.random() * height;
-      const h = 2 + Math.random() * 34 * burst;
-      const w = width * (.08 + Math.random() * .8);
-      const x = Math.random() * Math.max(1, width - w);
-      const shift = (Math.random() - .5) * 120 * burst;
-
-      ctx.globalAlpha = .35 + Math.random() * .6;
-
-      ctx.drawImage(
-        capriImage,
-        x, y, w, h,
-        x + shift, y, w, h
-      );
-    }
-
-    /* Sharp horizontal digital tears */
-
-    const tearCount = Math.floor(3 + burst * 24);
-
-    for (let i = 0; i < tearCount; i++) {
-      const y = Math.random() * height;
-      const tearHeight = 1 + Math.random() * 12 * burst;
-      const tearWidth = width * (.08 + Math.random() * .72);
-      const x = Math.random() * (width - tearWidth);
-
-      const colours = [
-        capriPalette.magenta,
-        capriPalette.green,
-        capriPalette.violet
-      ];
-
-      ctx.globalAlpha = .2 + Math.random() * .7;
-
-      ctx.fillStyle = colours[
-        Math.floor(Math.random() * colours.length)
-      ];
-
-      ctx.fillRect(x, y, tearWidth, tearHeight);
-    }
-
-    /* Vertical digital shears */
-
-    if (Math.random() < .5 * burst) {
-      const x = Math.random() * width;
-      const w = 2 + Math.random() * 16 * burst;
-
-      ctx.globalAlpha = .55;
-      ctx.fillStyle = capriPalette.magenta;
-
-      ctx.fillRect(
-        x,
-        Math.random() * height * .5,
-        w,
-        height * (.2 + Math.random() * .5)
-      );
-    }
-
-    /* Black digital gaps */
-
-    if (Math.random() < .24 * burst) {
-      ctx.globalAlpha = .5 + Math.random() * .4;
-      ctx.fillStyle = "#030305";
-
-      ctx.fillRect(
-        Math.random() * width,
-        Math.random() * height,
-        width * (.12 + Math.random() * .48),
-        2 + Math.random() * 14
-      );
-    }
-
-    /* Colour bars */
-
-    if (Math.random() < .5 * burst) {
-      const barY = Math.random() * height;
-      const barWidth = width * (.15 + Math.random() * .65);
-
-      ctx.globalAlpha = .65;
-
-      ctx.fillStyle = Math.random() > .5
-        ? capriPalette.magenta
-        : capriPalette.green;
-
-      ctx.fillRect(
-        Math.random() * (width - barWidth),
-        barY,
-        barWidth,
-        1 + Math.random() * 5
-      );
-    }
-
-    /* Final-stage compression distortion */
-
-    if (burst > .65) {
-      const compression = Math.sin(phase * .025) * 8 * burst;
-
-      ctx.globalAlpha = .18;
-      ctx.drawImage(
-        capriImage,
-        compression,
-        0,
-        width - compression * 2,
-        height
+        shift, sy, width, sh
       );
     }
 
     ctx.globalAlpha = 1;
-    ctx.globalCompositeOperation = "source-over";
   }
 
   /* ==========================================
-     CAPRI GLITCH TIMING
+     CAPRI MOVEMENT SYSTEM
 
-     Capri does not travel around the screen.
-     The wrapper remains fixed.
-
-     Only the image itself distorts.
+     Smooth curved path:
+     1. Enters from bottom-left.
+     2. Sweeps across the upper screen.
+     3. Curves around the right edge.
+     4. Crosses the lower screen.
+     5. Moves towards the text.
+     6. Settles beside the archive.
   ========================================== */
 
   function smoothProgress(value) {
     return value * value * (3 - 2 * value);
   }
 
-  function getGlitchIntensity(progress) {
+  function easeOutCubic(value) {
+    return 1 - Math.pow(1 - value, 3);
+  }
+
+  function easeInOutCubic(value) {
+    return value < .5
+      ? 4 * value * value * value
+      : 1 - Math.pow(-2 * value + 2, 3) / 2;
+  }
+
+  function cubicBezier(p0, p1, p2, p3, t) {
+    const inverse = 1 - t;
+
+    return (
+      inverse ** 3 * p0 +
+      3 * inverse ** 2 * t * p1 +
+      3 * inverse * t ** 2 * p2 +
+      t ** 3 * p3
+    );
+  }
+
+  function getCapriPosition(progress) {
+    const width = window.innerWidth;
+    const height = window.innerHeight;
+    const mobile = width <= 650;
+
+    const finalX = mobile
+      ? width * .5
+      : width * .245;
+
+    const finalY = mobile
+      ? height * .285
+      : height * .5;
+
+    const points = [
+      {
+        x: -width * .45,
+        y: height * 1.05,
+        scale: .55,
+        rotation: -18
+      },
+      {
+        x: width * .18,
+        y: height * .08,
+        scale: .68,
+        rotation: 10
+      },
+      {
+        x: width * .82,
+        y: height * .12,
+        scale: .78,
+        rotation: 20
+      },
+      {
+        x: width * 1.12,
+        y: height * .62,
+        scale: .82,
+        rotation: 35
+      },
+      {
+        x: width * .72,
+        y: height * .94,
+        scale: .78,
+        rotation: -16
+      },
+      {
+        x: width * .18,
+        y: height * .75,
+        scale: .84,
+        rotation: -22
+      },
+      {
+        x: finalX,
+        y: finalY,
+        scale: mobile ? .64 : .88,
+        rotation: 0
+      }
+    ];
+
+    const segmentCount = points.length - 1;
+    const scaled = progress * segmentCount;
+
+    const index = Math.min(
+      segmentCount - 1,
+      Math.floor(scaled)
+    );
+
+    const local = progress >= 1
+      ? 1
+      : scaled - index;
+
+    const current = points[index];
+    const next = points[index + 1];
+
+    const previous = points[Math.max(0, index - 1)];
+    const after = points[Math.min(points.length - 1, index + 2)];
+
+    const tension = .16;
+
+    function catmull(a, b, c, d, t) {
+      return .5 * (
+        2 * b +
+        (-a + c) * t +
+        (2 * a - 5 * b + 4 * c - d) * t * t +
+        (-a + 3 * b - 3 * c + d) * t * t * t
+      );
+    }
+
+    const x = catmull(
+      previous.x,
+      current.x,
+      next.x,
+      after.x,
+      local
+    );
+
+    const y = catmull(
+      previous.y,
+      current.y,
+      next.y,
+      after.y,
+      local
+    );
+
+    const scale = current.scale +
+      (next.scale - current.scale) * local;
+
+    const rotation = current.rotation +
+      (next.rotation - current.rotation) * local;
+
+    return {
+      x,
+      y,
+      scale,
+      rotation,
+      tension
+    };
+  }
+
+  function getCapriGlitchIntensity(progress) {
     const bursts = [
-      [0.015, 0.13],
-      [0.17, 0.27],
-      [0.30, 0.41],
-      [0.44, 0.56],
-      [0.59, 0.70],
-      [0.72, 0.84],
-      [0.84, 0.96]
+      [0.02, 0.09, .75],
+      [0.20, 0.26, .45],
+      [0.39, 0.46, .65],
+      [0.59, 0.65, .5],
+      [0.78, 0.88, .8]
     ];
 
     let intensity = 0;
 
-    bursts.forEach(([start, end]) => {
+    bursts.forEach(([start, end, strength]) => {
       if (progress >= start && progress <= end) {
         const local = (progress - start) / (end - start);
-        const strength = Math.sin(local * Math.PI);
 
-        intensity = Math.max(intensity, strength);
+        intensity = Math.max(
+          intensity,
+          Math.sin(local * Math.PI) * strength
+        );
       }
     });
 
     return intensity;
   }
 
-  function easeOutExpo(value) {
-    return value >= 1
-      ? 1
-      : 1 - Math.pow(2, -10 * value);
-  }
-
   /* ==========================================
      CAPRI ANIMATION LOOP
-
-     FIXED X AND Y.
-
-     The final effect is a forward scale burst,
-     not a position change.
   ========================================== */
 
   function animateCapri(timestamp) {
@@ -2002,134 +1898,115 @@
     }
 
     const elapsed = timestamp - capriAnimationStart;
-    const duration = 4800;
+    const duration = 5600;
 
     const progress = Math.min(1, elapsed / duration);
 
-    let scale = .72;
-    let rotation = 0;
+    const pathProgress = easeInOutCubic(progress);
+    const position = getCapriPosition(pathProgress);
+
+    const mobile = window.innerWidth <= 650;
+
+    let x = position.x;
+    let y = position.y;
+    let scale = position.scale;
+    let rotation = position.rotation;
 
     const intensity = reducedMotion
       ? 0
-      : getGlitchIntensity(progress);
+      : getCapriGlitchIntensity(progress);
 
-    /* Subtle rotation while the image distorts */
+    /* Gentle movement while travelling */
 
-    if (progress < .84) {
-      rotation =
-        Math.sin(elapsed * .009) * 1.8 +
-        Math.sin(elapsed * .023) * intensity * 2.5;
+    if (progress < .88) {
+      x += Math.sin(elapsed * .004) * 5;
+      y += Math.cos(elapsed * .005) * 5;
+      rotation += Math.sin(elapsed * .003) * 2;
     }
 
-    /* Initial appearance */
+    /* Initial fade */
 
-    if (progress < .08) {
-      const intro = smoothProgress(progress / .08);
-      scale = .58 + intro * .25;
-    }
+    const opacity = progress < .045
+      ? progress / .045
+      : 1;
 
-    /* Main glitch sequence */
+    /* Final approach to the text */
 
-    if (progress >= .08 && progress < .84) {
-      const pulse =
-        Math.sin(elapsed * .006) * .035;
+    if (progress >= .88) {
+      const settle = smoothProgress(
+        (progress - .88) / .12
+      );
 
-      scale = .83 + pulse + intensity * .045;
-    }
+      const targetX = mobile
+        ? window.innerWidth * .5
+        : window.innerWidth * .245;
 
-    /* ======================================
-       FINAL BREAKTHROUGH
+      const targetY = mobile
+        ? window.innerHeight * .285
+        : window.innerHeight * .5;
 
-       Capri remains at the exact same
-       screen coordinates.
+      x += (targetX - x) * settle;
+      y += (targetY - y) * settle;
 
-       Only the scale changes.
-    ====================================== */
+      scale = position.scale + (mobile ? .64 : .88 - position.scale) * settle;
+      rotation *= 1 - settle;
 
-    if (progress >= .84 && progress < .94) {
-      const popProgress = (progress - .84) / .10;
-      const pop = easeOutExpo(popProgress);
+      if (progress >= .91) {
+        secretInner.classList.add("capri-text-visible");
+      }
 
-      scale = .88 + pop * 2.05;
-
-      rotation *= 1 - pop;
-
-      if (!secretOverlay.classList.contains("capri-impact")) {
+      if (progress >= .88 && !secretOverlay.classList.contains("capri-impact")) {
         secretOverlay.classList.add("capri-impact");
       }
     }
 
-    /* Settle back to the original fixed spot */
-
-    if (progress >= .94) {
-      const settle = smoothProgress(
-        (progress - .94) / .06
-      );
-
-      scale = 2.93 + (.96 - 2.93) * settle;
-      rotation = 0;
-    }
-
-    /* No left/top changes. Ever. */
-
     capriFlight.style.transform = `
+      translate3d(${x}px, ${y}px, 0)
       translate(-50%, -50%)
       scale(${scale})
       rotate(${rotation}deg)
     `;
 
-    capriFlight.style.opacity =
-      progress < .025
-        ? String(progress / .025)
-        : "1";
+    capriFlight.style.opacity = String(opacity);
 
-    drawCapriGlitch(intensity, elapsed);
-
-    /* Impact glow */
-
-    if (progress >= .84 && progress <= .94) {
-      const pop = (progress - .84) / .10;
-
-      const glow = 25 + pop * 75;
-      const blur = Math.sin(pop * Math.PI) * 2.5;
-
+    if (intensity > .02) {
       capriFlight.style.filter = `
-        blur(${blur}px)
-        drop-shadow(0 0 ${glow}px ${capriPalette.magenta})
-        drop-shadow(0 0 ${glow * .65}px ${capriPalette.green})
-      `;
-    } else if (progress > .94) {
-      capriFlight.style.filter = `
-        drop-shadow(0 0 22px ${capriPalette.magenta})
-        drop-shadow(0 0 12px ${capriPalette.green})
+        drop-shadow(0 0 ${20 + intensity * 28}px ${capriPalette.magenta})
+        drop-shadow(0 0 ${12 + intensity * 18}px ${capriPalette.green})
       `;
     } else {
       capriFlight.style.filter = `
-        drop-shadow(0 0 18px ${capriPalette.magenta})
-        drop-shadow(0 0 10px ${capriPalette.green})
+        drop-shadow(0 0 20px ${capriPalette.magenta})
+        drop-shadow(0 0 11px ${capriPalette.green})
       `;
     }
 
+    drawCapriGlitch(intensity);
+
     if (progress < 1) {
-      capriAnimationFrame = requestAnimationFrame(
-        animateCapri
-      );
+      capriAnimationFrame = requestAnimationFrame(animateCapri);
     } else {
-      capriFlight.classList.add("capri-settled");
-
-      secretOverlay.classList.remove("capri-impact");
-
-      drawCapriClean();
+      capriFlight.style.transform = `
+        translate3d(
+          ${mobile ? window.innerWidth * .5 : window.innerWidth * .245}px,
+          ${mobile ? window.innerHeight * .285 : window.innerHeight * .5}px,
+          0
+        )
+        translate(-50%, -50%)
+        scale(${mobile ? .64 : .88})
+      `;
 
       capriFlight.style.opacity = "1";
 
-      capriFlight.style.transform =
-        "translate(-50%, -50%) scale(.96)";
-
       capriFlight.style.filter = `
-        drop-shadow(0 0 22px ${capriPalette.magenta})
-        drop-shadow(0 0 12px ${capriPalette.green})
+        drop-shadow(0 0 20px ${capriPalette.magenta})
+        drop-shadow(0 0 11px ${capriPalette.green})
       `;
+
+      secretInner.classList.add("capri-text-visible");
+      secretOverlay.classList.remove("capri-impact");
+
+      drawCapriClean();
     }
   }
 
@@ -2139,34 +2016,46 @@
     capriAnimationFrame = null;
     capriAnimationStart = 0;
 
-    capriFlight.classList.remove("capri-settled");
-    capriFlight.classList.add("capri-visible");
-
+    secretInner.classList.remove("capri-text-visible");
     secretOverlay.classList.remove("capri-impact");
-
-    /* Reset transform only.
-       The fixed CSS position remains untouched. */
 
     capriFlight.style.opacity = "0";
     capriFlight.style.filter = "none";
 
-    capriFlight.style.transform =
-      "translate(-50%, -50%) scale(.58)";
+    capriFlight.style.transform = `
+      translate3d(
+        ${-window.innerWidth * .45}px,
+        ${window.innerHeight * 1.05}px,
+        0
+      )
+      translate(-50%, -50%)
+      scale(.55)
+    `;
 
     drawCapriClean();
 
     if (reducedMotion) {
       capriFlight.style.opacity = "1";
 
-      capriFlight.style.transform =
-        "translate(-50%, -50%) scale(.96)";
+      capriFlight.style.transform = `
+        translate3d(
+          ${window.innerWidth <= 650
+            ? window.innerWidth * .5
+            : window.innerWidth * .245}px,
+          ${window.innerWidth <= 650
+            ? window.innerHeight * .285
+            : window.innerHeight * .5}px,
+          0
+        )
+        translate(-50%, -50%)
+        scale(.85)
+      `;
 
+      secretInner.classList.add("capri-text-visible");
       return;
     }
 
-    capriAnimationFrame = requestAnimationFrame(
-      animateCapri
-    );
+    capriAnimationFrame = requestAnimationFrame(animateCapri);
   }
 
   /* ==========================================
@@ -2188,12 +2077,10 @@
 
     secretOverlay.setAttribute("aria-hidden", "true");
 
-    capriFlight.classList.remove(
-      "capri-visible",
-      "capri-settled"
-    );
+    secretInner.classList.remove("capri-text-visible");
 
     body.classList.remove("myrlore-secret");
+    body.style.overflow = "";
 
     if (secretPreviousFocus?.focus) {
       secretPreviousFocus.focus();
@@ -2207,6 +2094,7 @@
     secretPreviousFocus = document.activeElement;
 
     body.classList.add("myrlore-secret");
+    body.style.overflow = "hidden";
 
     secretOverlay.classList.remove("active");
 
