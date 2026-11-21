@@ -1984,3 +1984,32 @@ a {
 .studio-archive-link:hover span {
   transform: translate(3px, -3px);
 }
+
+/* ==========================================
+   MYRLORE — STUDIO ARCHIVE FOOTER LINK
+========================================== */
+
+.studio-archive-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+
+  font-family: "DM Mono", monospace;
+  font-size: 9px;
+  letter-spacing: 1.2px;
+
+  color: var(--muted);
+  transition: color 0.3s ease;
+}
+
+.studio-archive-link:hover {
+  color: var(--champagne);
+}
+
+.studio-archive-link span {
+  transition: transform 0.3s ease;
+}
+
+.studio-archive-link:hover span {
+  transform: translate(3px, -3px);
+}
