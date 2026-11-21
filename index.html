@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -6,591 +5,375 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="theme-color" content="#08090b">
 
-  <!-- SEO -->
-  <meta name="description" content="MYRLORE is an independent creative studio shaping distinctive brands and immersive digital experiences.">
-  <meta name="author" content="MYRLORE">
-  <meta name="robots" content="index, follow">
+  <meta name="description" content="MYRLORE Form Lab — an interactive 3D sculpture and material experimentation studio.">
 
-  <title>MYRLORE® — Independent Creative Studio</title>
+  <title>Form Lab — MYRLORE®</title>
 
-  <!-- FAVICON -->
-  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
-
-  <!-- OPEN GRAPH / DISCORD / FACEBOOK -->
-  <meta property="og:type" content="website">
-  <meta property="og:site_name" content="MYRLORE">
-  <meta property="og:title" content="MYRLORE® — Independent Creative Studio">
-  <meta property="og:description" content="We shape brands, build digital experiences and turn ambitious ideas into something extraordinary.">
-  <meta property="og:url" content="https://myrlore-6fufsiyxa-xtremetoy.vercel.app/">
-  <meta property="og:image" content="https://myrlore-6fufsiyxa-xtremetoy.vercel.app/myrlore-social-preview.jpg">
-  <meta property="og:image:secure_url" content="https://myrlore-6fufsiyxa-xtremetoy.vercel.app/myrlore-social-preview.jpg">
-  <meta property="og:image:type" content="image/jpeg">
-  <meta property="og:image:width" content="1200">
-  <meta property="og:image:height" content="630">
-  <meta property="og:image:alt" content="MYRLORE — Independent Creative Studio, platinum monogram on a dark cinematic background.">
-  <meta property="og:locale" content="en_IN">
-
-  <!-- TWITTER / X -->
-  <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:title" content="MYRLORE® — Independent Creative Studio">
-  <meta name="twitter:description" content="We shape brands, build digital experiences and turn ambitious ideas into something extraordinary.">
-  <meta name="twitter:image" content="https://myrlore-6fufsiyxa-xtremetoy.vercel.app/myrlore-social-preview.jpg">
-  <meta name="twitter:image:alt" content="MYRLORE — Independent Creative Studio">
-
-  <!-- FONTS -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
-  <!-- MAIN STYLESHEET -->
-  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="form-lab.css">
 
-  <!-- THREE.JS IMPORT MAP -->
   <script type="importmap">
-  {
-    "imports": {
-      "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js",
-      "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"
+    {
+      "imports": {
+        "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js"
+      }
     }
-  }
   </script>
 
-  <!-- GSAP -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js" defer></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js" defer></script>
+  <script type="module" src="form-lab.js"></script>
 </head>
 
 <body>
 
-  <!-- PAGE LOADER -->
-  <div class="page-loader" id="pageLoader">
-    <div class="loader-word">MYRLORE<span>®</span></div>
-    <div class="loader-line"><span></span></div>
-    <p>CREATING SOMETHING DIFFERENT</p>
-  </div>
-
-  <!-- BACKGROUND EFFECTS -->
-  <div class="noise" aria-hidden="true"></div>
-  <div class="cursor-glow" id="cursorGlow" aria-hidden="true"></div>
-
-  <!-- CINEMATIC PAGE TRANSITION -->
-  <div class="page-transition" id="pageTransition" aria-hidden="true" inert>
-    <div class="transition-curtain"></div>
-    <div class="transition-content">
-      <span class="transition-wordmark">MYRLORE<span>®</span></span>
-      <span class="transition-caption">INDEPENDENT CREATIVE STUDIO</span>
-      <div class="transition-progress"><span></span></div>
-    </div>
-  </div>
-
-  <!-- HEADER -->
-  <header class="site-header">
-    <a class="logo" href="#home" aria-label="MYRLORE home">
-      MYRLORE<span>®</span>
-    </a>
+  <header class="lab-header">
+    <a href="index.html" class="wordmark">MYRLORE<span>®</span></a>
 
     <div class="header-center">
-      <span class="status-dot"></span>
-      INDEPENDENT CREATIVE STUDIO
+      FORM LAB <span>/</span> EXPERIMENTAL DIVISION
     </div>
 
-    <button class="menu-toggle" id="menuToggle" aria-label="Open menu" aria-controls="menuPanel" aria-expanded="false" type="button">
-      <span>MENU</span>
-      <i></i>
-      <i></i>
-    </button>
+    <a href="index.html" class="back-link">
+      Back to Studio <span>↗</span>
+    </a>
   </header>
 
-  <!-- NAVIGATION -->
-  <nav class="menu-panel" id="menuPanel" aria-label="Main navigation">
-    <button class="menu-close" id="menuClose" type="button">CLOSE ×</button>
-    <div class="menu-label">EXPLORE MYRLORE</div>
-    <a href="#studio"><span>01</span> Studio</a>
-    <a href="#services"><span>02</span> Expertise</a>
-    <a href="#work"><span>03</span> Selected work</a>
-    <a href="form-lab.html"><span>04</span> Form Lab <span>↗</span></a>
-    <a href="#contact"><span>05</span> Contact</a>
-    <div class="menu-bottom">INDEPENDENT BY NATURE. CREATIVE BY DESIGN.</div>
-  </nav>
+  <main class="lab-main">
 
-  <main>
-
-    <!-- HERO -->
-    <section class="hero" id="home">
-      <div class="hero-meta">
-        <span>INDEPENDENT CREATIVE STUDIO</span>
-        <span>BASED IN INDIA · WORKING EVERYWHERE</span>
+    <section class="lab-intro">
+      <div class="eyebrow">
+        <span class="status-dot"></span>
+        INTERACTIVE OBJECT GENERATOR
       </div>
 
-      <div class="hero-content">
-        <div class="hero-copy">
-          <p class="eyebrow">
-            <span class="eyebrow-line"></span>
-            A DIFFERENT KIND OF CREATIVE STUDIO
-          </p>
-
-          <h1>
-            We make<br>
-            <span class="headline-outline">digital</span><br>
-            <span class="headline-last">matter<span class="lime-dot">.</span></span>
-          </h1>
-
-          <div class="hero-bottom">
-            <p>
-              We shape brands, build digital experiences and turn
-              ambitious ideas into something extraordinary.
-            </p>
-
-            <a class="round-link" href="#work" aria-label="Explore our work">
-              <span>↘</span>
-            </a>
-          </div>
-        </div>
-
-        <!-- THREE.JS VISUAL -->
-        <div class="hero-visual">
-          <div class="visual-caption caption-top">FORM / 001</div>
-
-          <canvas id="webgl" aria-label="Animated three-dimensional metallic sculpture"></canvas>
-
-          <div class="visual-caption caption-bottom">AN EXPLORATION IN FORM & MOTION</div>
-          <div class="visual-index">01 — 04</div>
-          <div class="visual-cross cross-one">+</div>
-          <div class="visual-cross cross-two">+</div>
-        </div>
-      </div>
-
-      <div class="hero-footer">
-        <span>SCROLL TO EXPLORE <span class="scroll-arrow">↓</span></span>
-        <span>DESIGN WITH INTENTION.</span>
-      </div>
-    </section>
-
-    <!-- INTRO MARQUEE -->
-    <section class="intro-band" aria-label="Studio principles">
-      <div class="intro-track">
-        <span>IDEAS INTO IMPACT</span><b>✳</b>
-        <span>DESIGN WITHOUT LIMITS</span><b>✳</b>
-        <span>BUILT TO BE DIFFERENT</span><b>✳</b>
-        <span>IDEAS INTO IMPACT</span><b>✳</b>
-        <span>DESIGN WITHOUT LIMITS</span><b>✳</b>
-      </div>
-    </section>
-
-    <!-- STUDIO -->
-    <section class="studio section-pad" id="studio">
-      <div class="section-top">
-        <span class="section-number">01 / THE STUDIO</span>
-        <span class="section-aside">SMALL BY DESIGN. BIG ON IDEAS.</span>
-      </div>
-
-      <div class="studio-layout">
-        <h2 class="studio-heading reveal">
-          Not here to<br>
-          blend <span>in.</span>
-        </h2>
-
-        <div class="studio-description reveal">
-          <p class="large-copy">We believe the internet deserves more than ordinary.</p>
-
+      <div class="intro-row">
+        <div>
+          <h1>Form Lab<span>.</span></h1>
           <p>
-            MYRLORE is an independent creative studio exploring
-            the intersection of design, technology and imagination.
-            We create distinctive identities and digital experiences
-            for people with ideas worth putting into the world.
+            Explore material, geometry and light.
+            Shape your own digital object in real time.
           </p>
-
-          <a class="text-link" href="#contact">
-            A LITTLE MORE ABOUT US <span>↗</span>
-          </a>
         </div>
-      </div>
 
-      <div class="studio-bottom">
-        <span>CURIOUS MINDS. UNCOMMON IDEAS.</span>
-        <span>EST. 2026</span>
-      </div>
-    </section>
-
-    <!-- SERVICES -->
-    <section class="services section-pad" id="services">
-      <div class="section-top">
-        <span class="section-number">02 / WHAT WE DO</span>
-        <span class="section-aside">THOUGHTFUL FROM START TO FINISH.</span>
-      </div>
-
-      <h2 class="services-heading reveal">
-        Ideas need<br>
-        <span>execution.</span>
-      </h2>
-
-      <div class="service-list">
-
-        <!-- SERVICE 01 -->
-        <article class="service-item">
-          <button class="service-trigger" id="serviceTrigger01" type="button" aria-expanded="false" aria-controls="servicePanel01">
-            <span class="service-num">01</span>
-            <span class="service-main">
-              <span class="service-title">Brand identity</span>
-              <span class="service-summary">Identity systems · Art direction · Visual language</span>
-            </span>
-            <span class="service-arrow" aria-hidden="true">↗</span>
-          </button>
-
-          <div class="service-details" id="servicePanel01" role="region" aria-labelledby="serviceTrigger01" hidden>
-            <div class="service-details-inner">
-              <p class="service-description">
-                Building distinctive visual identities that give
-                ambitious ideas a recognisable and consistent presence.
-              </p>
-
-              <div class="service-detail-columns">
-                <div>
-                  <span class="service-detail-label">WHAT IT INCLUDES</span>
-                  <ul>
-                    <li>Visual identity systems</li>
-                    <li>Logo and typography direction</li>
-                    <li>Colour and design systems</li>
-                    <li>Creative art direction</li>
-                  </ul>
-                </div>
-
-                <div>
-                  <span class="service-detail-label">THE OUTCOME</span>
-                  <p>A coherent visual language designed to make a brand distinctive and memorable.</p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </article>
-
-        <!-- SERVICE 02 -->
-        <article class="service-item">
-          <button class="service-trigger" id="serviceTrigger02" type="button" aria-expanded="false" aria-controls="servicePanel02">
-            <span class="service-num">02</span>
-            <span class="service-main">
-              <span class="service-title">Digital experiences</span>
-              <span class="service-summary">UI / UX · Websites · Interactive experiences</span>
-            </span>
-            <span class="service-arrow" aria-hidden="true">↗</span>
-          </button>
-
-          <div class="service-details" id="servicePanel02" role="region" aria-labelledby="serviceTrigger02" hidden>
-            <div class="service-details-inner">
-              <p class="service-description">
-                Creating immersive digital experiences that combine
-                thoughtful interfaces, expressive visuals and intuitive
-                interactions.
-              </p>
-
-              <div class="service-detail-columns">
-                <div>
-                  <span class="service-detail-label">WHAT IT INCLUDES</span>
-                  <ul>
-                    <li>Website design and development</li>
-                    <li>User interface design</li>
-                    <li>User experience planning</li>
-                    <li>Interactive web experiences</li>
-                  </ul>
-                </div>
-
-                <div>
-                  <span class="service-detail-label">THE OUTCOME</span>
-                  <p>A polished digital presence that feels purposeful, engaging and easy to explore.</p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </article>
-
-        <!-- SERVICE 03 -->
-        <article class="service-item">
-          <button class="service-trigger" id="serviceTrigger03" type="button" aria-expanded="false" aria-controls="servicePanel03">
-            <span class="service-num">03</span>
-            <span class="service-main">
-              <span class="service-title">Development</span>
-              <span class="service-summary">Web development · Creative technology · Web apps</span>
-            </span>
-            <span class="service-arrow" aria-hidden="true">↗</span>
-          </button>
-
-          <div class="service-details" id="servicePanel03" role="region" aria-labelledby="serviceTrigger03" hidden>
-            <div class="service-details-inner">
-              <p class="service-description">
-                Turning creative concepts into functional digital
-                products through thoughtful engineering and modern
-                web technologies.
-              </p>
-
-              <div class="service-detail-columns">
-                <div>
-                  <span class="service-detail-label">WHAT IT INCLUDES</span>
-                  <ul>
-                    <li>Frontend development</li>
-                    <li>Interactive web applications</li>
-                    <li>Creative coding</li>
-                    <li>Performance and responsive optimisation</li>
-                  </ul>
-                </div>
-
-                <div>
-                  <span class="service-detail-label">THE OUTCOME</span>
-                  <p>Functional, responsive digital products that bring creative ideas to life.</p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </article>
-
-        <!-- SERVICE 04 -->
-        <article class="service-item">
-          <button class="service-trigger" id="serviceTrigger04" type="button" aria-expanded="false" aria-controls="servicePanel04">
-            <span class="service-num">04</span>
-            <span class="service-main">
-              <span class="service-title">Digital innovation</span>
-              <span class="service-summary">AI-assisted solutions · Automation · Experiments</span>
-            </span>
-            <span class="service-arrow" aria-hidden="true">↗</span>
-          </button>
-
-          <div class="service-details" id="servicePanel04" role="region" aria-labelledby="serviceTrigger04" hidden>
-            <div class="service-details-inner">
-              <p class="service-description">
-                Exploring emerging technologies and unconventional
-                ideas to discover new ways of creating useful digital
-                experiences.
-              </p>
-
-              <div class="service-detail-columns">
-                <div>
-                  <span class="service-detail-label">WHAT IT INCLUDES</span>
-                  <ul>
-                    <li>AI-assisted digital concepts</li>
-                    <li>Workflow automation experiments</li>
-                    <li>Creative technology prototypes</li>
-                    <li>Emerging technology exploration</li>
-                  </ul>
-                </div>
-
-                <div>
-                  <span class="service-detail-label">THE OUTCOME</span>
-                  <p>Experimental concepts and practical solutions that explore what technology can make possible.</p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </article>
-      </div>
-
-      <div class="services-footer">
-        <span>FOUR DISCIPLINES. ONE CREATIVE DIRECTION.</span>
-        <a href="#contact" class="text-link">DISCUSS A PROJECT <span>↗</span></a>
-      </div>
-    </section>
-
-    <!-- SELECTED WORK -->
-    <section class="work section-pad" id="work">
-      <div class="section-top">
-        <span class="section-number">03 / SELECTED WORK</span>
-        <span class="section-aside">INDEPENDENT PROJECTS & EXPLORATIONS</span>
-      </div>
-
-      <div class="work-heading-row">
-        <h2 class="reveal">
-          Made with<br>
-          <span>intention.</span>
-        </h2>
-        <p>A selection of digital projects and creative explorations.</p>
-      </div>
-
-      <div class="work-grid">
-
-        <!-- CORROGUARD -->
-        <a class="work-card work-large" href="#case-study" data-case-study="corroguard" aria-label="Explore CorroGuard case study">
-          <div class="work-art art-corro">
-            <div class="art-orbit"></div>
-            <div class="art-core">CG<span>®</span></div>
-            <span class="art-label">MATERIAL INTELLIGENCE</span>
-            <span class="work-view-label">EXPLORE PROJECT ↗</span>
-          </div>
-
-          <div class="work-info">
-            <div>
-              <h3>CorroGuard</h3>
-              <p>Engineering · Digital platform</p>
-            </div>
-            <span>↗</span>
-          </div>
-        </a>
-
-        <!-- FLOODWATCH CHENNAI -->
-        <a class="work-card work-small" href="#case-study" data-case-study="floodwatch" aria-label="Explore FloodWatch Chennai case study">
-          <div class="work-art art-flood">
-            <div class="flood-lines"></div>
-            <div class="flood-title">FLOOD<br>WATCH<span>.</span></div>
-            <span class="art-label">CHENNAI / INDIA</span>
-            <span class="work-view-label">EXPLORE PROJECT ↗</span>
-          </div>
-
-          <div class="work-info">
-            <div>
-              <h3>FloodWatch Chennai</h3>
-              <p>Data · Mapping · Web platform</p>
-            </div>
-            <span>↗</span>
-          </div>
-        </a>
-
-        <!-- WORK NOTE -->
-        <div class="work-note">
-          <span>MORE TO COME</span>
-          <p>Good work takes curiosity.<br>We're just getting started.</p>
+        <div class="intro-index">
+          EXPERIMENTAL DIVISION
+          <strong>002 / CUSTOM EDITION</strong>
         </div>
       </div>
     </section>
 
-    <!-- MANIFESTO -->
-    <section class="manifesto section-pad">
-      <span class="section-number">04 / THE BELIEF</span>
+    <section class="workspace">
 
-      <h2 class="manifesto-heading reveal">
-        The future<br>
-        belongs to<br>
-        the <span>curious.</span>
-      </h2>
+      <!-- 3D VIEWPORT -->
 
-      <div class="manifesto-bottom">
-        <span>STAY CURIOUS. MAKE MEANING.</span>
-        <span>MYRLORE® — 2026</span>
+      <div class="viewport-panel">
+
+        <div class="viewport-topbar">
+          <span>LIVE OBJECT PREVIEW</span>
+          <span class="viewport-status">
+            <span class="status-dot"></span>
+            RENDER ACTIVE
+          </span>
+        </div>
+
+        <div class="viewport" id="viewport">
+
+          <div class="viewport-grid"></div>
+          <div class="viewport-crosshair"></div>
+
+          <div class="viewport-loading" id="loadingMessage">
+            INITIALISING FORM ENGINE...
+          </div>
+
+          <div class="viewport-bottom-left">
+            <span>MYRLORE® / FORM STUDY</span>
+            <strong id="objectNumber">OBJECT / 001</strong>
+          </div>
+
+          <div class="viewport-bottom-right">
+            DRAG TO ROTATE
+            <span>SCROLL TO ZOOM</span>
+          </div>
+
+        </div>
+
+        <div class="viewport-footer">
+          <span>REAL-TIME GEOMETRY ENGINE</span>
+          <span>THREE.JS / WEBGL</span>
+        </div>
+
       </div>
+
+      <!-- CONTROL PANEL -->
+
+      <aside class="control-panel">
+
+        <div class="control-heading">
+          <div>
+            <span class="eyebrow">OBJECT CONFIGURATION</span>
+            <h2>Studio Controls</h2>
+          </div>
+          <span class="control-number">01 — 04</span>
+        </div>
+
+        <!-- PRESETS -->
+
+        <section class="control-section">
+
+          <div class="section-heading">
+            <span>01 / BASE FORM</span>
+            <span>SELECT OBJECT</span>
+          </div>
+
+          <div class="preset-list" id="presetList">
+
+            <button class="preset-button active" data-preset="liquid">
+              <span class="preset-index">01</span>
+              <span>Liquid Knot</span>
+              <span class="preset-arrow">↗</span>
+            </button>
+
+            <button class="preset-button" data-preset="orbit">
+              <span class="preset-index">02</span>
+              <span>Orbital Rings</span>
+              <span class="preset-arrow">↗</span>
+            </button>
+
+            <button class="preset-button" data-preset="spire">
+              <span class="preset-index">03</span>
+              <span>Monolith</span>
+              <span class="preset-arrow">↗</span>
+            </button>
+
+            <button class="preset-button" data-preset="wave">
+              <span class="preset-index">04</span>
+              <span>Fluid Wave</span>
+              <span class="preset-arrow">↗</span>
+            </button>
+
+            <button class="preset-button" data-preset="bloom">
+              <span class="preset-index">05</span>
+              <span>Chrome Bloom</span>
+              <span class="preset-arrow">↗</span>
+            </button>
+
+          </div>
+        </section>
+
+        <!-- CUSTOM GEOMETRY -->
+
+        <section class="control-section geometry-section">
+
+          <div class="section-heading">
+            <span>02 / CUSTOM GEOMETRY</span>
+            <span>LIVE EDIT</span>
+          </div>
+
+          <div class="slider-control">
+            <div class="slider-label">
+              <label for="twistControl">Twist</label>
+              <output id="twistValue">0.35</output>
+            </div>
+
+            <input
+              type="range"
+              id="twistControl"
+              min="-2"
+              max="2"
+              step="0.05"
+              value="0.35"
+            >
+
+            <div class="slider-range">
+              <span>STRAIGHT</span>
+              <span>TWISTED</span>
+            </div>
+          </div>
+
+          <div class="slider-control">
+            <div class="slider-label">
+              <label for="scaleControl">Scale</label>
+              <output id="scaleValue">1.00</output>
+            </div>
+
+            <input
+              type="range"
+              id="scaleControl"
+              min="0.60"
+              max="1.60"
+              step="0.01"
+              value="1"
+            >
+
+            <div class="slider-range">
+              <span>COMPACT</span>
+              <span>EXPANDED</span>
+            </div>
+          </div>
+
+          <div class="slider-control">
+            <div class="slider-label">
+              <label for="thicknessControl">Thickness</label>
+              <output id="thicknessValue">1.00</output>
+            </div>
+
+            <input
+              type="range"
+              id="thicknessControl"
+              min="0.50"
+              max="1.60"
+              step="0.01"
+              value="1"
+            >
+
+            <div class="slider-range">
+              <span>SLIM</span>
+              <span>HEAVY</span>
+            </div>
+          </div>
+
+          <div class="slider-control">
+            <div class="slider-label">
+              <label for="complexityControl">Complexity</label>
+              <output id="complexityValue">5</output>
+            </div>
+
+            <input
+              type="range"
+              id="complexityControl"
+              min="2"
+              max="8"
+              step="1"
+              value="5"
+            >
+
+            <div class="slider-range">
+              <span>MINIMAL</span>
+              <span>DETAILED</span>
+            </div>
+          </div>
+
+          <button class="geometry-reset" id="geometryReset">
+            RESET GEOMETRY PARAMETERS <span>↺</span>
+          </button>
+
+        </section>
+
+        <!-- MATERIALS -->
+
+        <section class="control-section">
+
+          <div class="section-heading">
+            <span>03 / MATERIAL</span>
+            <span>SURFACE FINISH</span>
+          </div>
+
+          <div class="material-options" id="materialOptions">
+
+            <button class="material-button active" data-material="chrome">
+              <span class="material-swatch chrome-swatch"></span>
+              Chrome
+            </button>
+
+            <button class="material-button" data-material="titanium">
+              <span class="material-swatch titanium-swatch"></span>
+              Titanium
+            </button>
+
+            <button class="material-button" data-material="champagne">
+              <span class="material-swatch champagne-swatch"></span>
+              Champagne
+            </button>
+
+          </div>
+        </section>
+
+        <!-- LIGHTING -->
+
+        <section class="control-section">
+
+          <div class="section-heading">
+            <span>04 / ENVIRONMENT</span>
+            <span>LIGHTING</span>
+          </div>
+
+          <div class="lighting-options" id="lightingOptions">
+
+            <button class="lighting-button active" data-lighting="studio">
+              Studio
+            </button>
+
+            <button class="lighting-button" data-lighting="contrast">
+              Contrast
+            </button>
+
+            <button class="lighting-button" data-lighting="warm">
+              Warm
+            </button>
+
+          </div>
+        </section>
+
+        <!-- MOTION -->
+
+        <section class="motion-section">
+
+          <label class="motion-toggle" for="autoRotate">
+            <span>
+              <strong>Auto rotation</strong>
+              <small>Continuous object movement</small>
+            </span>
+
+            <input type="checkbox" id="autoRotate" checked>
+            <span class="toggle-track"></span>
+          </label>
+
+        </section>
+
+        <!-- ACTIONS -->
+
+        <div class="control-actions">
+
+          <button class="random-button" id="randomButton">
+            GENERATE RANDOM FORM <span>✳</span>
+          </button>
+
+          <button class="reset-button" id="resetButton">
+            RESET ALL SETTINGS
+          </button>
+
+        </div>
+
+        <p class="control-note">
+          Changes are rendered locally in real time.
+          Experiment freely with form, surface and light.
+        </p>
+
+      </aside>
+
     </section>
 
-    <!-- CONTACT -->
-    <section class="contact section-pad" id="contact">
-      <div class="section-top">
-        <span class="section-number">05 / START SOMETHING</span>
-        <span class="section-aside">HAVE AN IDEA? LET'S EXPLORE IT.</span>
+    <section class="lab-bottom">
+      <div>
+        <span class="eyebrow">THE EXPERIMENTAL DIVISION</span>
+        <h2>Every form begins<br>with an idea<span>.</span></h2>
       </div>
 
-      <p class="contact-kicker">GOOD THINGS START WITH A CONVERSATION.</p>
-
-      <h2 class="contact-heading reveal">
-        Let's make<br>
-        it <span>matter.</span>
-      </h2>
-
-      <a class="contact-link" href="mailto:hello@myrlore.com">
-        <span>hello@myrlore.com</span>
-        <span>↗</span>
-      </a>
+      <p>
+        An interactive space for exploring digital sculpture,
+        reflective materials and abstract geometry.
+      </p>
     </section>
 
   </main>
 
-  <!-- INTERACTIVE CASE STUDY OVERLAY -->
-  <div class="case-modal" id="caseStudyModal" aria-hidden="true" inert>
-    <div class="case-backdrop" data-case-close></div>
-
-    <section class="case-panel" role="dialog" aria-modal="true" aria-labelledby="caseTitle" tabindex="-1">
-      <div class="case-topbar">
-        <a class="case-logo" href="#home">MYRLORE<span>®</span></a>
-
-        <button class="case-close" id="caseClose" type="button" aria-label="Close case study">
-          CLOSE <span>×</span>
-        </button>
-      </div>
-
-      <div class="case-content">
-        <div class="case-hero-art" id="caseHeroArt">
-          <span class="case-art-index" id="caseIndex">PROJECT / 001</span>
-          <div class="case-art-symbol" id="caseSymbol">CG</div>
-          <span class="case-art-caption" id="caseArtCaption">MATERIAL INTELLIGENCE</span>
-        </div>
-
-        <div class="case-intro">
-          <div class="case-eyebrow">
-            <span class="status-dot"></span>
-            <span id="caseCategory">ENGINEERING · DIGITAL PLATFORM</span>
-          </div>
-
-          <h2 id="caseTitle">CorroGuard</h2>
-
-          <p id="caseSummary">
-            An interactive engineering chemistry platform
-            exploring corrosion analysis and prevention.
-          </p>
-        </div>
-
-        <div class="case-details">
-          <div class="case-detail-block">
-            <span class="case-label">01 / OVERVIEW</span>
-            <p id="caseOverview"></p>
-          </div>
-
-          <div class="case-detail-block">
-            <span class="case-label">02 / KEY FEATURES</span>
-            <ul id="caseFeatures"></ul>
-          </div>
-
-          <div class="case-detail-block">
-            <span class="case-label">03 / TECHNOLOGY</span>
-            <div class="case-tech-list" id="caseTech"></div>
-          </div>
-        </div>
-
-        <div class="case-bottom">
-          <span>INDEPENDENT PROJECT / MYRLORE®</span>
-
-          <button class="case-bottom-close" type="button" data-case-close>
-            BACK TO SELECTED WORK ↑
-          </button>
-        </div>
-      </div>
-    </section>
-  </div>
-
-  <!-- FOOTER -->
-  <footer class="footer">
-    <a class="logo" href="#home">MYRLORE<span>®</span></a>
+  <footer class="lab-footer">
+    <span>© <span id="currentYear"></span> MYRLORE®</span>
     <span>INDEPENDENT CREATIVE STUDIO</span>
-    <span>© <span id="year"></span> MYRLORE. ALL RIGHTS RESERVED.</span>
-
-    <!-- STUDIO ARCHIVE LINK -->
-    <a href="archive.html" class="studio-archive-link">
-      STUDIO ARCHIVE <span>↗</span>
-    </a>
-
-    <a href="#home">BACK TO TOP ↑</a>
+    <a href="index.html">RETURN TO STUDIO ↗</a>
   </footer>
-
-  <!-- LOADER FALLBACK -->
-  <script>
-    (() => {
-      let loaderHidden = false;
-
-      const hideLoader = () => {
-        if (loaderHidden) return;
-        loaderHidden = true;
-
-        document.body.classList.add("loaded");
-
-        const loader = document.getElementById("pageLoader");
-
-        if (loader) {
-          loader.style.display = "none";
-        }
-      };
-
-      window.addEventListener("load", () => {
-        setTimeout(hideLoader, 500);
-      }, { once: true });
-
-      setTimeout(hideLoader, 5000);
-    })();
-  </script>
-
-  <!-- MAIN THREE.JS / GSAP SCRIPT -->
-  <script type="module" src="script.js"></script>
 
 </body>
 </html>
