@@ -1,4 +1,3 @@
-
 /* ==========================================
    MYRLORE® — STUDIO ARCHIVE
    PREMIUM THREE.JS OBJECT COLLECTION
@@ -22,6 +21,10 @@ const archiveEntries = [
     description:
       "An exploration of reflective surfaces, fluid geometry and the relationship between light and metallic form. A study in the visual language of polished chrome.",
     artwork: "chrome",
+    medium: "POLISHED CHROME / 3D FORM",
+    focus: "FLUID GEOMETRY",
+    palette: "CHROME · GRAPHITE · CHAMPAGNE",
+    process: "A flowing ribbon structure was shaped around a central polished core, then layered with darker metal and fine champagne accents.",
     summary: "An exploration of reflective form and liquid geometry."
   },
 
@@ -34,6 +37,10 @@ const archiveEntries = [
     description:
       "A material exploration focused on contrast, reflection and surface treatment. Examining the visual character of metallic finishes through light and shadow.",
     artwork: "material",
+    medium: "LAYERED METALLIC SURFACES",
+    focus: "SURFACE & CONTRAST",
+    palette: "SILVER · CHARCOAL · WARM METAL",
+    process: "Three ribbon-like surfaces overlap to explore how material, depth and directional light change the reading of a form.",
     summary: "A study of reflective surfaces and material contrast."
   },
 
@@ -46,6 +53,10 @@ const archiveEntries = [
     description:
       "An investigation into typography as an object. Exploring weight, proportion, negative space and the visual impact of restrained composition.",
     artwork: "type",
+    medium: "EXTRUDED CHROME LETTERFORM",
+    focus: "TYPE AS OBJECT",
+    palette: "CHROME · GRAPHITE · CHAMPAGNE",
+    process: "A custom geometric letterform is extruded, bevelled and paired with a dark inset backing to give typography physical presence.",
     summary: "An experiment in type, scale and negative space."
   },
 
@@ -58,6 +69,10 @@ const archiveEntries = [
     description:
       "A geometric study built around symmetry, repetition and spatial relationships. Exploring how simple structures can create complex visual compositions.",
     artwork: "geometry",
+    medium: "CHROME / ORBITAL STRUCTURE",
+    focus: "REPETITION & SYMMETRY",
+    palette: "SILVER · CHAMPAGNE · BLACK",
+    process: "Intersecting metallic rings create a balanced spatial composition around a single central point.",
     summary: "A geometric study of repetition and proportion."
   },
 
@@ -70,6 +85,10 @@ const archiveEntries = [
     description:
       "An exploration of controlled illumination, reflective contrast and the role of light in shaping how materials are perceived.",
     artwork: "light",
+    medium: "GLASS / CHROME / LIGHT",
+    focus: "REFRACTION & REFLECTION",
+    palette: "ICE GLASS · SILVER · WARM LIGHT",
+    process: "A translucent central form is framed by metallic rings and controlled points of light to study contrast and depth.",
     summary: "An investigation into light and reflective contrast."
   },
 
@@ -82,6 +101,10 @@ const archiveEntries = [
     description:
       "A minimal form experiment investigating contour, balance and proportion through a reduced visual language.",
     artwork: "form",
+    medium: "LATHE-FORMED CHROME",
+    focus: "CONTOUR & BALANCE",
+    palette: "CHROME · GRAPHITE · CHAMPAGNE",
+    process: "A rotationally formed silhouette is traced by a spiral and fine contour lines, creating a study of proportion and movement.",
     summary: "An exploration of contour, balance and proportion."
   }
 
@@ -104,6 +127,7 @@ const modalArtwork = document.querySelector("#modalArtwork");
 const modalCategory = document.querySelector("#modalCategory");
 const modalTitle = document.querySelector("#modalTitle");
 const modalDescription = document.querySelector("#modalDescription");
+const modalSpecs = document.querySelector("#modalSpecs");
 const modalDate = document.querySelector("#modalDate");
 
 const archiveYear = document.querySelector("#archiveYear");
@@ -126,8 +150,8 @@ function createEnvironmentTexture() {
 
   const canvas = document.createElement("canvas");
 
-  canvas.width = 1024;
-  canvas.height = 512;
+  canvas.width = 1536;
+  canvas.height = 768;
 
   const context = canvas.getContext("2d");
 
@@ -145,25 +169,29 @@ function createEnvironmentTexture() {
   context.fillStyle = gradient;
   context.fillRect(0, 0, canvas.width, canvas.height);
 
-  // Large studio softboxes
+  // Broad, feathered studio softboxes create smoother metal reflections.
+  function drawSoftbox(x, y, width, height, colour, alpha = 1) {
+    const boxGradient = context.createLinearGradient(x, y, x + width, y + height);
+    boxGradient.addColorStop(0, `rgba(${colour}, 0)`);
+    boxGradient.addColorStop(0.18, `rgba(${colour}, ${0.42 * alpha})`);
+    boxGradient.addColorStop(0.5, `rgba(${colour}, ${0.92 * alpha})`);
+    boxGradient.addColorStop(0.82, `rgba(${colour}, ${0.42 * alpha})`);
+    boxGradient.addColorStop(1, `rgba(${colour}, 0)`);
+    context.fillStyle = boxGradient;
+    context.fillRect(x, y, width, height);
+  }
 
-  context.fillStyle = "#ffffff";
-  context.fillRect(85, 55, 115, 300);
+  drawSoftbox(110, 70, 170, 470, "255,255,255", 0.9);
+  drawSoftbox(430, 20, 90, 390, "210,218,228", 0.72);
+  drawSoftbox(820, 85, 210, 450, "255,255,248", 0.88);
+  drawSoftbox(1260, 45, 115, 410, "190,201,216", 0.68);
 
-  context.fillStyle = "#cbd0d7";
-  context.fillRect(300, 20, 65, 230);
-
-  context.fillStyle = "#f5f5f2";
-  context.fillRect(565, 65, 135, 280);
-
-  context.fillStyle = "#aeb5be";
-  context.fillRect(850, 35, 80, 250);
-
-  context.fillStyle = "rgba(255,255,255,0.7)";
-  context.fillRect(0, 420, 1024, 12);
-
-  context.fillStyle = "rgba(255,255,255,0.15)";
-  context.fillRect(0, 465, 1024, 5);
+  const floorGlow = context.createLinearGradient(0, 610, 0, 690);
+  floorGlow.addColorStop(0, "rgba(255,255,255,0)");
+  floorGlow.addColorStop(0.5, "rgba(255,255,255,0.38)");
+  floorGlow.addColorStop(1, "rgba(255,255,255,0)");
+  context.fillStyle = floorGlow;
+  context.fillRect(0, 610, canvas.width, 80);
 
   const texture = new THREE.CanvasTexture(canvas);
 
@@ -184,7 +212,7 @@ function createChromeMaterial(environment) {
 
     color: 0xe2e5e9,
     metalness: 1,
-    roughness: 0.13,
+    roughness: 0.16,
 
     envMap: environment,
     envMapIntensity: 1.9,
@@ -203,7 +231,7 @@ function createDarkMetalMaterial(environment) {
 
     color: 0x292e36,
     metalness: 1,
-    roughness: 0.2,
+    roughness: 0.24,
 
     envMap: environment,
     envMapIntensity: 1.65,
@@ -222,7 +250,7 @@ function createChampagneMaterial(environment) {
 
     color: 0xc6b69a,
     metalness: 0.95,
-    roughness: 0.16,
+    roughness: 0.2,
 
     envMap: environment,
     envMapIntensity: 1.7,
@@ -328,7 +356,7 @@ function addTube(
   radius,
   material,
   segments = 160,
-  radialSegments = 16
+  radialSegments = 20
 ) {
 
   const curve = new THREE.CatmullRomCurve3(
@@ -953,8 +981,8 @@ function createOrbitalGeometry(group, environment) {
       new THREE.TorusGeometry(
         item.radius,
         item.tube,
-        20,
-        120
+        28,
+        180
       ),
 
       chrome
@@ -1018,8 +1046,8 @@ function createLightStudy(group, environment) {
     new THREE.TorusGeometry(
       1.08,
       0.045,
-      24,
-      160
+      28,
+      200
     ),
 
     chrome
@@ -1042,8 +1070,8 @@ function createLightStudy(group, environment) {
     new THREE.TorusGeometry(
       0.78,
       0.025,
-      20,
-      150
+      26,
+      180
     ),
 
     darkMetal
@@ -1098,8 +1126,8 @@ function createLightStudy(group, environment) {
     new THREE.TorusGeometry(
       0.48,
       0.075,
-      24,
-      120
+      28,
+      160
     ),
 
     glass
@@ -1289,8 +1317,8 @@ function createContour(group, environment) {
     spiralPoints,
     0.035,
     darkMetal,
-    240,
-    12
+    260,
+    16
   );
 
 
@@ -1328,8 +1356,8 @@ function createContour(group, environment) {
     contourPoints,
     0.018,
     champagne,
-    180,
-    10
+    200,
+    14
   );
 
 
@@ -1452,7 +1480,7 @@ function initialiseScene(container, type, number) {
     });
 
     renderer.setPixelRatio(
-      Math.min(window.devicePixelRatio || 1, 1.5)
+      Math.min(window.devicePixelRatio || 1, 1.75)
     );
 
     renderer.setSize(width, height, false);
@@ -1661,7 +1689,7 @@ let animationFrame = null;
 
 function updateAnimationLoop() {
 
-  if (reducedMotion) return;
+  if (reducedMotion || document.hidden) return;
 
   const hasVisibleScenes = [...sceneStates.values()].some(
     state => state.visible || state.inModal
@@ -1756,6 +1784,15 @@ window.addEventListener("resize", () => {
 
   });
 
+});
+
+document.addEventListener("visibilitychange", () => {
+  if (document.hidden && animationFrame !== null) {
+    cancelAnimationFrame(animationFrame);
+    animationFrame = null;
+  } else {
+    updateAnimationLoop();
+  }
 });
 
 
@@ -1894,6 +1931,11 @@ function renderArchive(filter = "all") {
 
         <p>${entry.summary}</p>
 
+        <div class="entry-tags" aria-label="Study metadata">
+          <span>${entry.focus}</span>
+          <span>${entry.medium}</span>
+        </div>
+
       </div>
 
     `;
@@ -1959,13 +2001,12 @@ filterList.addEventListener("click", event => {
 
 
   document.querySelectorAll(".filter-button").forEach(item => {
-
     item.classList.remove("active");
-
+    item.setAttribute("aria-pressed", "false");
   });
 
-
   button.classList.add("active");
+  button.setAttribute("aria-pressed", "true");
 
   renderArchive(filter);
 
@@ -1990,6 +2031,26 @@ function openEntry(entry, triggerElement) {
 
   modalDate.textContent = entry.date;
 
+  if (modalSpecs) {
+    modalSpecs.innerHTML = `
+      <div class="modal-spec">
+        <span>MEDIUM</span>
+        <strong>${entry.medium}</strong>
+      </div>
+      <div class="modal-spec">
+        <span>FOCUS</span>
+        <strong>${entry.focus}</strong>
+      </div>
+      <div class="modal-spec">
+        <span>PALETTE</span>
+        <strong>${entry.palette}</strong>
+      </div>
+      <div class="modal-spec modal-spec-wide">
+        <span>PROCESS NOTE</span>
+        <strong>${entry.process}</strong>
+      </div>
+    `;
+  }
 
   modalArtwork.innerHTML = "";
 
@@ -2081,10 +2142,30 @@ document.querySelectorAll("[data-close-modal]").forEach(element => {
 
 document.addEventListener("keydown", event => {
 
+  if (!entryModal.classList.contains("open")) return;
+
   if (event.key === "Escape") {
-
     closeEntry();
+    return;
+  }
 
+  if (event.key === "Tab") {
+    const focusable = [...entryModal.querySelectorAll(
+      'button:not([disabled]), a[href], [tabindex]:not([tabindex="-1"])'
+    )].filter(element => element.offsetParent !== null);
+
+    if (!focusable.length) return;
+
+    const first = focusable[0];
+    const last = focusable[focusable.length - 1];
+
+    if (event.shiftKey && document.activeElement === first) {
+      event.preventDefault();
+      last.focus();
+    } else if (!event.shiftKey && document.activeElement === last) {
+      event.preventDefault();
+      first.focus();
+    }
   }
 
 });
