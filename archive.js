@@ -1,6 +1,7 @@
+
 /* ==========================================
    MYRLORE® — STUDIO ARCHIVE
-   THREE.JS OBJECT COLLECTION
+   PREMIUM THREE.JS OBJECT COLLECTION
 ========================================== */
 
 import * as THREE from "three";
@@ -118,7 +119,7 @@ const reducedMotion = window.matchMedia(
 
 
 /* ==========================================
-   SHARED ENVIRONMENT DESIGN
+   ENVIRONMENT TEXTURE
 ========================================== */
 
 function createEnvironmentTexture() {
@@ -131,37 +132,38 @@ function createEnvironmentTexture() {
   const context = canvas.getContext("2d");
 
   const gradient = context.createLinearGradient(
-    0,
-    0,
-    0,
-    canvas.height
+    0, 0, 0, canvas.height
   );
 
-  gradient.addColorStop(0, "#d9dce0");
-  gradient.addColorStop(0.22, "#737a83");
-  gradient.addColorStop(0.48, "#171b21");
-  gradient.addColorStop(0.7, "#555b64");
-  gradient.addColorStop(1, "#d1d3d4");
+  gradient.addColorStop(0, "#e7e9eb");
+  gradient.addColorStop(0.18, "#89919b");
+  gradient.addColorStop(0.38, "#242a32");
+  gradient.addColorStop(0.58, "#080a0e");
+  gradient.addColorStop(0.76, "#626a75");
+  gradient.addColorStop(1, "#d8dadd");
 
   context.fillStyle = gradient;
   context.fillRect(0, 0, canvas.width, canvas.height);
 
-  // Studio reflection panels
+  // Large studio softboxes
 
   context.fillStyle = "#ffffff";
-  context.fillRect(120, 75, 100, 250);
+  context.fillRect(85, 55, 115, 300);
 
-  context.fillStyle = "#c9cdd2";
-  context.fillRect(390, 35, 55, 190);
+  context.fillStyle = "#cbd0d7";
+  context.fillRect(300, 20, 65, 230);
 
-  context.fillStyle = "#f0f0ed";
-  context.fillRect(730, 90, 120, 230);
+  context.fillStyle = "#f5f5f2";
+  context.fillRect(565, 65, 135, 280);
 
-  context.fillStyle = "#9299a2";
-  context.fillRect(900, 150, 35, 180);
+  context.fillStyle = "#aeb5be";
+  context.fillRect(850, 35, 80, 250);
 
-  context.fillStyle = "rgba(255,255,255,0.3)";
-  context.fillRect(0, 400, 1024, 20);
+  context.fillStyle = "rgba(255,255,255,0.7)";
+  context.fillRect(0, 420, 1024, 12);
+
+  context.fillStyle = "rgba(255,255,255,0.15)";
+  context.fillRect(0, 465, 1024, 5);
 
   const texture = new THREE.CanvasTexture(canvas);
 
@@ -180,16 +182,15 @@ function createChromeMaterial(environment) {
 
   return new THREE.MeshPhysicalMaterial({
 
-    color: 0xdfe2e5,
-
+    color: 0xe2e5e9,
     metalness: 1,
-    roughness: 0.17,
+    roughness: 0.13,
 
     envMap: environment,
-    envMapIntensity: 1.65,
+    envMapIntensity: 1.9,
 
     clearcoat: 1,
-    clearcoatRoughness: 0.12
+    clearcoatRoughness: 0.08
 
   });
 
@@ -200,16 +201,15 @@ function createDarkMetalMaterial(environment) {
 
   return new THREE.MeshPhysicalMaterial({
 
-    color: 0x343941,
-
-    metalness: 0.95,
-    roughness: 0.24,
+    color: 0x292e36,
+    metalness: 1,
+    roughness: 0.2,
 
     envMap: environment,
-    envMapIntensity: 1.35,
+    envMapIntensity: 1.65,
 
     clearcoat: 1,
-    clearcoatRoughness: 0.18
+    clearcoatRoughness: 0.14
 
   });
 
@@ -221,12 +221,41 @@ function createChampagneMaterial(environment) {
   return new THREE.MeshPhysicalMaterial({
 
     color: 0xc6b69a,
-
-    metalness: 0.92,
-    roughness: 0.2,
+    metalness: 0.95,
+    roughness: 0.16,
 
     envMap: environment,
-    envMapIntensity: 1.4
+    envMapIntensity: 1.7,
+
+    clearcoat: 1,
+    clearcoatRoughness: 0.12
+
+  });
+
+}
+
+
+function createGlassMaterial(environment) {
+
+  return new THREE.MeshPhysicalMaterial({
+
+    color: 0xdce5ed,
+
+    metalness: 0.05,
+    roughness: 0.08,
+
+    transmission: 0.92,
+    thickness: 1.2,
+    ior: 1.45,
+
+    transparent: true,
+    opacity: 1,
+
+    envMap: environment,
+    envMapIntensity: 1.5,
+
+    clearcoat: 1,
+    clearcoatRoughness: 0.04
 
   });
 
@@ -288,104 +317,445 @@ function createLighting(scene) {
 
 
 /* ==========================================
+   GEOMETRY HELPERS
+========================================== */
+
+// Smooth sculptural tube
+
+function addTube(
+  group,
+  points,
+  radius,
+  material,
+  segments = 160,
+  radialSegments = 16
+) {
+
+  const curve = new THREE.CatmullRomCurve3(
+    points.map(point => new THREE.Vector3(...point))
+  );
+
+  const geometry = new THREE.TubeGeometry(
+    curve,
+    segments,
+    radius,
+    radialSegments,
+    false
+  );
+
+  const mesh = new THREE.Mesh(geometry, material);
+
+  group.add(mesh);
+
+  return mesh;
+}
+
+
+// Custom flowing ribbon surface
+
+function addRibbon(
+  group,
+  points,
+  width,
+  material,
+  options = {}
+) {
+
+  const segments = options.segments || 150;
+  const widthSegments = options.widthSegments || 16;
+
+  const twist = options.twist || 0;
+  const wave = options.wave || 0;
+
+  const curve = new THREE.CatmullRomCurve3(
+    points.map(point => new THREE.Vector3(...point))
+  );
+
+  const frames = curve.computeFrenetFrames(
+    segments,
+    false
+  );
+
+  const positions = [];
+  const uvs = [];
+  const indices = [];
+
+  for (let i = 0; i <= segments; i++) {
+
+    const t = i / segments;
+
+    const center = curve.getPointAt(t);
+
+    const normal = frames.normals[i];
+    const binormal = frames.binormals[i];
+
+    const angle = twist * t * Math.PI * 2;
+
+    const rotatedNormal = normal.clone()
+      .multiplyScalar(Math.cos(angle))
+      .add(
+        binormal.clone().multiplyScalar(Math.sin(angle))
+      );
+
+    const rotatedBinormal = binormal.clone()
+      .multiplyScalar(Math.cos(angle))
+      .sub(
+        normal.clone().multiplyScalar(Math.sin(angle))
+      );
+
+    const widthVariation =
+      1 + Math.sin(t * Math.PI * 2) * wave;
+
+    for (let j = 0; j <= widthSegments; j++) {
+
+      const v = j / widthSegments;
+
+      const side = (v - 0.5) * width * widthVariation;
+
+      const point = center.clone().add(
+        rotatedNormal.clone().multiplyScalar(side)
+      );
+
+      // Slight sculptural curvature
+
+      point.add(
+        rotatedBinormal.clone().multiplyScalar(
+          Math.sin(v * Math.PI) * 0.035
+        )
+      );
+
+      positions.push(
+        point.x,
+        point.y,
+        point.z
+      );
+
+      uvs.push(t, v);
+
+      if (i < segments && j < widthSegments) {
+
+        const a = i * (widthSegments + 1) + j;
+        const b = a + widthSegments + 1;
+
+        indices.push(
+          a, b, a + 1,
+          b, b + 1, a + 1
+        );
+
+      }
+
+    }
+
+  }
+
+  const geometry = new THREE.BufferGeometry();
+
+  geometry.setAttribute(
+    "position",
+    new THREE.Float32BufferAttribute(positions, 3)
+  );
+
+  geometry.setAttribute(
+    "uv",
+    new THREE.Float32BufferAttribute(uvs, 2)
+  );
+
+  geometry.setIndex(indices);
+
+  geometry.computeVertexNormals();
+
+  const mesh = new THREE.Mesh(
+    geometry,
+    material
+  );
+
+  group.add(mesh);
+
+  return mesh;
+}
+
+
+/* ==========================================
    OBJECT 001 — LIQUID FORM
-   CHROME SCULPTURE
+   FLUID CHROME SCULPTURE
 ========================================== */
 
 function createLiquidForm(group, environment) {
 
   const chrome = createChromeMaterial(environment);
+  const darkMetal = createDarkMetalMaterial(environment);
+  const champagne = createChampagneMaterial(environment);
 
-  const object = new THREE.Mesh(
+  // Main flowing surface
 
-    new THREE.TorusKnotGeometry(
-      0.88,
-      0.27,
-      220,
-      36,
-      2,
-      3
-    ),
+  addRibbon(
+    group,
 
-    chrome
+    [
+      [-1.25, -0.55, -0.25],
+      [-0.95, 0.25, 0.35],
+      [-0.35, 0.95, 0.2],
+      [0.4, 0.72, -0.25],
+      [1.05, 0.05, -0.3],
+      [0.85, -0.7, 0.25],
+      [0.1, -0.85, 0.4],
+      [-0.65, -0.35, 0.25]
+    ],
+
+    0.34,
+    chrome,
+
+    {
+      twist: 1.15,
+      wave: 0.24,
+      segments: 200,
+      widthSegments: 24
+    }
 
   );
 
-  object.scale.set(1.05, 0.9, 0.8);
 
-  group.add(object);
+  // Secondary folded chrome surface
 
+  addRibbon(
+    group,
+
+    [
+      [-1.05, 0.5, -0.5],
+      [-0.55, 0.95, -0.1],
+      [0.2, 0.9, 0.45],
+      [1.1, 0.35, 0.3],
+      [0.95, -0.4, -0.15],
+      [0.25, -0.95, -0.4],
+      [-0.65, -0.75, -0.25]
+    ],
+
+    0.18,
+    darkMetal,
+
+    {
+      twist: 0.8,
+      wave: 0.3,
+      segments: 180
+    }
+
+  );
+
+
+  // Flowing metallic edge
+
+  addTube(
+    group,
+
+    [
+      [-1.1, -0.45, 0.1],
+      [-0.7, 0.3, 0.55],
+      [0.0, 0.85, 0.45],
+      [0.8, 0.5, 0.15],
+      [1.05, -0.2, 0.35],
+      [0.45, -0.85, 0.55],
+      [-0.45, -0.75, 0.45]
+    ],
+
+    0.035,
+    champagne,
+    180,
+    12
+
+  );
+
+
+  // Central polished core
 
   const core = new THREE.Mesh(
 
-    new THREE.SphereGeometry(0.38, 48, 48),
+    new THREE.SphereGeometry(
+      0.34,
+      64,
+      64
+    ),
 
-    createDarkMetalMaterial(environment)
+    darkMetal
 
   );
 
+  core.position.set(0, 0, 0);
+
   group.add(core);
+
+
+  // Floating chrome droplets
+
+  const dropletMaterial = chrome;
+
+  [
+    [-1.15, 0.55, 0.15, 0.095],
+    [1.15, 0.6, -0.15, 0.07],
+    [0.95, -0.85, 0.15, 0.11]
+  ].forEach(item => {
+
+    const droplet = new THREE.Mesh(
+
+      new THREE.SphereGeometry(
+        item[3],
+        32,
+        32
+      ),
+
+      dropletMaterial
+
+    );
+
+    droplet.position.set(
+      item[0],
+      item[1],
+      item[2]
+    );
+
+    droplet.scale.set(1, 1.4, 0.85);
+
+    group.add(droplet);
+
+  });
 
 }
 
 
 /* ==========================================
    OBJECT 002 — SURFACE / 01
-   LAYERED METALLIC STRUCTURE
+   LAYERED METALLIC RIBBONS
 ========================================== */
 
 function createMaterialStudy(group, environment) {
 
   const chrome = createChromeMaterial(environment);
   const darkMetal = createDarkMetalMaterial(environment);
+  const champagne = createChampagneMaterial(environment);
 
-  const layers = [
+  // Upper flowing chrome layer
 
-    {
-      y: 0.38,
-      rotation: -0.22,
-      scale: [1.55, 0.13, 0.9],
-      material: chrome
-    },
+  addRibbon(
+    group,
 
-    {
-      y: 0.12,
-      rotation: 0.12,
-      scale: [1.35, 0.12, 0.82],
-      material: darkMetal
-    },
+    [
+      [-1.5, 0.55, -0.15],
+      [-1.0, 0.8, 0.25],
+      [-0.35, 0.65, 0.4],
+      [0.35, 0.25, 0.15],
+      [1.0, 0.15, -0.2],
+      [1.45, 0.48, -0.1]
+    ],
 
-    {
-      y: -0.14,
-      rotation: -0.12,
-      scale: [1.55, 0.13, 0.9],
-      material: chrome
-    },
+    0.42,
+    chrome,
 
     {
-      y: -0.4,
-      rotation: 0.18,
-      scale: [1.2, 0.11, 0.75],
-      material: darkMetal
+      twist: 0.16,
+      wave: 0.22,
+      segments: 180
     }
 
-  ];
+  );
 
-  layers.forEach(layer => {
 
-    const mesh = new THREE.Mesh(
+  // Middle dark metallic layer
 
-      new THREE.BoxGeometry(1, 1, 1, 8, 2, 8),
+  addRibbon(
+    group,
 
-      layer.material
+    [
+      [-1.45, 0.05, 0.25],
+      [-0.85, -0.05, 0.45],
+      [-0.2, 0.15, 0.2],
+      [0.5, 0.55, -0.15],
+      [1.25, 0.35, -0.3],
+      [1.5, -0.05, -0.15]
+    ],
+
+    0.3,
+    darkMetal,
+
+    {
+      twist: 0.3,
+      wave: 0.18,
+      segments: 180
+    }
+
+  );
+
+
+  // Lower polished surface
+
+  addRibbon(
+    group,
+
+    [
+      [-1.35, -0.55, -0.3],
+      [-0.8, -0.75, -0.1],
+      [-0.15, -0.55, 0.25],
+      [0.55, -0.25, 0.35],
+      [1.15, -0.35, 0.05],
+      [1.4, -0.65, -0.15]
+    ],
+
+    0.38,
+    chrome,
+
+    {
+      twist: 0.2,
+      wave: 0.26,
+      segments: 180
+    }
+
+  );
+
+
+  // Fine champagne edge detail
+
+  addTube(
+    group,
+
+    [
+      [-1.35, 0.42, 0.15],
+      [-0.75, 0.62, 0.4],
+      [-0.1, 0.45, 0.35],
+      [0.65, 0.12, 0.05],
+      [1.3, 0.2, -0.1]
+    ],
+
+    0.018,
+    champagne,
+    150,
+    10
+
+  );
+
+
+  // Floating structural supports
+
+  const supportMaterial = darkMetal;
+
+  [
+    [-0.85, -0.95, 0],
+    [0.8, -0.95, 0]
+  ].forEach(position => {
+
+    const support = new THREE.Mesh(
+
+      new THREE.CylinderGeometry(
+        0.035,
+        0.05,
+        0.3,
+        24
+      ),
+
+      supportMaterial
 
     );
 
-    mesh.position.y = layer.y;
-    mesh.rotation.z = layer.rotation;
-    mesh.scale.set(...layer.scale);
+    support.position.set(...position);
 
-    group.add(mesh);
+    group.add(support);
 
   });
 
@@ -394,10 +764,14 @@ function createMaterialStudy(group, environment) {
 
 /* ==========================================
    OBJECT 003 — TYPOGRAPHIC SILENCE
-   EXTRUDED M
+   SCULPTED CHROME LETTERFORM
 ========================================== */
 
 function createTypography(group, environment) {
+
+  const chrome = createChromeMaterial(environment);
+  const darkMetal = createDarkMetalMaterial(environment);
+  const champagne = createChampagneMaterial(environment);
 
   const shape = new THREE.Shape();
 
@@ -415,54 +789,135 @@ function createTypography(group, environment) {
   shape.lineTo(-0.58, -0.8);
   shape.closePath();
 
+
   const geometry = new THREE.ExtrudeGeometry(
 
     shape,
 
     {
-      depth: 0.22,
+      depth: 0.32,
+
       bevelEnabled: true,
-      bevelSegments: 4,
-      steps: 1,
-      bevelSize: 0.055,
-      bevelThickness: 0.055
+      bevelSegments: 8,
+
+      steps: 2,
+
+      bevelSize: 0.075,
+      bevelThickness: 0.075,
+
+      curveSegments: 24
+
     }
 
   );
 
   geometry.center();
 
+
   const letter = new THREE.Mesh(
-
     geometry,
-
-    createChromeMaterial(environment)
-
+    chrome
   );
 
-  letter.scale.set(1.2, 1.2, 1.2);
+  letter.scale.set(1.25, 1.25, 1.25);
 
   group.add(letter);
 
 
-  const dot = new THREE.Mesh(
+  // Dark inset backing
 
-    new THREE.SphereGeometry(0.12, 32, 32),
+  const backing = new THREE.Mesh(
 
-    createChampagneMaterial(environment)
+    new THREE.ExtrudeGeometry(
+
+      shape,
+
+      {
+        depth: 0.08,
+        bevelEnabled: true,
+        bevelSegments: 3,
+        bevelSize: 0.025,
+        bevelThickness: 0.025
+      }
+
+    ),
+
+    darkMetal
 
   );
 
-  dot.position.set(1.25, -0.68, 0.12);
+  backing.scale.set(1.28, 1.28, 0.65);
+
+  backing.position.z = -0.28;
+
+  group.add(backing);
+
+
+  // Sculptural diagonal detail
+
+  addTube(
+    group,
+
+    [
+      [-1.1, -0.95, 0.25],
+      [-0.72, -0.2, 0.35],
+      [-0.15, 0.55, 0.4],
+      [0.45, 1.0, 0.25],
+      [1.1, 0.65, 0.1]
+    ],
+
+    0.025,
+    champagne,
+    130,
+    10
+
+  );
+
+
+  // Floating signature point
+
+  const dot = new THREE.Mesh(
+
+    new THREE.SphereGeometry(
+      0.105,
+      40,
+      40
+    ),
+
+    champagne
+
+  );
+
+  dot.position.set(1.35, -0.75, 0.2);
 
   group.add(dot);
+
+
+  // Small metallic base
+
+  const base = new THREE.Mesh(
+
+    new THREE.CylinderGeometry(
+      0.82,
+      0.92,
+      0.055,
+      96
+    ),
+
+    darkMetal
+
+  );
+
+  base.position.y = -1.12;
+
+  group.add(base);
 
 }
 
 
 /* ==========================================
    OBJECT 004 — ORBITAL GEOMETRY
-   INTERLOCKING CHROME RINGS
+   ORIGINAL DESIGN — UNCHANGED
 ========================================== */
 
 function createOrbitalGeometry(group, environment) {
@@ -528,43 +983,106 @@ function createOrbitalGeometry(group, environment) {
 
 /* ==========================================
    OBJECT 005 — LIGHT / REFLECTION
-   ILLUMINATED METALLIC FORM
+   GLASS AND CHROME LIGHT SCULPTURE
 ========================================== */
 
 function createLightStudy(group, environment) {
 
   const chrome = createChromeMaterial(environment);
+  const darkMetal = createDarkMetalMaterial(environment);
+  const glass = createGlassMaterial(environment);
 
-  const rod = new THREE.Mesh(
+  // Central glass sculpture
 
-    new THREE.CylinderGeometry(
-      0.055,
-      0.055,
-      2.5,
-      32
+  const glassCore = new THREE.Mesh(
+
+    new THREE.SphereGeometry(
+      0.58,
+      96,
+      96
+    ),
+
+    glass
+
+  );
+
+  glassCore.scale.set(0.8, 1.25, 0.8);
+
+  group.add(glassCore);
+
+
+  // Floating chrome orbital ring
+
+  const outerRing = new THREE.Mesh(
+
+    new THREE.TorusGeometry(
+      1.08,
+      0.045,
+      24,
+      160
     ),
 
     chrome
 
   );
 
-  rod.rotation.z = Math.PI / 5;
+  outerRing.rotation.set(
+    0.8,
+    0.25,
+    0.35
+  );
 
-  group.add(rod);
+  group.add(outerRing);
 
+
+  // Second intersecting ring
+
+  const innerRing = new THREE.Mesh(
+
+    new THREE.TorusGeometry(
+      0.78,
+      0.025,
+      20,
+      150
+    ),
+
+    darkMetal
+
+  );
+
+  innerRing.rotation.set(
+    1.2,
+    0.75,
+    -0.4
+  );
+
+  group.add(innerRing);
+
+
+  // Illuminated central column
+
+  const lightMaterial = new THREE.MeshPhysicalMaterial({
+
+    color: 0xf2eee3,
+
+    emissive: 0xd5c8ae,
+    emissiveIntensity: 2.1,
+
+    metalness: 0.2,
+    roughness: 0.15
+
+  });
 
   const innerLight = new THREE.Mesh(
 
     new THREE.CylinderGeometry(
-      0.018,
-      0.018,
-      2.2,
-      16
+      0.035,
+      0.035,
+      2.0,
+      32
     ),
 
-    new THREE.MeshBasicMaterial({
-      color: 0xf2eee3
-    })
+    lightMaterial
 
   );
 
@@ -573,93 +1091,287 @@ function createLightStudy(group, environment) {
   group.add(innerLight);
 
 
-  const ring = new THREE.Mesh(
+  // Glass halo
+
+  const halo = new THREE.Mesh(
 
     new THREE.TorusGeometry(
-      0.82,
-      0.025,
-      16,
-      100
+      0.48,
+      0.075,
+      24,
+      120
     ),
 
-    chrome
+    glass
 
   );
 
-  ring.rotation.set(0.8, 0.5, 0.2);
+  halo.rotation.set(
+    1.3,
+    0.2,
+    0.6
+  );
 
-  group.add(ring);
+  group.add(halo);
 
+
+  // Small chrome nodes
+
+  [
+    [-1.05, 0.3, 0],
+    [0.95, -0.55, 0.1],
+    [0.25, 1.05, -0.1]
+  ].forEach(position => {
+
+    const node = new THREE.Mesh(
+
+      new THREE.SphereGeometry(
+        0.09,
+        32,
+        32
+      ),
+
+      chrome
+
+    );
+
+    node.position.set(...position);
+
+    group.add(node);
+
+  });
+
+
+  // Controlled illumination
 
   const glow = new THREE.PointLight(
-    0xffffff,
-    20,
-    5
+    0xe6d8bd,
+    32,
+    7
   );
 
-  glow.position.set(0.4, 0.2, 1);
+  glow.position.set(0.2, 0.3, 1.2);
 
   group.add(glow);
+
+
+  const secondaryGlow = new THREE.PointLight(
+    0xb8cce8,
+    15,
+    6
+  );
+
+  secondaryGlow.position.set(-1.2, -0.5, -0.8);
+
+  group.add(secondaryGlow);
+
+
+  // Floating base
+
+  const base = new THREE.Mesh(
+
+    new THREE.CylinderGeometry(
+      0.58,
+      0.72,
+      0.09,
+      96
+    ),
+
+    darkMetal
+
+  );
+
+  base.position.y = -1.2;
+
+  group.add(base);
 
 }
 
 
 /* ==========================================
    OBJECT 006 — CONTOUR
-   SCULPTURAL LATHE FORM
+   ORGANIC CHROME SCULPTURE
 ========================================== */
 
 function createContour(group, environment) {
 
-  const points = [
+  const chrome = createChromeMaterial(environment);
+  const darkMetal = createDarkMetalMaterial(environment);
+  const champagne = createChampagneMaterial(environment);
 
-    new THREE.Vector2(0.05, -1.1),
-    new THREE.Vector2(0.42, -0.95),
-    new THREE.Vector2(0.7, -0.58),
-    new THREE.Vector2(0.76, -0.1),
-    new THREE.Vector2(0.65, 0.38),
-    new THREE.Vector2(0.38, 0.82),
-    new THREE.Vector2(0.05, 1.05)
+  // Organic profile
 
-  ];
+  const points = [];
+
+  for (let i = 0; i <= 48; i++) {
+
+    const t = i / 48;
+
+    const y = -1.25 + t * 2.5;
+
+    const taper = Math.sin(t * Math.PI);
+
+    const baseRadius =
+      0.2 +
+      taper * 0.55 +
+      Math.sin(t * Math.PI * 3) * 0.09;
+
+    const radius = Math.max(
+      0.08,
+      baseRadius
+    );
+
+    points.push(
+      new THREE.Vector2(radius, y)
+    );
+
+  }
+
 
   const geometry = new THREE.LatheGeometry(
     points,
-    96
+    160
   );
 
   geometry.computeVertexNormals();
 
+
   const object = new THREE.Mesh(
-
     geometry,
-
-    createChromeMaterial(environment)
-
+    chrome
   );
 
-  object.scale.set(0.9, 1, 0.9);
+  object.scale.set(
+    0.9,
+    1,
+    0.9
+  );
 
   group.add(object);
 
 
+  // Sculptural spiral around the form
+
+  const spiralPoints = [];
+
+  for (let i = 0; i <= 220; i++) {
+
+    const t = i / 220;
+
+    const angle = t * Math.PI * 4.2;
+
+    const y = -1.12 + t * 2.25;
+
+    const taper = Math.sin(
+      (t * 0.92 + 0.04) * Math.PI
+    );
+
+    const radius =
+      0.22 +
+      taper * 0.53 +
+      Math.sin(t * Math.PI * 3) * 0.075;
+
+    spiralPoints.push([
+
+      Math.cos(angle) * radius,
+
+      y,
+
+      Math.sin(angle) * radius
+
+    ]);
+
+  }
+
+
+  addTube(
+    group,
+    spiralPoints,
+    0.035,
+    darkMetal,
+    240,
+    12
+  );
+
+
+  // Thin champagne contour line
+
+  const contourPoints = [];
+
+  for (let i = 0; i <= 160; i++) {
+
+    const t = i / 160;
+
+    const angle = t * Math.PI * 2;
+
+    const y = -0.9 + t * 1.8;
+
+    const radius =
+      0.82 +
+      Math.sin(t * Math.PI * 3) * 0.06;
+
+    contourPoints.push([
+
+      Math.cos(angle) * radius,
+
+      y,
+
+      Math.sin(angle) * radius
+
+    ]);
+
+  }
+
+
+  addTube(
+    group,
+    contourPoints,
+    0.018,
+    champagne,
+    180,
+    10
+  );
+
+
+  // Sculptural base
+
   const base = new THREE.Mesh(
 
     new THREE.TorusGeometry(
-      0.48,
-      0.025,
-      16,
-      100
+      0.46,
+      0.035,
+      24,
+      128
     ),
 
-    createDarkMetalMaterial(environment)
+    darkMetal
 
   );
 
   base.rotation.x = Math.PI / 2;
-  base.position.y = -0.9;
+
+  base.position.y = -1.18;
 
   group.add(base);
+
+
+  // Small polished crown
+
+  const crown = new THREE.Mesh(
+
+    new THREE.SphereGeometry(
+      0.13,
+      40,
+      40
+    ),
+
+    champagne
+
+  );
+
+  crown.position.y = 1.27;
+
+  group.add(crown);
 
 }
 
@@ -867,7 +1579,6 @@ function resizeScene(state) {
 
 /* ==========================================
    INTERSECTION OBSERVER
-   PAUSE OFF-SCREEN OBJECTS
 ========================================== */
 
 const artworkObserver = new IntersectionObserver(
