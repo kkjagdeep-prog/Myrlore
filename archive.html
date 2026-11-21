@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -25,14 +24,22 @@
 
   <link rel="stylesheet" href="archive.css">
 
-  <script src="archive.js" defer></script>
+  <!-- Three.js is loaded only on the archive page -->
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js"
+      }
+    }
+  </script>
+
+  <script type="module" src="archive.js"></script>
 </head>
 
 <body>
 
   <div class="archive-noise"></div>
 
-  <!-- HEADER -->
   <header class="archive-header">
 
     <a href="index.html" class="archive-logo">
@@ -53,7 +60,6 @@
 
   <main>
 
-    <!-- INTRODUCTION -->
     <section class="archive-hero">
 
       <div class="archive-overline">
@@ -93,7 +99,6 @@
     </section>
 
 
-    <!-- ARCHIVE INDEX -->
     <section class="archive-section" id="archive">
 
       <div class="section-heading">
@@ -110,7 +115,6 @@
       </div>
 
 
-      <!-- FILTERS -->
       <div class="archive-toolbar">
 
         <div class="filter-list" id="filterList">
@@ -140,13 +144,11 @@
       </div>
 
 
-      <!-- ENTRIES ARE CREATED BY archive.js -->
       <div class="archive-grid" id="archiveGrid"></div>
 
     </section>
 
 
-    <!-- CLOSING STATEMENT -->
     <section class="archive-closing">
 
       <span class="section-kicker">END OF CURRENT INDEX</span>
@@ -171,7 +173,6 @@
   </main>
 
 
-  <!-- ENTRY DETAIL MODAL -->
   <div class="entry-modal" id="entryModal" aria-hidden="true">
 
     <div class="modal-backdrop" data-close-modal></div>
@@ -223,7 +224,6 @@
   </div>
 
 
-  <!-- FOOTER -->
   <footer class="archive-footer">
 
     <a href="index.html" class="footer-logo">
