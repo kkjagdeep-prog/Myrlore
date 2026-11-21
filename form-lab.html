@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -59,14 +60,12 @@
 
         <div class="intro-index">
           EXPERIMENTAL DIVISION
-          <strong>002 / CUSTOM EDITION</strong>
+          <strong>003 / SCULPTURE COLLECTION</strong>
         </div>
       </div>
     </section>
 
     <section class="workspace">
-
-      <!-- 3D VIEWPORT -->
 
       <div class="viewport-panel">
 
@@ -106,8 +105,6 @@
 
       </div>
 
-      <!-- CONTROL PANEL -->
-
       <aside class="control-panel">
 
         <div class="control-heading">
@@ -115,7 +112,7 @@
             <span class="eyebrow">OBJECT CONFIGURATION</span>
             <h2>Studio Controls</h2>
           </div>
-          <span class="control-number">01 — 04</span>
+          <span class="control-number">01 — 05</span>
         </div>
 
         <!-- PRESETS -->
@@ -159,6 +156,36 @@
               <span class="preset-arrow">↗</span>
             </button>
 
+            <button class="preset-button" data-preset="helix">
+              <span class="preset-index">06</span>
+              <span>Helix</span>
+              <span class="preset-arrow">↗</span>
+            </button>
+
+            <button class="preset-button" data-preset="mobius">
+              <span class="preset-index">07</span>
+              <span>Möbius Form</span>
+              <span class="preset-arrow">↗</span>
+            </button>
+
+            <button class="preset-button" data-preset="voronoi">
+              <span class="preset-index">08</span>
+              <span>Voronoi Structure</span>
+              <span class="preset-arrow">↗</span>
+            </button>
+
+            <button class="preset-button" data-preset="parametric">
+              <span class="preset-index">09</span>
+              <span>Parametric Wave</span>
+              <span class="preset-arrow">↗</span>
+            </button>
+
+            <button class="preset-button" data-preset="sphere">
+              <span class="preset-index">10</span>
+              <span>Liquid Sphere</span>
+              <span class="preset-arrow">↗</span>
+            </button>
+
           </div>
         </section>
 
@@ -177,14 +204,7 @@
               <output id="twistValue">0.35</output>
             </div>
 
-            <input
-              type="range"
-              id="twistControl"
-              min="-2"
-              max="2"
-              step="0.05"
-              value="0.35"
-            >
+            <input type="range" id="twistControl" min="-2" max="2" step="0.05" value="0.35">
 
             <div class="slider-range">
               <span>STRAIGHT</span>
@@ -198,14 +218,7 @@
               <output id="scaleValue">1.00</output>
             </div>
 
-            <input
-              type="range"
-              id="scaleControl"
-              min="0.60"
-              max="1.60"
-              step="0.01"
-              value="1"
-            >
+            <input type="range" id="scaleControl" min="0.60" max="1.60" step="0.01" value="1">
 
             <div class="slider-range">
               <span>COMPACT</span>
@@ -219,14 +232,7 @@
               <output id="thicknessValue">1.00</output>
             </div>
 
-            <input
-              type="range"
-              id="thicknessControl"
-              min="0.50"
-              max="1.60"
-              step="0.01"
-              value="1"
-            >
+            <input type="range" id="thicknessControl" min="0.50" max="1.60" step="0.01" value="1">
 
             <div class="slider-range">
               <span>SLIM</span>
@@ -240,14 +246,7 @@
               <output id="complexityValue">5</output>
             </div>
 
-            <input
-              type="range"
-              id="complexityControl"
-              min="2"
-              max="8"
-              step="1"
-              value="5"
-            >
+            <input type="range" id="complexityControl" min="2" max="8" step="1" value="5">
 
             <div class="slider-range">
               <span>MINIMAL</span>
