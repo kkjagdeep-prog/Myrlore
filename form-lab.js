@@ -1,3 +1,4 @@
+
 import * as THREE from "three";
 
 /* ==========================================
@@ -248,6 +249,8 @@ function applyLighting(mode) {
 
   const p = presets[mode];
 
+  if (!p || !lights.ambient) return;
+
   lights.ambient.intensity = p.ambient;
   lights.key.intensity = p.key;
   lights.fill.intensity = p.fill;
@@ -319,6 +322,8 @@ function addRing(
 function deformGeometry(geometry) {
   const position = geometry.attributes.position;
 
+  if (!position) return geometry;
+
   const twistAmount = parameters.twist;
   const thicknessAmount = parameters.thickness;
 
@@ -351,7 +356,6 @@ function deformGeometry(geometry) {
   position.needsUpdate = true;
 
   geometry.computeVertexNormals();
-
   geometry.computeBoundingSphere();
 
   return geometry;
@@ -417,7 +421,7 @@ function createLiquidKnot(group) {
   const core = createMesh(
     new THREE.IcosahedronGeometry(
       0.23,
-      Math.min(2 + detail / 2, 6)
+      Math.min(2 + Math.floor(detail / 2), 6)
     ),
     getMaterial()
   );
@@ -468,7 +472,10 @@ function createOrbital(group) {
   const center = createMesh(
     new THREE.IcosahedronGeometry(
       0.23,
-      Math.min(2 + parameters.complexity / 2, 6)
+      Math.min(
+        2 + Math.floor(parameters.complexity / 2),
+        6
+      )
     ),
     new THREE.MeshPhysicalMaterial({
       color: 0xc6b69a,
@@ -742,9 +749,16 @@ function clearGroup(group) {
 function buildSculpture(preset) {
   if (!sculptureGroup) return;
 
+  const builder = presetBuilders[preset];
+
+  if (!builder) {
+    console.error("Unknown sculpture preset:", preset);
+    return;
+  }
+
   clearGroup(sculptureGroup);
 
-  presetBuilders[preset](sculptureGroup);
+  builder(sculptureGroup);
 
   currentPreset = preset;
 
@@ -788,7 +802,11 @@ function readGeometryControls() {
   parameters.twist = Number(twistControl.value);
   parameters.scale = Number(scaleControl.value);
   parameters.thickness = Number(thicknessControl.value);
-  parameters.complexity = Number(complexityControl.value);
+
+  // Complexity must always be a whole number.
+  parameters.complexity = Math.round(
+    Number(complexityControl.value)
+  );
 
   updateParameterDisplays();
 }
@@ -854,9 +872,12 @@ function initialise() {
 
   scene.background = new THREE.Color(0x111419);
 
+  const width = Math.max(viewport.clientWidth, 1);
+  const height = Math.max(viewport.clientHeight, 1);
+
   camera = new THREE.PerspectiveCamera(
     38,
-    viewport.clientWidth / viewport.clientHeight,
+    width / height,
     0.1,
     100
   );
@@ -873,10 +894,7 @@ function initialise() {
     Math.min(window.devicePixelRatio || 1, 1.75)
   );
 
-  renderer.setSize(
-    viewport.clientWidth,
-    viewport.clientHeight
-  );
+  renderer.setSize(width, height);
 
   renderer.outputColorSpace = THREE.SRGBColorSpace;
 
@@ -928,7 +946,7 @@ function renderOnce() {
 function animate() {
   animationFrame = null;
 
-  if (!renderer) return;
+  if (!renderer || !sculptureGroup) return;
 
   if (autoRotateInput.checked && !isDragging) {
     sculptureGroup.rotation.y += 0.0028;
@@ -983,7 +1001,7 @@ function resizeRenderer() {
 
 function setupPointerEvents() {
   viewport.addEventListener("pointerdown", event => {
-    if (event.target !== renderer.domElement) return;
+    if (!renderer || event.target !== renderer.domElement) return;
 
     isDragging = true;
 
@@ -994,7 +1012,7 @@ function setupPointerEvents() {
   });
 
   viewport.addEventListener("pointermove", event => {
-    if (!isDragging) return;
+    if (!isDragging || !sculptureGroup) return;
 
     const deltaX = event.clientX - previousPointer.x;
     const deltaY = event.clientY - previousPointer.y;
@@ -1022,6 +1040,8 @@ function setupPointerEvents() {
   });
 
   viewport.addEventListener("wheel", event => {
+    if (!camera) return;
+
     event.preventDefault();
 
     zoom += event.deltaY * 0.003;
@@ -1229,6 +1249,10 @@ resetButton.addEventListener("click", () => {
   updateActiveControls();
 
   renderOnce();
+
+  if (autoRotateInput.checked) {
+    startAnimation();
+  }
 });
 
 
