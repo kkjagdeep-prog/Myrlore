@@ -2,6 +2,7 @@
 /* ==========================================
    MYRLORE® — MAIN INTERACTION SYSTEM
    A2 CHROME SCULPTURE · GSAP · UI
+   CAPRI SECRET ARCHIVE
 ========================================== */
 
 (() => {
@@ -164,10 +165,7 @@
     revealElements.forEach(element => {
       gsapInstance.fromTo(
         element,
-        {
-          opacity: 0,
-          y: 45
-        },
+        { opacity: 0, y: 45 },
         {
           opacity: 1,
           y: 0,
@@ -215,7 +213,7 @@
 
   /* ==========================================
      SERVICES ACCORDION
-========================================== */
+  ========================================== */
 
   const serviceItems = $$(".service-item");
 
@@ -239,11 +237,7 @@
     trigger.setAttribute("aria-expanded", "false");
     item.classList.remove("is-active");
 
-    if (
-      gsapInstance &&
-      !reducedMotion &&
-      !panel.hidden
-    ) {
+    if (gsapInstance && !reducedMotion && !panel.hidden) {
       gsapInstance.to(panel, {
         height: 0,
         opacity: 0,
@@ -279,10 +273,7 @@
     if (gsapInstance && !reducedMotion) {
       gsapInstance.fromTo(
         panel,
-        {
-          height: 0,
-          opacity: 0
-        },
+        { height: 0, opacity: 0 },
         {
           height: "auto",
           opacity: 1,
@@ -304,9 +295,7 @@
       const active = item.classList.contains("is-active");
 
       serviceItems.forEach((other, otherIndex) => {
-        if (other !== item) {
-          closeService(other, otherIndex);
-        }
+        if (other !== item) closeService(other, otherIndex);
       });
 
       if (active) {
@@ -339,12 +328,7 @@
         "Corrosion types and case studies",
         "Corrosion prevention information"
       ],
-      technology: [
-        "HTML",
-        "CSS",
-        "JavaScript",
-        "Chart.js"
-      ]
+      technology: ["HTML", "CSS", "JavaScript", "Chart.js"]
     },
 
     floodwatch: {
@@ -366,12 +350,8 @@
         "Flood awareness insights"
       ],
       technology: [
-        "HTML",
-        "CSS",
-        "JavaScript",
-        "Leaflet",
-        "Chart.js",
-        "GeoJSON"
+        "HTML", "CSS", "JavaScript",
+        "Leaflet", "Chart.js", "GeoJSON"
       ]
     }
   };
@@ -393,10 +373,7 @@
 
     const setText = (selector, value) => {
       const element = $(selector);
-
-      if (element) {
-        element.textContent = value;
-      }
+      if (element) element.textContent = value;
     };
 
     setText("#caseIndex", data.index);
@@ -450,9 +427,7 @@
 
     body.classList.add("case-open");
 
-    requestAnimationFrame(() => {
-      caseClose?.focus();
-    });
+    requestAnimationFrame(() => caseClose?.focus());
   }
 
   function closeCaseStudy() {
@@ -470,7 +445,6 @@
   $$("[data-case-study]").forEach(card => {
     card.addEventListener("click", event => {
       event.preventDefault();
-
       openCaseStudy(card.dataset.caseStudy, card);
     });
   });
@@ -497,10 +471,7 @@
     if (event.shiftKey && document.activeElement === first) {
       event.preventDefault();
       last.focus();
-    } else if (
-      !event.shiftKey &&
-      document.activeElement === last
-    ) {
+    } else if (!event.shiftKey && document.activeElement === last) {
       event.preventDefault();
       first.focus();
     }
@@ -634,9 +605,7 @@
         event.metaKey ||
         event.shiftKey ||
         event.altKey
-      ) {
-        return;
-      }
+      ) return;
 
       let destination;
 
@@ -650,15 +619,13 @@
       if (destination.pathname === location.pathname) return;
 
       event.preventDefault();
-
       runPageTransition(destination.href);
     });
   });
 
   /* ==========================================
      THREE.JS — A2 CHROME SCULPTURE
-     Custom blades · central core · filaments
-========================================== */
+  ========================================== */
 
   const canvas = $("#webgl");
 
@@ -681,9 +648,7 @@
   const BLADE_SEGMENTS = 84;
   const RADIAL_SEGMENTS = 24;
 
-  /* ==========================================
-     CUSTOM BLADE GEOMETRY
-  ========================================== */
+  /* BLADE GEOMETRY */
 
   function createBladeGeometry(options = {}) {
     const {
@@ -715,7 +680,6 @@
     }
 
     const centerCurve = new THREE.CatmullRomCurve3(curvePoints);
-
     const frames = centerCurve.computeFrenetFrames(
       BLADE_SEGMENTS,
       false
@@ -768,11 +732,15 @@
         const depth = Math.sin(angle) * bladeThickness;
 
         const ridgeFactor =
-          Math.pow(Math.abs(Math.cos(angle)), 8) * ridge * envelope;
+          Math.pow(Math.abs(Math.cos(angle)), 8) *
+          ridge * envelope;
 
         const point = center.clone()
           .addScaledVector(twistedNormal, side)
-          .addScaledVector(twistedBinormal, depth + ridgeFactor);
+          .addScaledVector(
+            twistedBinormal,
+            depth + ridgeFactor
+          );
 
         positions.push(point.x, point.y, point.z);
         uvs.push(u, t);
@@ -809,15 +777,9 @@
     return geometry;
   }
 
-  /* ==========================================
-     CHROME CURVE GEOMETRY
-  ========================================== */
+  /* CHROME CURVES */
 
-  function createChromeCurve(
-    points,
-    material,
-    radius = 0.018
-  ) {
+  function createChromeCurve(points, material, radius = 0.018) {
     const curve = new THREE.CatmullRomCurve3(points);
 
     const geometry = new THREE.TubeGeometry(
@@ -831,9 +793,7 @@
     return new THREE.Mesh(geometry, material);
   }
 
-  /* ==========================================
-     ENVIRONMENT REFLECTIONS
-  ========================================== */
+  /* ENVIRONMENT REFLECTIONS */
 
   function createEnvironment(renderer) {
     const pmrem = new THREE.PMREMGenerator(renderer);
@@ -842,58 +802,31 @@
     environmentScene.background = new THREE.Color(0x17191e);
 
     const panels = [
-      {
-        position: [0, 5, 2],
-        size: [5, 0.15, 2],
-        color: 0xffffff
-      },
-      {
-        position: [-5, 1, 1],
-        size: [0.15, 5, 2],
-        color: 0xdce5f0
-      },
-      {
-        position: [5, 0, -1],
-        size: [0.15, 4, 2],
-        color: 0xc6b69a
-      },
-      {
-        position: [0, -4, -2],
-        size: [4, 0.15, 2],
-        color: 0x8995a4
-      },
-      {
-        position: [0, 0, -5],
-        size: [4, 4, 0.15],
-        color: 0xffffff
-      }
+      { position: [0, 5, 2], size: [5, 0.15, 2], color: 0xffffff },
+      { position: [-5, 1, 1], size: [0.15, 5, 2], color: 0xdce5f0 },
+      { position: [5, 0, -1], size: [0.15, 4, 2], color: 0xc6b69a },
+      { position: [0, -4, -2], size: [4, 0.15, 2], color: 0x8995a4 },
+      { position: [0, 0, -5], size: [4, 4, 0.15], color: 0xffffff }
     ];
 
     panels.forEach(data => {
       const panel = new THREE.Mesh(
         new THREE.BoxGeometry(...data.size),
-        new THREE.MeshBasicMaterial({
-          color: data.color
-        })
+        new THREE.MeshBasicMaterial({ color: data.color })
       );
 
       panel.position.set(...data.position);
       environmentScene.add(panel);
     });
 
-    const texture = pmrem.fromScene(
-      environmentScene,
-      0.04
-    ).texture;
+    const texture = pmrem.fromScene(environmentScene, 0.04).texture;
 
     pmrem.dispose();
 
     return texture;
   }
 
-  /* ==========================================
-     SCULPTURE INITIALISATION
-  ========================================== */
+  /* INITIALISE THREE.JS */
 
   async function initialiseThree() {
     if (!canvas || threeReady || reducedMotion) return;
@@ -907,16 +840,9 @@
       RectAreaLightUniformsLib.init();
 
       clock = new THREE.Clock();
-
       scene = new THREE.Scene();
 
-      camera = new THREE.PerspectiveCamera(
-        35,
-        1,
-        0.1,
-        100
-      );
-
+      camera = new THREE.PerspectiveCamera(35, 1, 0.1, 100);
       camera.position.set(0, 0, 8);
 
       renderer = new THREE.WebGLRenderer({
@@ -933,8 +859,6 @@
       renderer.outputColorSpace = THREE.SRGBColorSpace;
       renderer.toneMapping = THREE.ACESFilmicToneMapping;
       renderer.toneMappingExposure = 1.15;
-
-      /* MATERIALS */
 
       const chromeMaterial = new THREE.MeshPhysicalMaterial({
         color: 0xc8c9c7,
@@ -963,54 +887,27 @@
 
       scene.environment = createEnvironment(renderer);
 
-      /* LIGHTING */
+      scene.add(new THREE.AmbientLight(0xffffff, 0.5));
 
-      scene.add(
-        new THREE.AmbientLight(0xffffff, 0.5)
-      );
-
-      const keyLight = new THREE.DirectionalLight(
-        0xffffff,
-        3.2
-      );
-
+      const keyLight = new THREE.DirectionalLight(0xffffff, 3.2);
       keyLight.position.set(4, 5, 6);
       scene.add(keyLight);
 
-      const rimLight = new THREE.DirectionalLight(
-        0xc6b69a,
-        2.8
-      );
-
+      const rimLight = new THREE.DirectionalLight(0xc6b69a, 2.8);
       rimLight.position.set(-5, 1, -4);
       scene.add(rimLight);
 
-      const lowerLight = new THREE.PointLight(
-        0x89939d,
-        22,
-        14
-      );
-
+      const lowerLight = new THREE.PointLight(0x89939d, 22, 14);
       lowerLight.position.set(0, -3, 3);
       scene.add(lowerLight);
 
-      const areaLight = new THREE.RectAreaLight(
-        0xffffff,
-        6,
-        5,
-        2
-      );
-
+      const areaLight = new THREE.RectAreaLight(0xffffff, 6, 5, 2);
       areaLight.position.set(0, 4, 4);
       areaLight.lookAt(0, 0, 0);
       scene.add(areaLight);
 
-      /* MAIN SCULPTURE */
-
       sculpture = new THREE.Group();
       scene.add(sculpture);
-
-      /* NINE CUSTOM BLADES */
 
       const bladeConfigurations = [
         { length: 2.9, width: 0.43, twist: 1.25, bend: 0.34 },
@@ -1029,14 +926,11 @@
 
         const blade = new THREE.Mesh(
           geometry,
-          index % 3 === 0
-            ? champagneMaterial
-            : chromeMaterial
+          index % 3 === 0 ? champagneMaterial : chromeMaterial
         );
 
         const angle =
-          (index / bladeConfigurations.length) *
-          Math.PI * 2;
+          (index / bladeConfigurations.length) * Math.PI * 2;
 
         blade.rotation.set(
           Math.sin(angle) * 0.5,
@@ -1057,15 +951,8 @@
         sculpture.add(blade);
       });
 
-      /* CENTRAL CORE */
-
-      const coreGeometry = new THREE.IcosahedronGeometry(
-        0.48,
-        3
-      );
-
       const core = new THREE.Mesh(
-        coreGeometry,
+        new THREE.IcosahedronGeometry(0.48, 3),
         darkMetal
       );
 
@@ -1079,11 +966,8 @@
 
       sculpture.add(innerCore);
 
-      /* THREE CHROME FILAMENTS */
-
       for (let i = 0; i < 3; i++) {
         const points = [];
-
         const offset = i * (Math.PI * 2 / 3);
 
         for (let j = 0; j <= 100; j++) {
@@ -1102,32 +986,22 @@
           );
         }
 
-        const filament = createChromeCurve(
-          points,
-          i === 1 ? champagneMaterial : chromeMaterial,
-          0.014
+        sculpture.add(
+          createChromeCurve(
+            points,
+            i === 1 ? champagneMaterial : chromeMaterial,
+            0.014
+          )
         );
-
-        sculpture.add(filament);
       }
 
-      /* PARTICLES */
-
       const particleCount = 180;
-
-      const particlePositions = new Float32Array(
-        particleCount * 3
-      );
+      const particlePositions = new Float32Array(particleCount * 3);
 
       for (let i = 0; i < particleCount; i++) {
-        particlePositions[i * 3] =
-          (Math.random() - 0.5) * 7;
-
-        particlePositions[i * 3 + 1] =
-          (Math.random() - 0.5) * 7;
-
-        particlePositions[i * 3 + 2] =
-          (Math.random() - 0.5) * 5;
+        particlePositions[i * 3] = (Math.random() - 0.5) * 7;
+        particlePositions[i * 3 + 1] = (Math.random() - 0.5) * 7;
+        particlePositions[i * 3 + 2] = (Math.random() - 0.5) * 5;
       }
 
       const particleGeometry = new THREE.BufferGeometry();
@@ -1137,28 +1011,23 @@
         new THREE.BufferAttribute(particlePositions, 3)
       );
 
-      const particleMaterial = new THREE.PointsMaterial({
-        color: 0xc6b69a,
-        size: 0.018,
-        transparent: true,
-        opacity: 0.55,
-        sizeAttenuation: true
-      });
-
       particleSystem = new THREE.Points(
         particleGeometry,
-        particleMaterial
+        new THREE.PointsMaterial({
+          color: 0xc6b69a,
+          size: 0.018,
+          transparent: true,
+          opacity: 0.55,
+          sizeAttenuation: true
+        })
       );
 
       scene.add(particleSystem);
-
-      /* RESIZE */
 
       function resizeRenderer() {
         if (!renderer || !camera || !canvas) return;
 
         const rect = canvas.getBoundingClientRect();
-
         const width = Math.max(1, rect.width);
         const height = Math.max(1, rect.height);
 
@@ -1171,16 +1040,11 @@
       resizeRenderer();
 
       if ("ResizeObserver" in window) {
-        const resizeObserver = new ResizeObserver(
-          resizeRenderer
-        );
-
+        const resizeObserver = new ResizeObserver(resizeRenderer);
         resizeObserver.observe(canvas);
       } else {
         window.addEventListener("resize", resizeRenderer);
       }
-
-      /* POINTER MOVEMENT */
 
       if (!touchDevice) {
         window.addEventListener("mousemove", event => {
@@ -1192,34 +1056,26 @@
         });
       }
 
-      /* SCROLL */
-
       window.addEventListener("scroll", () => {
         scrollRotation = window.scrollY * 0.00015;
       }, { passive: true });
 
-      /* ANIMATION */
-
       function animate() {
-        if (!pageVisible) return;
+        if (!pageVisible || !threeReady) return;
 
         animationFrame = requestAnimationFrame(animate);
 
         const elapsed = clock.getElapsedTime();
 
-        sculpture.rotation.y =
-          elapsed * 0.13 + scrollRotation;
+        sculpture.rotation.y = elapsed * 0.13 + scrollRotation;
 
         sculpture.rotation.x =
-          Math.sin(elapsed * 0.25) * 0.13 +
-          pointerY * 0.3;
+          Math.sin(elapsed * 0.25) * 0.13 + pointerY * 0.3;
 
         sculpture.rotation.z =
-          Math.cos(elapsed * 0.2) * 0.08 +
-          pointerX * 0.2;
+          Math.cos(elapsed * 0.2) * 0.08 + pointerX * 0.2;
 
-        sculpture.position.y =
-          Math.sin(elapsed * 0.5) * 0.08;
+        sculpture.position.y = Math.sin(elapsed * 0.5) * 0.08;
 
         particleSystem.rotation.y = elapsed * 0.025;
         particleSystem.rotation.x = elapsed * 0.012;
@@ -1228,23 +1084,17 @@
       }
 
       threeReady = true;
-      animate();
+
+      if (pageVisible) animate();
 
     } catch (error) {
-      console.error(
-        "MYRLORE sculpture initialisation failed:",
-        error
-      );
+      console.error("MYRLORE sculpture initialisation failed:", error);
 
-      if (canvas) {
-        canvas.style.opacity = "0";
-      }
+      if (canvas) canvas.style.opacity = "0";
     }
   }
 
-  /* ==========================================
-     LAZY LOAD SCULPTURE
-  ========================================== */
+  /* LAZY LOAD SCULPTURE */
 
   if (canvas) {
     const hero = $(".hero");
@@ -1255,9 +1105,7 @@
           observer.disconnect();
           initialiseThree();
         }
-      }, {
-        rootMargin: "200px"
-      });
+      }, { rootMargin: "200px" });
 
       observer.observe(hero);
     } else {
@@ -1265,30 +1113,48 @@
     }
   }
 
-  /* ==========================================
-     TAB VISIBILITY
-  ========================================== */
+  /* TAB VISIBILITY — FIXED RESUME */
 
   document.addEventListener("visibilitychange", () => {
     pageVisible = !document.hidden;
 
     if (!renderer || !threeReady) return;
 
+    cancelAnimationFrame(animationFrame);
+
     if (pageVisible) {
-      cancelAnimationFrame(animationFrame);
       clock.start();
-      animationFrame = requestAnimationFrame(() => {
-        renderer.render(scene, camera);
-      });
-    } else {
-      cancelAnimationFrame(animationFrame);
+      animateThreeAgain();
     }
   });
 
+  function animateThreeAgain() {
+    if (!pageVisible || !threeReady) return;
+
+    animationFrame = requestAnimationFrame(animateThreeAgain);
+
+    const elapsed = clock.getElapsedTime();
+
+    sculpture.rotation.y = elapsed * 0.13 + scrollRotation;
+
+    sculpture.rotation.x =
+      Math.sin(elapsed * 0.25) * 0.13 + pointerY * 0.3;
+
+    sculpture.rotation.z =
+      Math.cos(elapsed * 0.2) * 0.08 + pointerX * 0.2;
+
+    sculpture.position.y = Math.sin(elapsed * 0.5) * 0.08;
+
+    particleSystem.rotation.y = elapsed * 0.025;
+    particleSystem.rotation.x = elapsed * 0.012;
+
+    renderer.render(scene, camera);
+  }
+
   /* ==========================================
-     KONAMI CODE — MYRLORE SECRET
-     ↑ ↑ ↓ ↓ ← → ← → B A
-========================================== */
+     MYRLORE® — CAPRI SECRET ARCHIVE
+     Glitch entrance · orbit · final position
+  ========================================== */
 
   const konamiSequence = [
     "ArrowUp",
@@ -1305,8 +1171,7 @@
 
   let konamiPosition = 0;
   let secretActive = false;
-
-  /* Create the visual effect without requiring CSS edits. */
+  let secretPreviousFocus = null;
 
   const secretStyle = document.createElement("style");
 
@@ -1317,15 +1182,14 @@
       z-index: 999999;
       display: grid;
       place-items: center;
+      overflow: hidden;
       padding: 24px;
-      background: rgba(5, 6, 8, .96);
+      background: #050608;
       color: #eeeDE8;
       opacity: 0;
       visibility: hidden;
-      transition: opacity .5s ease, visibility .5s ease;
+      transition: opacity .45s ease, visibility .45s ease;
       font-family: "Manrope", sans-serif;
-      text-align: center;
-      backdrop-filter: blur(18px);
     }
 
     #myrloreSecretOverlay.active {
@@ -1333,13 +1197,43 @@
       visibility: visible;
     }
 
+    #myrloreSecretOverlay::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      opacity: .12;
+      background-image:
+        linear-gradient(rgba(255,255,255,.035) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,.035) 1px, transparent 1px);
+      background-size: 4px 4px;
+    }
+
+    #myrloreSecretOverlay .secret-noise {
+      position: absolute;
+      inset: -50%;
+      pointer-events: none;
+      opacity: .08;
+      background: repeating-linear-gradient(
+        transparent 0px,
+        transparent 3px,
+        rgba(255,255,255,.18) 4px
+      );
+      animation: capriNoise .16s steps(2) infinite;
+    }
+
     #myrloreSecretOverlay .secret-inner {
-      max-width: 620px;
+      position: relative;
+      z-index: 3;
+      width: min(650px, 90vw);
+      text-align: center;
+      opacity: 0;
       transform: translateY(18px);
-      transition: transform .6s ease;
+      transition: opacity .8s ease .5s, transform .8s ease .5s;
     }
 
     #myrloreSecretOverlay.active .secret-inner {
+      opacity: 1;
       transform: translateY(0);
     }
 
@@ -1347,27 +1241,29 @@
       color: #c6b69a;
       font: 10px "DM Mono", monospace;
       letter-spacing: .3em;
-      margin-bottom: 28px;
+      margin-bottom: 26px;
     }
 
     #myrloreSecretOverlay h2 {
       margin: 0;
-      font-size: clamp(38px, 8vw, 84px);
+      font-size: clamp(42px, 8vw, 84px);
       font-weight: 500;
-      letter-spacing: -.07em;
+      letter-spacing: -.075em;
       line-height: .95;
     }
 
     #myrloreSecretOverlay p {
       color: #85868a;
-      font: 11px "DM Mono", monospace;
+      font: 10px "DM Mono", monospace;
       letter-spacing: .12em;
       line-height: 2;
-      margin: 28px 0;
+      margin: 26px 0;
     }
 
     #myrloreSecretOverlay button {
-      margin-top: 16px;
+      position: relative;
+      z-index: 10;
+      margin-top: 14px;
       padding: 13px 24px;
       border: 1px solid rgba(198,182,154,.45);
       background: transparent;
@@ -1383,16 +1279,240 @@
       color: #08090b;
     }
 
+    #capriFlight {
+      position: fixed;
+      z-index: 5;
+      left: 50%;
+      top: 50%;
+      width: clamp(150px, 24vw, 290px);
+      aspect-ratio: 1;
+      opacity: 0;
+      pointer-events: none;
+      transform: translate(100vw, -50%) scale(.7);
+      filter: drop-shadow(0 0 22px rgba(255,35,130,.25));
+    }
+
+    #capriFlight img {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      user-select: none;
+      -webkit-user-drag: none;
+    }
+
+    #capriFlight .capri-main {
+      z-index: 3;
+      filter: drop-shadow(0 0 12px rgba(255,55,150,.28));
+    }
+
+    #capriFlight .capri-ghost-one {
+      z-index: 2;
+      opacity: 0;
+      filter: brightness(1.8) sepia(1) saturate(5) hue-rotate(285deg);
+      animation: capriGhostOne .2s steps(2) 3;
+    }
+
+    #capriFlight .capri-ghost-two {
+      z-index: 1;
+      opacity: 0;
+      filter: brightness(1.7) sepia(1) saturate(5) hue-rotate(95deg);
+      animation: capriGhostTwo .22s steps(2) 3;
+    }
+
+    #capriFlight::after {
+      content: "";
+      position: absolute;
+      inset: 10%;
+      z-index: 4;
+      pointer-events: none;
+      opacity: 0;
+      background: repeating-linear-gradient(
+        0deg,
+        transparent 0px,
+        transparent 8px,
+        rgba(255,40,140,.45) 9px,
+        transparent 11px
+      );
+      mix-blend-mode: screen;
+      animation: capriScan 3.7s linear both;
+    }
+
+    #myrloreSecretOverlay.active #capriFlight {
+      animation: capriFlightPath 3.7s cubic-bezier(.2,.75,.25,1) both;
+    }
+
+    #myrloreSecretOverlay.active #capriFlight .capri-main {
+      animation: capriIdle 2.8s ease-in-out 3.7s infinite;
+    }
+
+    .capri-glitch-flash {
+      position: absolute;
+      z-index: 8;
+      inset: 0;
+      pointer-events: none;
+      opacity: 0;
+      background: linear-gradient(
+        90deg,
+        transparent 0 15%,
+        rgba(255,40,140,.18) 15% 18%,
+        transparent 18% 65%,
+        rgba(30,220,190,.15) 65% 68%,
+        transparent 68%
+      );
+      mix-blend-mode: screen;
+    }
+
+    #myrloreSecretOverlay.active .capri-glitch-flash {
+      animation: capriFlash 3.7s steps(1) both;
+    }
+
     #myrloreSecretOverlay .secret-symbol {
       display: block;
       color: #c6b69a;
-      font-size: 34px;
-      margin-bottom: 24px;
-      animation: myrloreSecretSpin 12s linear infinite;
+      font-size: 28px;
+      margin-bottom: 20px;
     }
 
-    @keyframes myrloreSecretSpin {
-      to { transform: rotate(360deg); }
+    @keyframes capriFlightPath {
+      0% {
+        left: 115%;
+        top: 18%;
+        opacity: 0;
+        transform: translate(-50%,-50%) rotate(25deg) scale(.55);
+      }
+      9% {
+        opacity: 1;
+        left: 83%;
+        top: 20%;
+        transform: translate(-50%,-50%) rotate(-18deg) scale(.85);
+      }
+      19% {
+        left: 17%;
+        top: 12%;
+        transform: translate(-50%,-50%) rotate(16deg) scale(1.05);
+      }
+      29% {
+        left: 9%;
+        top: 73%;
+        transform: translate(-50%,-50%) rotate(-22deg) scale(.88);
+      }
+      40% {
+        left: 67%;
+        top: 89%;
+        transform: translate(-50%,-50%) rotate(18deg) scale(1.12);
+      }
+      51% {
+        left: 92%;
+        top: 45%;
+        transform: translate(-50%,-50%) rotate(-12deg) scale(.92);
+      }
+      63% {
+        left: 52%;
+        top: 12%;
+        transform: translate(-50%,-50%) rotate(13deg) scale(1.05);
+      }
+      76% {
+        left: 38%;
+        top: 53%;
+        transform: translate(-50%,-50%) rotate(-7deg) scale(1.15);
+      }
+      88% {
+        left: 33%;
+        top: 50%;
+        transform: translate(-50%,-50%) rotate(4deg) scale(1.02);
+        opacity: 1;
+      }
+      100% {
+        left: 31%;
+        top: 50%;
+        transform: translate(-50%,-50%) rotate(0deg) scale(1);
+        opacity: 1;
+      }
+    }
+
+    @keyframes capriGhostOne {
+      0%, 100% { opacity: 0; transform: translateX(0); }
+      35% { opacity: .55; transform: translateX(-12px); }
+      55% { opacity: .3; transform: translateX(10px); }
+    }
+
+    @keyframes capriGhostTwo {
+      0%, 100% { opacity: 0; transform: translateX(0); }
+      40% { opacity: .45; transform: translateX(14px); }
+      65% { opacity: .2; transform: translateX(-8px); }
+    }
+
+    @keyframes capriScan {
+      0%, 12%, 30%, 48%, 100% { opacity: 0; }
+      14%, 17%, 50%, 53% { opacity: .8; }
+    }
+
+    @keyframes capriIdle {
+      0%, 100% { transform: translateY(0) rotate(0deg); }
+      50% { transform: translateY(-9px) rotate(1deg); }
+    }
+
+    @keyframes capriNoise {
+      0% { transform: translate(0,0); }
+      50% { transform: translate(-2%,1%); }
+      100% { transform: translate(1%,-1%); }
+    }
+
+    @keyframes capriFlash {
+      0%, 8%, 15%, 26%, 38%, 50%, 62%, 100% { opacity: 0; }
+      9%, 16%, 39%, 63% { opacity: .8; }
+      10%, 17%, 40%, 64% { opacity: 0; }
+    }
+
+    @media (max-width: 650px) {
+      #capriFlight {
+        width: min(46vw, 210px);
+      }
+
+      #myrloreSecretOverlay.active #capriFlight {
+        animation-name: capriFlightMobile;
+      }
+
+      #myrloreSecretOverlay .secret-inner {
+        padding-top: 100px;
+      }
+
+      #myrloreSecretOverlay h2 {
+        font-size: clamp(38px, 12vw, 62px);
+      }
+    }
+
+    @keyframes capriFlightMobile {
+      0% {
+        left: 120%;
+        top: 15%;
+        opacity: 0;
+        transform: translate(-50%,-50%) rotate(25deg) scale(.5);
+      }
+      20% {
+        left: 12%;
+        top: 20%;
+        opacity: 1;
+        transform: translate(-50%,-50%) rotate(-15deg) scale(1);
+      }
+      40% {
+        left: 85%;
+        top: 70%;
+        transform: translate(-50%,-50%) rotate(20deg) scale(.9);
+      }
+      65% {
+        left: 18%;
+        top: 75%;
+        transform: translate(-50%,-50%) rotate(-12deg) scale(1.05);
+      }
+      100% {
+        left: 50%;
+        top: 25%;
+        opacity: 1;
+        transform: translate(-50%,-50%) rotate(0deg) scale(.85);
+      }
     }
 
     @media (prefers-reduced-motion: reduce) {
@@ -1401,8 +1521,23 @@
         transition: none;
       }
 
-      #myrloreSecretOverlay .secret-symbol {
+      #myrloreSecretOverlay.active #capriFlight {
         animation: none;
+        left: 31%;
+        top: 50%;
+        opacity: 1;
+        transform: translate(-50%,-50%);
+      }
+
+      #capriFlight .capri-main {
+        animation: none;
+      }
+
+      #capriFlight .capri-ghost-one,
+      #capriFlight .capri-ghost-two,
+      #capriFlight::after,
+      .capri-glitch-flash {
+        display: none;
       }
     }
   `;
@@ -1415,6 +1550,16 @@
   secretOverlay.setAttribute("aria-hidden", "true");
 
   secretOverlay.innerHTML = `
+    <div class="secret-noise"></div>
+    <div class="capri-glitch-flash"></div>
+
+    <div id="capriFlight" aria-hidden="true">
+      <img class="capri-ghost-one" src="capri.png" alt="">
+      <img class="capri-ghost-two" src="capri.png" alt="">
+      <img class="capri-main" src="capri.png" alt="">
+
+    </div>
+
     <div class="secret-inner">
       <div class="secret-index">MYRLORE® / RESTRICTED ARCHIVE</div>
       <span class="secret-symbol">✳</span>
@@ -1431,7 +1576,11 @@
 
   document.body.appendChild(secretOverlay);
 
+  const secretCloseButton = $("#secretClose", secretOverlay);
+
   function closeSecret() {
+    if (!secretActive) return;
+
     secretActive = false;
 
     secretOverlay.classList.remove("active");
@@ -1444,8 +1593,6 @@
     }
   }
 
-  let secretPreviousFocus = null;
-
   function activateSecret() {
     if (secretActive) return;
 
@@ -1454,34 +1601,38 @@
 
     body.classList.add("myrlore-secret");
 
+    const capri = $("#capriFlight", secretOverlay);
+
+    secretOverlay.classList.remove("active");
+
+    if (capri) {
+      capri.style.animation = "none";
+      void capri.offsetWidth;
+      capri.style.animation = "";
+    }
+
+    void secretOverlay.offsetWidth;
+
     secretOverlay.classList.add("active");
     secretOverlay.setAttribute("aria-hidden", "false");
 
-    $("#secretClose")?.focus();
+    secretCloseButton?.focus();
 
     console.log(
-      "%c MYRLORE® — SECRET ARCHIVE UNLOCKED ",
+      "%c MYRLORE® — CAPRI ARCHIVE UNLOCKED ",
       "background:#c6b69a;color:#08090b;padding:10px;font-weight:bold;"
     );
   }
 
-  $("#secretClose", secretOverlay)?.addEventListener(
-    "click",
-    closeSecret
-  );
+  secretCloseButton?.addEventListener("click", closeSecret);
 
   secretOverlay.addEventListener("click", event => {
-    if (event.target === secretOverlay) {
-      closeSecret();
-    }
+    if (event.target === secretOverlay) closeSecret();
   });
 
   document.addEventListener("keydown", event => {
     if (secretActive) {
-      if (event.key === "Escape") {
-        closeSecret();
-      }
-
+      if (event.key === "Escape") closeSecret();
       return;
     }
 
@@ -1491,9 +1642,7 @@
         event.target.isContentEditable ||
         ["INPUT", "TEXTAREA", "SELECT"].includes(event.target.tagName)
       )
-    ) {
-      return;
-    }
+    ) return;
 
     const expected = konamiSequence[konamiPosition];
 
@@ -1509,7 +1658,6 @@
         activateSecret();
       }
     } else {
-      // Restart cleanly if the first key is pressed again.
       konamiPosition =
         pressed === konamiSequence[0] ? 1 : 0;
     }
@@ -1578,8 +1726,6 @@
     }
   }
 
-  /* Sound toggle */
-
   if (!touchDevice) {
     const soundToggle = document.createElement("button");
 
@@ -1587,10 +1733,7 @@
     soundToggle.className = "sound-toggle";
     soundToggle.textContent = "SOUND OFF";
     soundToggle.setAttribute("aria-pressed", "false");
-    soundToggle.setAttribute(
-      "aria-label",
-      "Enable interface sounds"
-    );
+    soundToggle.setAttribute("aria-label", "Enable interface sounds");
 
     soundToggle.style.cssText = `
       position: fixed;
@@ -1627,9 +1770,7 @@
           : "Enable interface sounds"
       );
 
-      if (audioEnabled) {
-        playResonance();
-      }
+      if (audioEnabled) playResonance();
     });
 
     $$(".work-card, .round-link, .service-trigger").forEach(element => {
