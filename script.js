@@ -1847,7 +1847,7 @@ document.addEventListener("visibilitychange", () => {
 
 // ============================================
 // MYRLORE® — SECRET KEYBOARD EASTER EGG
-// KONAMI CODE
+// KONAMI CODE + CHROME RESONANCE
 // ============================================
 
 (() => {
@@ -1867,6 +1867,121 @@ document.addEventListener("visibilitychange", () => {
   let sequencePosition = 0;
   let eggOpen = false;
   let previousFocus = null;
+
+  // Audio state
+  let audioContext = null;
+  let soundEnabled = true;
+
+  // ========================================
+  // CHROME RESONANCE SOUND
+  // GENERATED WITH WEB AUDIO API
+  // ========================================
+
+  function playChromeResonance() {
+    if (!soundEnabled) return;
+
+    const AudioContextClass =
+      window.AudioContext || window.webkitAudioContext;
+
+    if (!AudioContextClass) return;
+
+    try {
+      if (!audioContext) {
+        audioContext = new AudioContextClass();
+      }
+
+      if (audioContext.state === "suspended") {
+        audioContext.resume();
+      }
+
+      const now = audioContext.currentTime;
+
+      const master = audioContext.createGain();
+      master.gain.setValueAtTime(0.0001, now);
+      master.gain.exponentialRampToValueAtTime(
+        0.16,
+        now + 0.035
+      );
+      master.gain.exponentialRampToValueAtTime(
+        0.0001,
+        now + 1.45
+      );
+      master.connect(audioContext.destination);
+
+      // Main metallic tone
+      const tones = [
+        {
+          frequency: 880,
+          volume: 0.65,
+          duration: 1.25,
+          detune: -3
+        },
+        {
+          frequency: 1320,
+          volume: 0.28,
+          duration: 0.95,
+          detune: 4
+        },
+        {
+          frequency: 1760,
+          volume: 0.12,
+          duration: 0.72,
+          detune: -5
+        },
+        {
+          frequency: 440,
+          volume: 0.16,
+          duration: 1.35,
+          detune: 2
+        }
+      ];
+
+      tones.forEach((tone, index) => {
+        const oscillator = audioContext.createOscillator();
+        const gain = audioContext.createGain();
+
+        oscillator.type = index === 3 ? "sine" : "triangle";
+
+        oscillator.frequency.setValueAtTime(
+          tone.frequency,
+          now
+        );
+
+        oscillator.detune.setValueAtTime(
+          tone.detune,
+          now
+        );
+
+        const startTime = now + index * 0.012;
+
+        gain.gain.setValueAtTime(0.0001, startTime);
+
+        gain.gain.exponentialRampToValueAtTime(
+          tone.volume,
+          startTime + 0.018
+        );
+
+        gain.gain.exponentialRampToValueAtTime(
+          0.0001,
+          startTime + tone.duration
+        );
+
+        oscillator.connect(gain);
+        gain.connect(master);
+
+        oscillator.start(startTime);
+        oscillator.stop(startTime + tone.duration + 0.04);
+      });
+
+    } catch (error) {
+      console.warn("MYRLORE audio could not be played:", error);
+    }
+  }
+
+
+  // ========================================
+  // SECRET SCREEN STYLES
+  // ========================================
 
   const style = document.createElement("style");
 
@@ -1944,8 +2059,17 @@ document.addEventListener("visibilitychange", () => {
       line-height: 1.8;
     }
 
-    .myrlore-secret-close {
-      margin-top: 48px;
+    .myrlore-secret-controls {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 12px;
+      margin-top: 38px;
+      flex-wrap: wrap;
+    }
+
+    .myrlore-secret-close,
+    .myrlore-secret-sound {
       border: 1px solid rgba(235,232,222,.22);
       background: transparent;
       color: #eeede8;
@@ -1955,17 +2079,26 @@ document.addEventListener("visibilitychange", () => {
       cursor: pointer;
       transition:
         background .3s ease,
-        color .3s ease;
+        color .3s ease,
+        border-color .3s ease;
     }
 
-    .myrlore-secret-close:hover {
+    .myrlore-secret-close:hover,
+    .myrlore-secret-sound:hover {
       background: #eeede8;
       color: #08090b;
+      border-color: #eeede8;
     }
 
-    .myrlore-secret-close:focus-visible {
+    .myrlore-secret-close:focus-visible,
+    .myrlore-secret-sound:focus-visible {
       outline: 2px solid #c6b69a;
       outline-offset: 5px;
+    }
+
+    .myrlore-secret-sound {
+      color: #a9abb0;
+      border-color: rgba(235,232,222,.12);
     }
 
     .myrlore-secret-corner {
@@ -2004,8 +2137,13 @@ document.addEventListener("visibilitychange", () => {
         margin-top: 25px;
       }
 
-      .myrlore-secret-close {
-        margin-top: 35px;
+      .myrlore-secret-controls {
+        margin-top: 30px;
+      }
+
+      .myrlore-secret-close,
+      .myrlore-secret-sound {
+        padding: 13px 17px;
       }
 
       .myrlore-secret-corner {
@@ -2016,6 +2154,11 @@ document.addEventListener("visibilitychange", () => {
   `;
 
   document.head.appendChild(style);
+
+
+  // ========================================
+  // SECRET SCREEN HTML
+  // ========================================
 
   const overlay = document.createElement("div");
 
@@ -2051,12 +2194,22 @@ document.addEventListener("visibilitychange", () => {
         WELCOME TO THE OTHER SIDE.
       </p>
 
-      <button
-        class="myrlore-secret-close"
-        type="button"
-      >
-        RETURN TO THE STUDIO
-      </button>
+      <div class="myrlore-secret-controls">
+        <button
+          class="myrlore-secret-close"
+          type="button"
+        >
+          RETURN TO THE STUDIO
+        </button>
+
+        <button
+          class="myrlore-secret-sound"
+          type="button"
+          aria-pressed="true"
+        >
+          SOUND ON
+        </button>
+      </div>
     </div>
   `;
 
@@ -2065,6 +2218,39 @@ document.addEventListener("visibilitychange", () => {
   const closeButton = overlay.querySelector(
     ".myrlore-secret-close"
   );
+
+  const soundButton = overlay.querySelector(
+    ".myrlore-secret-sound"
+  );
+
+
+  // ========================================
+  // SOUND TOGGLE
+  // ========================================
+
+  function updateSoundButton() {
+    soundButton.textContent = soundEnabled
+      ? "SOUND ON"
+      : "SOUND OFF";
+
+    soundButton.setAttribute(
+      "aria-pressed",
+      String(soundEnabled)
+    );
+  }
+
+  soundButton.addEventListener("click", () => {
+    soundEnabled = !soundEnabled;
+    updateSoundButton();
+
+    // No sound is played when switching sound back on.
+    // It plays on the next Easter egg activation.
+  });
+
+
+  // ========================================
+  // OPEN / CLOSE SECRET EXPERIENCE
+  // ========================================
 
   function closeEgg() {
     if (!eggOpen) return;
@@ -2093,6 +2279,9 @@ document.addEventListener("visibilitychange", () => {
     document.body.style.overflow = "hidden";
 
     closeButton.focus({ preventScroll: true });
+
+    // Play the sound only when the secret is discovered.
+    playChromeResonance();
   }
 
   closeButton.addEventListener("click", closeEgg);
@@ -2102,6 +2291,11 @@ document.addEventListener("visibilitychange", () => {
       closeEgg();
     }
   });
+
+
+  // ========================================
+  // KONAMI CODE DETECTION
+  // ========================================
 
   document.addEventListener("keydown", (event) => {
     if (event.key === "Escape" && eggOpen) {
