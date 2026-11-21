@@ -1,11 +1,16 @@
 
-import * as THREE from "three";
-import { RectAreaLightUniformsLib } from "three/addons/lights/RectAreaLightUniformsLib.js";
+let THREE;
+let RectAreaLightUniformsLib;
+let clock;
+
+let threeLoadPromise = null;
+let threeInitialized = false;
 
 // ============================================
 // MYRLORE®
 // A2 — SHARP CHROME
 // LIQUID METAL STUDIO SCULPTURE
+// PERFORMANCE OPTIMISED
 // ============================================
 
 const canvas = document.querySelector("#webgl");
@@ -40,7 +45,19 @@ let targetY = 0;
 
 let isPageVisible = !document.hidden;
 
-const clock = new THREE.Clock();
+
+// ============================================
+// RENDERING PERFORMANCE
+// ============================================
+
+function getRenderPixelRatio() {
+  const isMobile = window.innerWidth < 600;
+
+  return Math.min(
+    window.devicePixelRatio || 1,
+    isMobile ? 1.25 : 1.5
+  );
+}
 
 
 // ============================================
@@ -597,58 +614,115 @@ function createParticles() {
 
 // ============================================
 // THREE.JS INITIALIZATION
+// LAZY-LOADED
 // ============================================
 
-function initThree() {
+async function initThree() {
+  if (!canvas || threeInitialized) return;
+
+  if (threeLoadPromise) {
+    return threeLoadPromise;
+  }
+
+  threeLoadPromise = (async () => {
+    try {
+      const [threeModule, areaLightModule] = await Promise.all([
+        import("three"),
+        import("three/addons/lights/RectAreaLightUniformsLib.js")
+      ]);
+
+      THREE = threeModule;
+
+      RectAreaLightUniformsLib =
+        areaLightModule.RectAreaLightUniformsLib;
+
+      clock = new THREE.Clock();
+
+      const width = Math.max(canvas.clientWidth, 1);
+      const height = Math.max(canvas.clientHeight, 1);
+
+      scene = new THREE.Scene();
+
+      camera = new THREE.PerspectiveCamera(
+        34,
+        width / height,
+        0.1,
+        100
+      );
+
+      camera.position.set(0, 0, 6.4);
+
+      renderer = new THREE.WebGLRenderer({
+        canvas,
+        antialias: true,
+        alpha: true,
+        powerPreference: "high-performance"
+      });
+
+      renderer.setPixelRatio(getRenderPixelRatio());
+      renderer.setSize(width, height);
+
+      renderer.outputColorSpace = THREE.SRGBColorSpace;
+      renderer.toneMapping = THREE.ACESFilmicToneMapping;
+      renderer.toneMappingExposure = 1.15;
+
+      createEnvironment();
+      createLighting();
+      createSculpture();
+      createParticles();
+
+      threeInitialized = true;
+
+      if (reducedMotion || !isPageVisible) {
+        renderer.render(scene, camera);
+      } else {
+        clock.start();
+        animate();
+      }
+
+    } catch (error) {
+      console.error(
+        "MYRLORE 3D initialization failed:",
+        error
+      );
+
+      canvas.style.display = "none";
+    }
+  })();
+
+  return threeLoadPromise;
+}
+
+
+// ============================================
+// LAZY-LOAD SCHEDULER
+// ============================================
+
+function scheduleThreeLoad() {
   if (!canvas) return;
 
-  try {
-    const width = Math.max(canvas.clientWidth, 1);
-    const height = Math.max(canvas.clientHeight, 1);
-
-    scene = new THREE.Scene();
-
-    camera = new THREE.PerspectiveCamera(
-      34,
-      width / height,
-      0.1,
-      100
-    );
-
-    camera.position.set(0, 0, 6.4);
-
-    renderer = new THREE.WebGLRenderer({
-      canvas,
-      antialias: true,
-      alpha: true,
-      powerPreference: "high-performance"
-    });
-
-    renderer.setPixelRatio(
-      Math.min(window.devicePixelRatio || 1, 1.5)
-    );
-
-    renderer.setSize(width, height);
-    renderer.outputColorSpace = THREE.SRGBColorSpace;
-    renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 1.15;
-
-    createEnvironment();
-    createLighting();
-    createSculpture();
-    createParticles();
-
-    if (reducedMotion) {
-      renderer.render(scene, camera);
-    } else {
-      clock.start();
-      animate();
-    }
-
-  } catch (error) {
-    console.error("MYRLORE 3D initialization failed:", error);
-    canvas.style.display = "none";
+  if (!("IntersectionObserver" in window)) {
+    initThree();
+    return;
   }
+
+  const observer = new IntersectionObserver(
+    (entries) => {
+      const shouldLoad = entries.some(
+        (entry) => entry.isIntersecting
+      );
+
+      if (shouldLoad) {
+        observer.disconnect();
+        initThree();
+      }
+    },
+    {
+      rootMargin: "250px 0px"
+    }
+  );
+
+  observer.observe(canvas);
 }
 
 
@@ -817,13 +891,10 @@ function resizeScene() {
   camera.aspect = width / height;
   camera.updateProjectionMatrix();
 
-  renderer.setPixelRatio(
-    Math.min(window.devicePixelRatio || 1, 1.5)
-  );
-
+  renderer.setPixelRatio(getRenderPixelRatio());
   renderer.setSize(width, height);
 
-  if (reducedMotion) {
+  if (reducedMotion || !isPageVisible) {
     renderer.render(scene, camera);
   }
 }
@@ -988,7 +1059,6 @@ let activeServicePanel = null;
 function animateServiceOpen(panel) {
   panel.hidden = false;
 
-  // Start from a closed height before measuring the full content.
   panel.style.height = "0px";
 
   const fullHeight = panel.scrollHeight;
@@ -1124,7 +1194,6 @@ function openService(item) {
     return;
   }
 
-  // Close the previously active service first.
   serviceItems.forEach((otherItem) => {
     if (otherItem !== item) {
       closeService(otherItem);
@@ -1165,8 +1234,6 @@ serviceTriggers.forEach((trigger) => {
   });
 });
 
-// Keep the expanded panel height correct if its content
-// changes size while it is open.
 window.addEventListener("resize", () => {
   if (!activeServicePanel || activeServicePanel.hidden) return;
 
@@ -1747,7 +1814,7 @@ if (transitionLayer) {
 // PAGE INITIALIZATION
 // ============================================
 
-initThree();
+scheduleThreeLoad();
 initAnimations();
 updateScrollProgress();
 
