@@ -1267,7 +1267,7 @@
       animation: scanlineDrift .065s steps(2) infinite;
     }
 
-    /* CALMER STATE AFTER CAPRI SETTLES */
+    /* CALMER STATE AFTER CAPRI DISAPPEARS */
 
     #myrloreSecretOverlay.fracture-calm .secret-noise {
       opacity: .035;
@@ -1425,28 +1425,21 @@
       animation: stripDisplace .23s steps(2) forwards;
     }
 
-    /* CAPRI SCREEN TEAR */
+    /* CAPRI — FIXED SIDE APPEARANCE */
 
     #capriPortal {
       position: fixed;
       z-index: 9;
-      left: 50%;
+      left: 15.5%;
       top: 52%;
       width: clamp(180px, 27vw, 350px);
       height: min(72vh, 520px);
       transform: translate(-50%, -50%);
       opacity: 0;
+      visibility: hidden;
       pointer-events: none;
       overflow: visible;
       perspective: 1000px;
-      transition:
-        left .68s cubic-bezier(.16,1,.3,1),
-        top .68s cubic-bezier(.16,1,.3,1),
-        opacity .25s ease;
-    }
-
-    #capriPortal.capri-side-position {
-      left: 15.5%;
     }
 
     #capriPortal::before {
@@ -1492,6 +1485,7 @@
 
     #capriPortal.portal-open {
       opacity: 1;
+      visibility: visible;
     }
 
     #capriPortal.portal-open::before {
@@ -1570,6 +1564,27 @@
     #capriPortal.capri-settled .capri-rgb {
       opacity: 0;
       animation: none;
+    }
+
+    /* CAPRI GLITCHES OUT */
+
+    #capriPortal.capri-disappearing #capriFlight {
+      animation: capriGlitchOut .85s steps(2) forwards;
+    }
+
+    #capriPortal.capri-disappearing .capri-rgb {
+      opacity: .65;
+      animation: capriRgbOut .85s steps(2) forwards;
+    }
+
+    #capriPortal.capri-gone {
+      opacity: 0;
+      visibility: hidden;
+    }
+
+    #capriPortal.capri-gone #capriFlight {
+      opacity: 0;
+      visibility: hidden;
     }
 
     /* ARCHIVE TEXT */
@@ -1782,6 +1797,76 @@
       }
     }
 
+    @keyframes capriGlitchOut {
+      0% {
+        opacity: 1;
+        transform: translateX(0) skewX(0);
+        filter: none;
+        clip-path: inset(0);
+      }
+      12% {
+        opacity: .95;
+        transform: translateX(7px) skewX(8deg);
+        filter: hue-rotate(70deg);
+        clip-path: inset(4% 0 8% 0);
+      }
+      25% {
+        opacity: .35;
+        transform: translateX(-12px) skewX(-12deg);
+        filter: contrast(2) saturate(2);
+        clip-path: inset(18% 0 58% 0);
+      }
+      38% {
+        opacity: 1;
+        transform: translateX(9px) skewX(5deg);
+        filter: hue-rotate(-80deg);
+        clip-path: inset(38% 0 32% 0);
+      }
+      52% {
+        opacity: .2;
+        transform: translateX(-8px) skewX(-10deg);
+        filter: contrast(3);
+        clip-path: inset(65% 0 12% 0);
+      }
+      68% {
+        opacity: .8;
+        transform: translateX(5px) skewX(7deg);
+        filter: hue-rotate(130deg);
+        clip-path: inset(8% 0 78% 0);
+      }
+      82% {
+        opacity: .18;
+        transform: translateX(-18px) skewX(-16deg);
+        filter: contrast(3) brightness(2);
+        clip-path: inset(0 0 0 72%);
+      }
+      100% {
+        opacity: 0;
+        transform: translateX(22px) skewX(20deg) scaleX(.72);
+        filter: blur(5px) contrast(3);
+        clip-path: inset(0 100% 0 0);
+      }
+    }
+
+    @keyframes capriRgbOut {
+      0% {
+        opacity: .65;
+        transform: translateX(-8px);
+      }
+      30% {
+        opacity: .9;
+        transform: translateX(12px);
+      }
+      60% {
+        opacity: .45;
+        transform: translateX(-16px);
+      }
+      100% {
+        opacity: 0;
+        transform: translateX(24px);
+      }
+    }
+
     @keyframes rgbSnap {
       0% { transform: translateX(-8px); opacity: .65; }
       50% { transform: translateX(8px); opacity: .35; }
@@ -1801,11 +1886,6 @@
         top: 24%;
         width: min(55vw, 230px);
         height: min(39vh, 280px);
-      }
-
-      #capriPortal.capri-side-position {
-        left: 50%;
-        top: 24%;
       }
 
       #myrloreSecretOverlay .secret-inner {
@@ -2044,7 +2124,7 @@
 
   /* ==========================================
      CONTINUOUS SCREEN CORRUPTION
-     INTENSE FIRST, SUBTLE AFTER CAPRI SETTLES
+     INTENSE FIRST, SUBTLE AFTER CAPRI DISAPPEARS
   ========================================== */
 
   function startScreenFracture() {
@@ -2218,8 +2298,80 @@
   }
 
   /* ==========================================
-     CAPRI EMERGENCE AND SIDE POSITION
-     SHE STAYS VISIBLE UNTIL ARCHIVE CLOSES
+     CAPRI DISAPPEARANCE
+     SHE GLITCHES OUT — ARCHIVE STAYS OPEN
+  ========================================== */
+
+  function disappearCapri() {
+    if (!capriPortal || !capriFlight) return;
+
+    if (reducedMotion) {
+      capriPortal.classList.remove(
+        "portal-open",
+        "capri-emerging",
+        "capri-settled"
+      );
+
+      capriPortal.classList.add("capri-gone");
+      capriSettled = true;
+
+      secretOverlay.classList.remove(
+        "fracture-start",
+        "fracture-heavy"
+      );
+
+      secretOverlay.classList.add("fracture-calm");
+      return;
+    }
+
+    // A short burst of corruption as Capri vanishes.
+    for (let i = 0; i < 7; i++) {
+      createGlitchPatch({
+        x: 7 + Math.random() * 25,
+        y: 15 + Math.random() * 70,
+        width: 45 + Math.random() * 170,
+        height: 3 + Math.random() * 14,
+        lifetime: 180 + Math.random() * 350,
+        block: true
+      });
+    }
+
+    createScreenStrip();
+
+    capriPortal.classList.remove("capri-settled");
+    capriPortal.classList.add("capri-disappearing");
+
+    // Let the glitch-out animation finish, then hide Capri entirely.
+    scheduleSequence(() => {
+      capriPortal.classList.remove(
+        "portal-open",
+        "capri-emerging",
+        "capri-settled",
+        "capri-disappearing"
+      );
+
+      capriPortal.classList.add("capri-gone");
+
+      capriFlight.style.opacity = "0";
+      capriFlight.style.transform = "";
+      capriFlight.style.clipPath = "";
+
+      capriSettled = true;
+
+      // The archive remains active; only its background settles.
+      secretOverlay.classList.remove(
+        "fracture-start",
+        "fracture-heavy"
+      );
+
+      secretOverlay.classList.add("fracture-calm");
+
+    }, 900);
+  }
+
+  /* ==========================================
+     CAPRI EMERGENCE
+     FIXED SIDE POSITION — NO TRAVEL
   ========================================== */
 
   function emergeCapri() {
@@ -2228,7 +2380,7 @@
     capriSettled = false;
 
     createGlitchPatch({
-      x: window.innerWidth <= 650 ? 50 : 50,
+      x: window.innerWidth <= 650 ? 50 : 15,
       y: window.innerWidth <= 650 ? 24 : 52,
       width: window.innerWidth <= 650 ? 190 : 280,
       height: 10,
@@ -2238,31 +2390,31 @@
 
     createScreenStrip();
 
+    capriPortal.classList.remove("capri-gone");
     capriPortal.classList.add("portal-open");
 
     if (reducedMotion) {
       capriPortal.classList.add("capri-settled");
-      capriPortal.classList.add("capri-side-position");
 
       capriFlight.style.opacity = "1";
       capriFlight.style.clipPath = "inset(0)";
       capriFlight.style.transform = "none";
 
-      capriSettled = true;
-
-      secretOverlay.classList.remove("fracture-start");
-      secretOverlay.classList.add("fracture-calm");
+      // Even with reduced motion, Capri should not stay permanently.
+      scheduleSequence(() => {
+        disappearCapri();
+      }, 1700);
 
       return;
     }
 
-    // Stage 1: Capri starts emerging through the centre tear.
+    // Stage 1: Capri appears at her fixed side position.
     scheduleSequence(() => {
       capriPortal.classList.add("capri-emerging");
 
       for (let i = 0; i < 9; i++) {
         createGlitchPatch({
-          x: 50 + (Math.random() - .5) * 14,
+          x: 15 + (Math.random() - .5) * 14,
           y: 52 + (Math.random() - .5) * 28,
           width: 35 + Math.random() * 180,
           height: 3 + Math.random() * 16,
@@ -2276,8 +2428,7 @@
       }
     }, 650);
 
-    // Stage 2: Capri finishes emerging, then quickly moves left.
-    // She remains visible in this position until the archive closes.
+    // Stage 2: Capri finishes appearing and remains in place briefly.
     scheduleSequence(() => {
       capriPortal.classList.remove("capri-emerging");
       capriPortal.classList.add("capri-settled");
@@ -2288,14 +2439,9 @@
 
       capriPortal.classList.remove("portal-open");
 
-      // Trigger the side movement.
-      requestAnimationFrame(() => {
-        capriPortal.classList.add("capri-side-position");
-      });
-
+      // Capri is now visible, but the background can calm down.
       capriSettled = true;
 
-      // Calm down the background effects after her entrance.
       secretOverlay.classList.remove(
         "fracture-start",
         "fracture-heavy"
@@ -2303,7 +2449,6 @@
 
       secretOverlay.classList.add("fracture-calm");
 
-      // One final small visual accent as she settles.
       createGlitchPatch({
         x: 12,
         y: 52,
@@ -2312,6 +2457,12 @@
         lifetime: 250,
         block: false
       });
+
+      // Keep her visible briefly, then glitch her out.
+      scheduleSequence(() => {
+        disappearCapri();
+      }, 1700);
+
     }, 2450);
   }
 
@@ -2341,7 +2492,8 @@
       "portal-open",
       "capri-emerging",
       "capri-settled",
-      "capri-side-position"
+      "capri-disappearing",
+      "capri-gone"
     );
 
     capriFlight.style.opacity = "0";
@@ -2399,7 +2551,8 @@
       "portal-open",
       "capri-emerging",
       "capri-settled",
-      "capri-side-position"
+      "capri-disappearing",
+      "capri-gone"
     );
 
     secretOverlay.setAttribute("aria-hidden", "true");
