@@ -3115,21 +3115,11 @@ if (!document.querySelector("#vaultAnimationStyle")) {
     populateList(caseFeatures, project.features);
     populateList(caseTech, project.tech);
 
+   
+    // Keep the existing project-specific artwork and CSS.
     if (caseHeroArt) {
       caseHeroArt.dataset.project = projectId;
-      caseHeroArt.style.background = `
-        radial-gradient(
-          ellipse at 50% 45%,
-          rgba(220,225,230,.24),
-          transparent 38%
-        ),
-        linear-gradient(
-          135deg,
-          #08090b,
-          #343b41 50%,
-          #101216
-        )
-      `;
+      caseHeroArt.style.removeProperty("background");
     }
 
     modal.classList.add("active", "is-open", "open");
@@ -3153,9 +3143,7 @@ if (!document.querySelector("#vaultAnimationStyle")) {
   }
 
   function closeCaseStudy() {
-    if (
-      modal.getAttribute("aria-hidden") === "true"
-    ) return;
+    if (modal.getAttribute("aria-hidden") === "true") return;
 
     modal.classList.remove("active", "is-open", "open");
     modal.setAttribute("aria-hidden", "true");
@@ -3200,14 +3188,7 @@ if (!document.querySelector("#vaultAnimationStyle")) {
   }
 
   $$("[data-case-close]", modal).forEach(element => {
-    element.addEventListener("click", event => {
-      if (
-        element === event.target ||
-        element.hasAttribute("data-case-close")
-      ) {
-        closeCaseStudy();
-      }
-    });
+    element.addEventListener("click", closeCaseStudy);
   });
 
   document.addEventListener("keydown", event => {
