@@ -215,6 +215,7 @@
 
   /* ==========================================
      SERVICES ACCORDION
+     SLOW, SMOOTH EXPANSION
   ========================================== */
 
   const serviceItems = $$(".service-item");
@@ -227,81 +228,122 @@
     );
   }
 
-  function closeService(item, index) {
-    const trigger =
+  function getServiceTrigger(item, index) {
+    return (
       $(".service-trigger", item) ||
-      $(`#serviceTrigger${String(index + 1).padStart(2, "0")}`);
+      $(`#serviceTrigger${String(index + 1).padStart(2, "0")}`)
+    );
+  }
 
+  function closeService(item, index) {
+    const trigger = getServiceTrigger(item, index);
     const panel = getServicePanel(item, index);
 
     if (!trigger || !panel) return;
 
+    if (gsapInstance) {
+      gsapInstance.killTweensOf(panel);
+    }
+
     trigger.setAttribute("aria-expanded", "false");
     item.classList.remove("is-active");
 
-    if (gsapInstance && !reducedMotion && !panel.hidden) {
+    if (panel.hidden) return;
+
+    if (gsapInstance && !reducedMotion) {
+      const currentHeight =
+        panel.getBoundingClientRect().height;
+
+      gsapInstance.set(panel, {
+        height: currentHeight,
+        opacity: 1,
+        overflow: "hidden"
+      });
+
       gsapInstance.to(panel, {
         height: 0,
         opacity: 0,
-        duration: 0.3,
+        duration: 0.85,
         ease: "power2.inOut",
         onComplete: () => {
           panel.hidden = true;
-          panel.style.height = "";
-          panel.style.opacity = "";
+
+          gsapInstance.set(panel, {
+            clearProps: "height,opacity,overflow"
+          });
         }
       });
     } else {
       panel.hidden = true;
       panel.style.height = "";
       panel.style.opacity = "";
+      panel.style.overflow = "";
     }
   }
 
   function openService(item, index) {
-    const trigger =
-      $(".service-trigger", item) ||
-      $(`#serviceTrigger${String(index + 1).padStart(2, "0")}`);
-
+    const trigger = getServiceTrigger(item, index);
     const panel = getServicePanel(item, index);
 
     if (!trigger || !panel) return;
 
+    if (gsapInstance) {
+      gsapInstance.killTweensOf(panel);
+    }
+
     trigger.setAttribute("aria-expanded", "true");
     item.classList.add("is-active");
+
     panel.hidden = false;
 
     if (gsapInstance && !reducedMotion) {
-      gsapInstance.fromTo(
-        panel,
-        { height: 0, opacity: 0 },
-        {
-          height: "auto",
-          opacity: 1,
-          duration: 0.5,
-          ease: "power3.out"
+      gsapInstance.set(panel, {
+        height: 0,
+        opacity: 0,
+        overflow: "hidden"
+      });
+
+      const targetHeight = panel.scrollHeight;
+
+      gsapInstance.to(panel, {
+        height: targetHeight,
+        opacity: 1,
+        duration: 1.05,
+        ease: "power3.inOut",
+        onComplete: () => {
+          gsapInstance.set(panel, {
+            height: "auto",
+            opacity: 1,
+            overflow: "visible"
+          });
         }
-      );
+      });
+    } else {
+      panel.style.height = "auto";
+      panel.style.opacity = "1";
+      panel.style.overflow = "visible";
     }
   }
 
   serviceItems.forEach((item, index) => {
-    const trigger =
-      $(".service-trigger", item) ||
-      $(`#serviceTrigger${String(index + 1).padStart(2, "0")}`);
+    const trigger = getServiceTrigger(item, index);
 
     if (!trigger) return;
 
     trigger.addEventListener("click", () => {
-      const active = item.classList.contains("is-active");
+      const isActive = item.classList.contains("is-active");
 
       serviceItems.forEach((other, otherIndex) => {
-        if (other !== item) closeService(other, otherIndex);
+        if (other !== item) {
+          closeService(other, otherIndex);
+        }
       });
 
-      active
-        ? closeService(item, index)
-        : openService(item, index);
+      if (isActive) {
+        closeService(item, index);
+      } else {
+        openService(item, index);
+      }
     });
   });
 
@@ -632,9 +674,6 @@
 
   /* ==========================================
      THREE.JS — A2 CHROME SCULPTURE
-
-     Loads Three.js directly from jsDelivr.
-     No bare module imports or addon required.
   ========================================== */
 
   const canvas = $("#webgl");
@@ -1376,8 +1415,7 @@
 
   /* ==========================================
      CAPRI SPRITE SHEET + COLOUR EXTRACTION
-
-     4 columns × 4 rows = 16 animation frames.
+     4 COLUMNS × 4 ROWS = 16 FRAMES
   ========================================== */
 
   function rgbToHex(r, g, b) {
@@ -1712,7 +1750,8 @@
   }
 
   /* ==========================================
-     CAPRI — CINEMATIC FLIGHT PATH
+     CAPRI — FAST CINEMATIC FLIGHT PATH
+     CURVED MOVEMENT + LEFT-SIDE LANDING
   ========================================== */
 
   function cubicBezierPoint(p0, p1, p2, p3, t) {
@@ -1732,34 +1771,34 @@
 
     const mobile = width <= 650;
 
-    const startX = width * -0.18;
+    const startX = width * -0.2;
     const startY = height * 0.82;
 
     const endX = mobile
       ? width * 0.5
-      : width * 0.36;
+      : width * 0.155;
 
     const endY = mobile
-      ? height * 0.27
+      ? height * 0.23
       : height * 0.52;
 
     const paths = [
       {
         from: [startX, startY],
-        control1: [width * 0.08, height * 0.05],
-        control2: [width * 0.35, height * 0.12],
-        to: [width * 0.54, height * 0.24]
+        control1: [width * 0.05, height * 0.02],
+        control2: [width * 0.62, height * 0.02],
+        to: [width * 0.88, height * 0.28]
       },
       {
-        from: [width * 0.54, height * 0.24],
-        control1: [width * 0.85, height * 0.02],
-        control2: [width * 1.02, height * 0.62],
-        to: [width * 0.76, height * 0.76]
+        from: [width * 0.88, height * 0.28],
+        control1: [width * 1.12, height * 0.55],
+        control2: [width * 0.76, height * 1.05],
+        to: [width * 0.43, height * 0.86]
       },
       {
-        from: [width * 0.76, height * 0.76],
-        control1: [width * 0.53, height * 1.02],
-        control2: [width * 0.16, height * 0.86],
+        from: [width * 0.43, height * 0.86],
+        control1: [width * 0.12, height * 0.72],
+        control2: [width * 0.02, height * 0.28],
         to: [endX, endY]
       }
     ];
@@ -1806,19 +1845,20 @@
       easeSettle;
 
     const rotation =
-      Math.sin(progress * Math.PI * 5) * 12 *
+      Math.sin(progress * Math.PI * 7) *
+      16 *
       (1 - easeSettle);
 
     const opacity = Math.min(
       1,
-      progress * 7,
+      progress * 8,
       (1 - progress) * 9 + 0.35
     );
 
     const glitch = Math.max(
       0,
-      Math.sin(progress * Math.PI * 12) *
-      (1 - easeSettle) * 0.65
+      Math.sin(progress * Math.PI * 14) *
+      (1 - easeSettle) * 0.75
     );
 
     return {
@@ -1828,7 +1868,7 @@
       rotation,
       opacity,
       glitch,
-      settle: easeSettle
+      settle
     };
   }
 
@@ -1836,7 +1876,7 @@
      CAPRI — ANIMATION LOOP
   ========================================== */
 
-  const CAPRI_FLIGHT_DURATION = 5600;
+  const CAPRI_FLIGHT_DURATION = 2100;
 
   function animateCapri(timestamp) {
     if (!secretActive) return;
