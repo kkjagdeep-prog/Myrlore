@@ -1,3 +1,4 @@
+
 /* ==========================================
    MYRLORE® — MAIN INTERACTION SYSTEM
    A2 CHROME SCULPTURE · GSAP · UI
@@ -1164,6 +1165,7 @@
 
   /* ==========================================
      MYRLORE® — CAPRI SECRET ARCHIVE
+     SCREEN FRACTURE SEQUENCE
   ========================================== */
 
   const konamiSequence = [
@@ -1184,9 +1186,8 @@
   let secretPreviousFocus = null;
 
   let capriImage = null;
-  let capriAnimationFrame = null;
-  let capriGlitchInterval = null;
-  let capriFlashInterval = null;
+  let patchTimers = [];
+  let glitchTimers = [];
 
   const secretStyle = document.createElement("style");
 
@@ -1209,7 +1210,7 @@
       opacity: 0;
       visibility: hidden;
       pointer-events: none;
-      transition: opacity .3s ease, visibility .3s ease;
+      transition: opacity .4s ease, visibility .4s ease;
     }
 
     #myrloreSecretOverlay.active {
@@ -1218,82 +1219,182 @@
       pointer-events: auto;
     }
 
+    /* FULL SCREEN SCANLINES */
+
     #myrloreSecretOverlay::before {
       content: "";
       position: absolute;
       inset: 0;
-      z-index: 1;
+      z-index: 3;
       pointer-events: none;
       opacity: 0;
       background:
         repeating-linear-gradient(
           0deg,
           transparent 0px,
-          transparent 2px,
-          rgba(255,255,255,.13) 3px,
-          transparent 4px
-        ),
-        repeating-linear-gradient(
-          90deg,
-          rgba(255,67,183,.08),
           transparent 3px,
-          rgba(140,255,85,.06) 6px
+          rgba(255,255,255,.13) 4px,
+          transparent 5px
         );
       mix-blend-mode: screen;
     }
 
-    #myrloreSecretOverlay.glitching::before {
-      opacity: .85;
-      animation: capriScanlines .12s steps(2) infinite;
+    #myrloreSecretOverlay.fracture-start::before {
+      opacity: .2;
+      animation: capriScanlines .22s steps(3) infinite;
     }
+
+    #myrloreSecretOverlay.fracture-heavy::before {
+      opacity: .75;
+      animation: capriScanlines .09s steps(2) infinite;
+    }
+
+    /* SCREEN NOISE */
 
     #myrloreSecretOverlay .secret-noise {
       position: absolute;
       inset: -50%;
       z-index: 2;
       pointer-events: none;
-      opacity: .12;
+      opacity: .1;
       background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 180 180' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.92' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.5'/%3E%3C/svg%3E");
     }
 
-    #myrloreSecretOverlay.glitching .secret-noise {
-      animation: capriNoise .09s steps(2) infinite;
-      opacity: .28;
+    #myrloreSecretOverlay.fracture-start .secret-noise {
+      opacity: .2;
+      animation: capriNoise .3s steps(3) infinite;
     }
 
-    #myrloreSecretOverlay .secret-glitch-bars {
+    #myrloreSecretOverlay.fracture-heavy .secret-noise {
+      opacity: .4;
+      animation: capriNoise .08s steps(2) infinite;
+    }
+
+    /* RANDOM PATCHES ACROSS THE SCREEN */
+
+    .capri-glitch-patches {
       position: absolute;
       inset: 0;
       z-index: 4;
+      overflow: hidden;
       pointer-events: none;
+    }
+
+    .capri-patch {
+      position: absolute;
+      height: var(--patch-height, 18px);
+      width: var(--patch-width, 130px);
+      left: var(--patch-x, 50%);
+      top: var(--patch-y, 50%);
+      opacity: 0;
+      transform: translateX(-50%) scaleX(.2);
+      background:
+        linear-gradient(
+          90deg,
+          transparent,
+          rgba(255,67,183,.7),
+          rgba(255,255,255,.8),
+          rgba(140,255,85,.65),
+          transparent
+        );
+      mix-blend-mode: screen;
+      filter: blur(.4px);
+      clip-path: polygon(
+        0 20%, 12% 0, 35% 18%, 48% 0,
+        70% 25%, 100% 5%, 95% 85%,
+        72% 100%, 45% 78%, 20% 100%
+      );
+    }
+
+    .capri-patch.visible {
+      animation: patchAppear .48s steps(3) forwards;
+    }
+
+    .capri-patch.fade {
+      animation: patchDisappear .55s ease forwards;
+    }
+
+    /* HORIZONTAL TEARING */
+
+    .capri-tear {
+      position: absolute;
+      left: -10%;
+      width: 120%;
+      height: var(--tear-height, 10px);
+      top: var(--tear-y, 50%);
       opacity: 0;
       background:
         linear-gradient(
           90deg,
-          transparent 0 8%,
-          rgba(255,67,183,.8) 8% 9%,
-          transparent 9% 48%,
-          rgba(140,255,85,.7) 48% 49%,
-          transparent 49% 100%
+          transparent,
+          rgba(255,67,183,.8),
+          rgba(255,255,255,.85),
+          rgba(140,255,85,.75),
+          transparent
         );
       mix-blend-mode: screen;
+      transform: translateX(-5%);
     }
 
-    #myrloreSecretOverlay.glitching .secret-glitch-bars {
-      animation: capriBars .16s steps(2) infinite;
+    #myrloreSecretOverlay.fracture-heavy .capri-tear {
+      animation: tearFlash .18s steps(2) infinite;
     }
 
-    #capriFlight {
+    /* THE MAIN OPENING */
+
+    #capriPortal {
       position: fixed;
-      z-index: 8;
-      left: 0;
-      top: 0;
-      width: clamp(210px, 30vw, 390px);
-      height: min(78vh, 560px);
+      z-index: 6;
+      left: 15.5%;
+      top: 52%;
+      width: clamp(180px, 27vw, 350px);
+      height: min(72vh, 520px);
+      transform: translate(-50%, -50%);
       opacity: 0;
       pointer-events: none;
-      transform: translate(-50%, -50%);
-      will-change: transform, opacity, filter;
+      overflow: visible;
+    }
+
+    #capriPortal::before {
+      content: "";
+      position: absolute;
+      inset: 10% -12%;
+      opacity: 0;
+      background:
+        linear-gradient(
+          90deg,
+          transparent,
+          rgba(255,67,183,.85),
+          rgba(255,255,255,.8),
+          rgba(140,255,85,.75),
+          transparent
+        );
+      filter: blur(12px);
+      clip-path: polygon(
+        20% 0, 80% 5%, 100% 35%,
+        82% 65%, 95% 100%, 15% 90%,
+        0 55%, 15% 30%
+      );
+    }
+
+    #capriPortal.portal-open::before {
+      animation: portalIgnite .8s ease forwards;
+    }
+
+    #capriPortal.portal-open {
+      opacity: 1;
+    }
+
+    /* CAPRI EMERGES THROUGH THE OPENING */
+
+    #capriFlight {
+      position: absolute;
+      inset: 0;
+      opacity: 0;
+      transform: translateX(-35px) scale(.72);
+      transform-origin: center center;
+      clip-path: inset(0 100% 0 0);
+      will-change: transform, opacity, clip-path, filter;
       filter:
         drop-shadow(0 0 18px var(--capri-pink))
         drop-shadow(0 0 15px var(--capri-green))
@@ -1305,36 +1406,50 @@
       height: 100%;
       display: block;
       object-fit: contain;
-      animation: capriImageGlitch .16s steps(2) infinite;
+      object-position: center;
     }
 
-    #capriFlight::before,
-    #capriFlight::after {
+    #capriPortal.capri-emerging #capriFlight {
+      animation: capriBreakThrough 1.35s cubic-bezier(.16,1,.3,1) forwards;
+    }
+
+    #capriPortal.capri-settled #capriFlight {
+      opacity: 1;
+      transform: translateX(0) scale(1);
+      clip-path: inset(0 0 0 0);
+      animation: none;
+    }
+
+    /* SUBTLE IDLE GLITCH — NO MOVEMENT OR DANCING */
+
+    #capriPortal.capri-settled #capriImage {
+      animation: capriIdleGlitch 5s steps(1) infinite;
+    }
+
+    #capriPortal.capri-settled::after {
       content: "";
       position: absolute;
       inset: 0;
       pointer-events: none;
-      background-image: inherit;
-      opacity: .35;
-      mix-blend-mode: screen;
+      opacity: 0;
+      background:
+        linear-gradient(
+          transparent 45%,
+          rgba(255,67,183,.3) 47%,
+          rgba(140,255,85,.25) 49%,
+          transparent 52%
+        );
+      animation: capriHaloFlicker 6s steps(1) infinite;
     }
 
-    #capriFlight::before {
-      filter: drop-shadow(-5px 0 var(--capri-pink));
-      animation: capriRGB1 .2s steps(2) infinite;
-    }
-
-    #capriFlight::after {
-      filter: drop-shadow(5px 0 var(--capri-green));
-      animation: capriRGB2 .17s steps(2) infinite;
-    }
+    /* ARCHIVE TEXT */
 
     #myrloreSecretOverlay .secret-inner {
       position: relative;
-      z-index: 6;
+      z-index: 8;
       opacity: 0;
       transform: translateY(18px);
-      transition: opacity .7s ease, transform .7s ease;
+      transition: opacity .8s ease, transform .8s ease;
     }
 
     #myrloreSecretOverlay.active .secret-inner {
@@ -1360,6 +1475,8 @@
       z-index: 10;
     }
 
+    /* ANIMATIONS */
+
     @keyframes capriNoise {
       0% { transform: translate(0, 0); }
       25% { transform: translate(-3%, 2%); }
@@ -1373,30 +1490,110 @@
       100% { transform: translateY(8px); }
     }
 
-    @keyframes capriBars {
-      0% { opacity: .15; transform: translateX(-12px); }
-      50% { opacity: .8; transform: translateX(14px); }
-      100% { opacity: .2; transform: translateX(-5px); }
+    @keyframes patchAppear {
+      0% {
+        opacity: 0;
+        transform: translateX(-50%) scaleX(.1);
+      }
+      35% {
+        opacity: .9;
+        transform: translateX(-48%) scaleX(1.15);
+      }
+      65% {
+        opacity: .45;
+        transform: translateX(-53%) scaleX(.85);
+      }
+      100% {
+        opacity: .65;
+        transform: translateX(-50%) scaleX(1);
+      }
     }
 
-    @keyframes capriImageGlitch {
-      0% { transform: translate(0,0) skewX(0); }
-      25% { transform: translate(2px,-1px) skewX(1deg); }
-      50% { transform: translate(-2px,1px) skewX(-1deg); }
-      75% { transform: translate(1px,0) skewX(.5deg); }
-      100% { transform: translate(0,0) skewX(0); }
+    @keyframes patchDisappear {
+      0% { opacity: .65; }
+      100% { opacity: 0; }
     }
 
-    @keyframes capriRGB1 {
-      0% { transform: translateX(-3px); clip-path: inset(10% 0 70% 0); }
-      50% { transform: translateX(4px); clip-path: inset(50% 0 25% 0); }
-      100% { transform: translateX(-2px); clip-path: inset(75% 0 5% 0); }
+    @keyframes tearFlash {
+      0% {
+        opacity: 0;
+        transform: translateX(-5%);
+      }
+      50% {
+        opacity: .85;
+        transform: translateX(3%);
+      }
+      100% {
+        opacity: .1;
+        transform: translateX(-2%);
+      }
     }
 
-    @keyframes capriRGB2 {
-      0% { transform: translateX(4px); clip-path: inset(60% 0 10% 0); }
-      50% { transform: translateX(-3px); clip-path: inset(15% 0 65% 0); }
-      100% { transform: translateX(3px); clip-path: inset(35% 0 40% 0); }
+    @keyframes portalIgnite {
+      0% {
+        opacity: 0;
+        transform: scaleX(.05);
+      }
+      35% {
+        opacity: 1;
+        transform: scaleX(1.2);
+      }
+      65% {
+        opacity: .65;
+        transform: scaleX(.9);
+      }
+      100% {
+        opacity: .3;
+        transform: scaleX(1);
+      }
+    }
+
+    @keyframes capriBreakThrough {
+      0% {
+        opacity: 0;
+        transform: translateX(-65px) scale(.62);
+        clip-path: inset(0 100% 0 0);
+      }
+      25% {
+        opacity: .7;
+        transform: translateX(-32px) scale(.72);
+        clip-path: inset(0 68% 0 0);
+      }
+      60% {
+        opacity: 1;
+        transform: translateX(8px) scale(.94);
+        clip-path: inset(0 12% 0 0);
+      }
+      82% {
+        transform: translateX(-3px) scale(1.02);
+        clip-path: inset(0 0 0 0);
+      }
+      100% {
+        opacity: 1;
+        transform: translateX(0) scale(1);
+        clip-path: inset(0 0 0 0);
+      }
+    }
+
+    @keyframes capriIdleGlitch {
+      0%, 91%, 94%, 100% {
+        transform: translate(0, 0);
+        filter: none;
+      }
+      92% {
+        transform: translate(2px, 0);
+        filter: drop-shadow(3px 0 var(--capri-pink));
+      }
+      93% {
+        transform: translate(-2px, 0);
+        filter: drop-shadow(-3px 0 var(--capri-green));
+      }
+    }
+
+    @keyframes capriHaloFlicker {
+      0%, 92%, 96%, 100% { opacity: 0; }
+      93% { opacity: .55; }
+      95% { opacity: .15; }
     }
 
     @media (min-width: 651px) {
@@ -1407,9 +1604,11 @@
     }
 
     @media (max-width: 650px) {
-      #capriFlight {
-        width: min(58vw, 245px);
-        height: min(46vh, 320px);
+      #capriPortal {
+        left: 50%;
+        top: 24%;
+        width: min(55vw, 230px);
+        height: min(39vh, 280px);
       }
 
       #myrloreSecretOverlay .secret-inner {
@@ -1432,13 +1631,21 @@
         transition: none;
       }
 
-      #myrloreSecretOverlay.glitching::before,
-      #myrloreSecretOverlay.glitching .secret-noise,
-      #myrloreSecretOverlay.glitching .secret-glitch-bars,
-      #capriImage,
-      #capriFlight::before,
-      #capriFlight::after {
+      #myrloreSecretOverlay.fracture-start::before,
+      #myrloreSecretOverlay.fracture-heavy::before,
+      #myrloreSecretOverlay.fracture-start .secret-noise,
+      #myrloreSecretOverlay.fracture-heavy .secret-noise,
+      #myrloreSecretOverlay.fracture-heavy .capri-tear,
+      #capriPortal.capri-settled #capriImage,
+      #capriPortal.capri-settled::after {
         animation: none;
+      }
+
+      #capriPortal.capri-emerging #capriFlight {
+        animation: none;
+        opacity: 1;
+        transform: none;
+        clip-path: none;
       }
     }
   `;
@@ -1452,10 +1659,17 @@
 
   secretOverlay.innerHTML = `
     <div class="secret-noise"></div>
-    <div class="secret-glitch-bars"></div>
 
-    <div id="capriFlight" aria-hidden="true">
-      <img id="capriImage" alt="">
+    <div class="capri-glitch-patches" id="capriGlitchPatches"></div>
+
+    <div class="capri-tear" style="--tear-y: 24%; --tear-height: 8px;"></div>
+    <div class="capri-tear" style="--tear-y: 67%; --tear-height: 13px;"></div>
+    <div class="capri-tear" style="--tear-y: 82%; --tear-height: 5px;"></div>
+
+    <div id="capriPortal" aria-hidden="true">
+      <div id="capriFlight">
+        <img id="capriImage" alt="">
+      </div>
     </div>
 
     <div class="secret-inner">
@@ -1480,13 +1694,16 @@
 
   document.body.appendChild(secretOverlay);
 
+  const capriPortal = $("#capriPortal", secretOverlay);
   const capriFlight = $("#capriFlight", secretOverlay);
   const capriImageElement = $("#capriImage", secretOverlay);
   const secretCloseButton = $("#secretClose", secretOverlay);
+  const patchContainer = $("#capriGlitchPatches", secretOverlay);
 
   /* ==========================================
      CAPRI IMAGE
-     USES FIRST SPRITE FRAME ONLY
+     FIRST SPRITE FRAME ONLY
+     NO FRAME CYCLING
   ========================================== */
 
   function loadCapri() {
@@ -1534,105 +1751,181 @@
   loadCapri();
 
   /* ==========================================
-     FULL-SCREEN GLITCH EFFECT
+     RANDOM SCREEN PATCH GENERATOR
   ========================================== */
 
-  function startScreenGlitch() {
-    secretOverlay.classList.add("glitching");
+  function createGlitchPatch(options = {}) {
+    if (!patchContainer) return;
 
-    if (capriGlitchInterval) {
-      clearInterval(capriGlitchInterval);
+    const patch = document.createElement("div");
+    patch.className = "capri-patch";
+
+    const x = options.x ?? Math.random() * 100;
+    const y = options.y ?? Math.random() * 100;
+    const width = options.width ?? 60 + Math.random() * 180;
+    const height = options.height ?? 4 + Math.random() * 24;
+
+    patch.style.setProperty("--patch-x", `${x}%`);
+    patch.style.setProperty("--patch-y", `${y}%`);
+    patch.style.setProperty("--patch-width", `${width}px`);
+    patch.style.setProperty("--patch-height", `${height}px`);
+
+    patchContainer.appendChild(patch);
+
+    requestAnimationFrame(() => {
+      patch.classList.add("visible");
+    });
+
+    const lifetime = options.lifetime ?? 500 + Math.random() * 900;
+
+    const timer = setTimeout(() => {
+      patch.classList.remove("visible");
+      patch.classList.add("fade");
+
+      setTimeout(() => patch.remove(), 600);
+    }, lifetime);
+
+    patchTimers.push(timer);
+  }
+
+  function clearPatchTimers() {
+    patchTimers.forEach(timer => clearTimeout(timer));
+    patchTimers = [];
+
+    if (patchContainer) {
+      patchContainer.replaceChildren();
     }
-
-    capriGlitchInterval = setInterval(() => {
-      if (!secretActive) return;
-
-      const offsetX = (Math.random() - 0.5) * 18;
-      const offsetY = (Math.random() - 0.5) * 8;
-
-      secretOverlay.style.transform =
-        `translate(${offsetX}px, ${offsetY}px)`;
-
-      if (Math.random() > 0.5) {
-        secretOverlay.style.filter =
-          `hue-rotate(${Math.random() * 45 - 20}deg)`;
-      } else {
-        secretOverlay.style.filter = "none";
-      }
-    }, 65);
-
-    capriFlashInterval = setTimeout(() => {
-      secretOverlay.classList.remove("glitching");
-      secretOverlay.style.transform = "";
-      secretOverlay.style.filter = "";
-
-      if (capriGlitchInterval) {
-        clearInterval(capriGlitchInterval);
-        capriGlitchInterval = null;
-      }
-    }, 1100);
   }
 
   /* ==========================================
-     CAPRI ENTRANCE
-     SIMPLE. FAST. NO DANCING.
+     SCREEN FRACTURE BUILD-UP
   ========================================== */
 
-  function animateCapriEntrance() {
-    if (!capriFlight) return;
+  function startScreenFracture() {
+    secretOverlay.classList.add("fracture-start");
 
-    const mobile = window.innerWidth <= 650;
+    if (reducedMotion) return;
 
-    const endX = mobile
-      ? window.innerWidth * 0.5
-      : window.innerWidth * 0.155;
+    // First few isolated glitches.
+    for (let i = 0; i < 5; i++) {
+      const timer = setTimeout(() => {
+        if (!secretActive) return;
+        createGlitchPatch();
+      }, 300 + i * 260);
 
-    const endY = mobile
-      ? window.innerHeight * 0.23
-      : window.innerHeight * 0.52;
+      glitchTimers.push(timer);
+    }
 
-    const startX = window.innerWidth * 1.2;
-    const startY = window.innerHeight * 0.45;
+    // Gradually increase the number of patches.
+    const buildUp = setInterval(() => {
+      if (!secretActive) {
+        clearInterval(buildUp);
+        return;
+      }
+
+      createGlitchPatch({
+        lifetime: 550 + Math.random() * 650
+      });
+
+      if (Math.random() > 0.45) {
+        createGlitchPatch({
+          lifetime: 350 + Math.random() * 450,
+          width: 100 + Math.random() * 240,
+          height: 3 + Math.random() * 12
+        });
+      }
+    }, 220);
+
+    glitchTimers.push(buildUp);
+
+    // The whole screen begins to break apart.
+    const heavyTimer = setTimeout(() => {
+      if (!secretActive) return;
+
+      secretOverlay.classList.add("fracture-heavy");
+
+      for (let i = 0; i < 18; i++) {
+        createGlitchPatch({
+          lifetime: 350 + Math.random() * 500,
+          width: 80 + Math.random() * 280,
+          height: 5 + Math.random() * 25
+        });
+      }
+    }, 1800);
+
+    glitchTimers.push(heavyTimer);
+  }
+
+  /* ==========================================
+     CAPRI EMERGES FROM THE LEFT-SIDE TEAR
+  ========================================== */
+
+  function emergeCapri() {
+    if (!capriPortal || !capriFlight) return;
+
+    capriPortal.classList.add("portal-open");
+
+    // The opening appears where Capri will emerge.
+    createGlitchPatch({
+      x: window.innerWidth <= 650 ? 50 : 15.5,
+      y: window.innerWidth <= 650 ? 24 : 52,
+      width: window.innerWidth <= 650 ? 210 : 320,
+      height: 38,
+      lifetime: 1100
+    });
 
     if (reducedMotion) {
+      capriPortal.classList.add("capri-settled");
       capriFlight.style.opacity = "1";
-      capriFlight.style.transform =
-        `translate(${endX}px, ${endY}px) translate(-50%, -50%)`;
       return;
     }
 
-    if (gsapInstance) {
-      gsapInstance.fromTo(
-        capriFlight,
-        {
-          opacity: 0,
-          x: startX,
-          y: startY,
-          scale: 0.5,
-          rotation: 12
-        },
-        {
-          opacity: 1,
-          x: endX,
-          y: endY,
-          scale: mobile ? 0.75 : 0.95,
-          rotation: 0,
-          duration: 1.15,
-          ease: "power4.out",
-          delay: 0.35
-        }
-      );
-    } else {
-      capriFlight.style.transition =
-        "transform 1.15s cubic-bezier(.16,1,.3,1), opacity .3s";
+    setTimeout(() => {
+      if (!secretActive) return;
 
-      capriFlight.style.opacity = "1";
+      capriPortal.classList.add("capri-emerging");
 
-      requestAnimationFrame(() => {
-        capriFlight.style.transform =
-          `translate(${endX}px, ${endY}px) translate(-50%, -50%) scale(${mobile ? 0.75 : 0.95})`;
-      });
-    }
+      // Extra fragments burst out of the opening.
+      for (let i = 0; i < 12; i++) {
+        createGlitchPatch({
+          x: (window.innerWidth <= 650 ? 50 : 15.5) +
+            (Math.random() - 0.5) * 12,
+          y: (window.innerWidth <= 650 ? 24 : 52) +
+            (Math.random() - 0.5) * 22,
+          width: 35 + Math.random() * 170,
+          height: 4 + Math.random() * 18,
+          lifetime: 350 + Math.random() * 450
+        });
+      }
+
+      setTimeout(() => {
+        if (!secretActive) return;
+
+        capriPortal.classList.remove("capri-emerging");
+        capriPortal.classList.add("capri-settled");
+
+        capriFlight.style.opacity = "1";
+      }, 1400);
+    }, 200);
+  }
+
+  /* ==========================================
+     SCREEN STABILISATION
+  ========================================== */
+
+  function stabiliseScreen() {
+    if (!secretActive) return;
+
+    secretOverlay.classList.remove("fracture-heavy");
+
+    // Let the remaining fragments fade away.
+    setTimeout(() => {
+      if (!secretActive) return;
+
+      secretOverlay.classList.remove("fracture-start");
+    }, 900);
+
+    // Keep only the occasional subtle Capri flicker.
   }
 
   /* ==========================================
@@ -1651,18 +1944,31 @@
 
     body.style.overflow = "hidden";
 
+    clearPatchTimers();
+
+    capriPortal.classList.remove(
+      "portal-open",
+      "capri-emerging",
+      "capri-settled"
+    );
+
     capriFlight.style.opacity = "0";
-    capriFlight.style.transform =
-      "translate(120vw, 45vh) translate(-50%, -50%) scale(.5)";
 
-    startScreenGlitch();
+    startScreenFracture();
 
+    // Let the screen glitch build before Capri breaks through.
     setTimeout(() => {
       if (!secretActive) return;
 
-      animateCapriEntrance();
+      emergeCapri();
       secretCloseButton?.focus();
-    }, reducedMotion ? 0 : 250);
+    }, reducedMotion ? 0 : 2900);
+
+    // The screen calms down after Capri emerges.
+    setTimeout(() => {
+      if (!secretActive) return;
+      stabiliseScreen();
+    }, reducedMotion ? 0 : 4900);
 
     console.log("MYRLORE® — SECRET ARCHIVE UNLOCKED");
   }
@@ -1676,20 +1982,30 @@
 
     secretActive = false;
 
-    clearInterval(capriGlitchInterval);
-    clearTimeout(capriFlashInterval);
+    glitchTimers.forEach(timer => {
+      clearInterval(timer);
+      clearTimeout(timer);
+    });
 
-    capriGlitchInterval = null;
-    capriFlashInterval = null;
+    glitchTimers = [];
+
+    clearPatchTimers();
 
     if (gsapInstance) {
       gsapInstance.killTweensOf(capriFlight);
     }
 
-    secretOverlay.classList.remove("active", "glitching");
+    secretOverlay.classList.remove(
+      "active",
+      "fracture-start",
+      "fracture-heavy"
+    );
 
-    secretOverlay.style.transform = "";
-    secretOverlay.style.filter = "";
+    capriPortal.classList.remove(
+      "portal-open",
+      "capri-emerging",
+      "capri-settled"
+    );
 
     secretOverlay.setAttribute("aria-hidden", "true");
     secretOverlay.setAttribute("inert", "");
@@ -1697,6 +2013,8 @@
     body.style.overflow = "";
 
     capriFlight.style.opacity = "0";
+    capriFlight.style.transform = "";
+    capriFlight.style.clipPath = "";
 
     secretPreviousFocus?.focus?.();
   }
