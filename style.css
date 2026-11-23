@@ -2871,3 +2871,164 @@ a {
     animation-duration: .01ms !important;
   }
 }
+
+/* ==========================================
+   MYRLORE — CHROMATIC SILVER ART DIRECTION
+   LIQUID METAL / REFLECTIVE / MONOCHROME
+========================================== */
+
+#vaultGrid [data-case-study] [class*="art-"] {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  border: 1px solid rgba(220,225,230,.22);
+  background-color: #101216;
+  background-blend-mode: screen, normal;
+  box-shadow:
+    inset 0 1px 1px rgba(255,255,255,.16),
+    inset 0 -25px 45px rgba(0,0,0,.35),
+    0 12px 35px rgba(0,0,0,.2);
+}
+
+/* Reflective studio lighting */
+#vaultGrid [data-case-study] [class*="art-"]::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  background:
+    linear-gradient(
+      118deg,
+      transparent 15%,
+      rgba(255,255,255,.055) 35%,
+      rgba(255,255,255,.20) 48%,
+      rgba(255,255,255,.035) 57%,
+      transparent 75%
+    );
+  opacity: .7;
+  mix-blend-mode: screen;
+  transition: opacity .5s ease, transform .8s ease;
+}
+
+#vaultGrid .work-card:hover [class*="art-"]::after {
+  opacity: 1;
+  transform: translateX(5%);
+}
+
+/* 01 — CORROGUARD */
+#vaultGrid [data-case-study="corroguard"] [class*="art-"] {
+  background:
+    radial-gradient(ellipse at 50% 42%, rgba(220,230,235,.23), transparent 28%),
+    radial-gradient(ellipse at 50% 100%, #3d454c, transparent 55%),
+    linear-gradient(135deg, #090b0e, #252b30 48%, #090b0e);
+}
+
+/* 02 — FLOODWATCH */
+#vaultGrid [data-case-study="floodwatch"] [class*="art-"] {
+  background:
+    repeating-radial-gradient(ellipse at 50% 75%, transparent 0 18px, rgba(220,230,235,.18) 19px 20px, transparent 21px 36px),
+    radial-gradient(ellipse at 50% 65%, #aeb9c0 0%, #3c454d 24%, transparent 65%),
+    linear-gradient(145deg, #090b0e, #20262c);
+}
+
+/* 03 — AETHER */
+#vaultGrid [data-case-study="aether"] [class*="art-"] {
+  background:
+    radial-gradient(ellipse at 50% 40%, rgba(240,244,248,.3), transparent 24%),
+    radial-gradient(ellipse at 35% 65%, #87939c, transparent 25%),
+    linear-gradient(125deg, #080a0d, #3a4148 48%, #0a0c0f);
+}
+
+/* 04 — NEXUS AI */
+#vaultGrid [data-case-study="nexus"] [class*="art-"] {
+  background:
+    radial-gradient(circle at 50% 50%, rgba(210,220,226,.24), transparent 22%),
+    repeating-linear-gradient(0deg, transparent 0 34px, rgba(205,215,222,.075) 35px 36px),
+    repeating-linear-gradient(90deg, transparent 0 34px, rgba(205,215,222,.075) 35px 36px),
+    linear-gradient(145deg, #080a0d, #293139 55%, #090b0e);
+}
+
+/* 05 — MONOLITH */
+#vaultGrid [data-case-study="monolith"] [class*="art-"] {
+  background:
+    linear-gradient(90deg, transparent 8%, rgba(230,235,238,.12) 8.2%, transparent 8.5%),
+    radial-gradient(ellipse at 50% 100%, rgba(205,215,222,.2), transparent 55%),
+    linear-gradient(145deg, #08090b, #353b40 50%, #0b0d0f);
+}
+
+/* 06 — SENTINEL */
+#vaultGrid [data-case-study="sentinel"] [class*="art-"] {
+  background:
+    radial-gradient(circle at center, transparent 0 17%, rgba(220,228,232,.65) 17.3% 17.8%, transparent 18.2% 30%, rgba(220,228,232,.24) 30.3% 30.7%, transparent 31%),
+    radial-gradient(circle at center, rgba(205,215,222,.2), transparent 50%),
+    linear-gradient(135deg, #090b0e, #252c32);
+}
+
+/* 07 — FORM / 01 */
+#vaultGrid [data-case-study="form01"] [class*="art-"] {
+  background:
+    linear-gradient(135deg, transparent 45%, rgba(235,240,244,.2) 46%, transparent 48%),
+    linear-gradient(45deg, transparent 45%, rgba(235,240,244,.12) 46%, transparent 48%),
+    radial-gradient(ellipse at 50% 45%, #6d7880, transparent 50%),
+    linear-gradient(135deg, #090b0e, #252b30);
+}
+
+/* 08 — ORBITAL */
+#vaultGrid [data-case-study="orbital"] [class*="art-"] {
+  background:
+    radial-gradient(ellipse at 50% 50%, transparent 0 18%, rgba(230,236,240,.7) 18.3% 18.8%, transparent 19.2% 34%, rgba(230,236,240,.3) 34.3% 34.8%, transparent 35.2%),
+    radial-gradient(circle at 50% 50%, #b5c0c7, #4b555d 22%, transparent 23%),
+    linear-gradient(135deg, #080a0d, #252c33);
+}
+
+/* 09 — SONORA */
+#vaultGrid [data-case-study="sonora"] [class*="art-"] {
+  background:
+    repeating-radial-gradient(ellipse at 50% 50%, transparent 0 10px, rgba(225,232,236,.25) 11px 12px, transparent 13px 23px),
+    radial-gradient(ellipse at center, rgba(190,200,207,.2), transparent 65%),
+    linear-gradient(135deg, #080a0d, #30373d);
+}
+
+/* 10 — ATLAS GRID */
+#vaultGrid [data-case-study="atlas"] [class*="art-"] {
+  background:
+    repeating-linear-gradient(0deg, transparent 0 27px, rgba(225,232,236,.12) 28px 29px),
+    repeating-linear-gradient(90deg, transparent 0 27px, rgba(225,232,236,.12) 28px 29px),
+    radial-gradient(ellipse at 50% 50%, #8d9aa2, transparent 40%),
+    linear-gradient(145deg, #080a0d, #252d33);
+}
+
+/* 11 — APEX */
+#vaultGrid [data-case-study="apex"] [class*="art-"] {
+  background:
+    radial-gradient(ellipse at 50% 58%, rgba(220,230,235,.3), transparent 28%),
+    linear-gradient(155deg, transparent 35%, rgba(220,230,235,.15) 36%, transparent 38%),
+    linear-gradient(25deg, #080a0d, #454e55 48%, #090b0e);
+}
+
+/* 12 — ECHO */
+#vaultGrid [data-case-study="echo"] [class*="art-"] {
+  background:
+    repeating-radial-gradient(ellipse at center, transparent 0 13px, rgba(225,232,236,.23) 14px 15px, transparent 16px 29px),
+    radial-gradient(ellipse at center, rgba(220,230,235,.2), transparent 60%),
+    linear-gradient(145deg, #090b0e, #30373d);
+}
+
+/* Remove old blue/green accent colours from artwork text */
+#vaultGrid [data-case-study] [class*="art-"] {
+  color: #e5e8ea;
+}
+
+#vaultGrid [data-case-study] [class*="art-"] span,
+#vaultGrid [data-case-study] [class*="art-"] strong,
+#vaultGrid [data-case-study] [class*="art-"] b {
+  color: #d8dfe3;
+}
+
+/* Reduced-motion support */
+@media (prefers-reduced-motion: reduce) {
+  #vaultGrid [data-case-study] [class*="art-"]::after {
+    transition: none;
+  }
+}
