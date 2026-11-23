@@ -1,4 +1,3 @@
-
 /* ==========================================
    MYRLORE® — MAIN INTERACTION SYSTEM
    A2 CHROME SCULPTURE · GSAP · UI
@@ -1341,8 +1340,6 @@
       animation: patchCutOut .2s steps(2) forwards;
     }
 
-    /* Some patches look like corrupted pieces of the display. */
-
     .capri-patch.pixel-block {
       background:
         repeating-linear-gradient(
@@ -1444,6 +1441,7 @@
       opacity: 0;
       pointer-events: none;
       overflow: visible;
+      perspective: 1000px;
     }
 
     #capriPortal::before {
@@ -1510,7 +1508,7 @@
       transform: translate3d(-45px, 0, 0) scale(.86);
       transform-origin: center center;
       clip-path: inset(0 100% 0 0);
-      will-change: transform, opacity, clip-path;
+      will-change: transform, opacity, clip-path, filter;
     }
 
     #capriImage {
@@ -1566,6 +1564,45 @@
     #capriPortal.capri-settled .capri-rgb {
       opacity: 0;
       animation: none;
+    }
+
+    /* ======================================
+       CAPRI BREAKS OUT TOWARDS THE VIEWER
+    ====================================== */
+
+    #capriPortal.capri-breakout #capriFlight {
+      animation: capriOutsideScreen .62s cubic-bezier(.16,1,.3,1) forwards;
+      transform-origin: center center;
+      z-index: 20;
+    }
+
+    #capriPortal.capri-breakout .capri-rgb {
+      opacity: .65;
+      animation: rgbSnap .12s steps(2) 4;
+    }
+
+    /* ======================================
+       CAPRI DIGITAL DISINTEGRATION
+    ====================================== */
+
+    #capriPortal.capri-disappearing #capriFlight {
+      animation: capriDigitalDisintegration .48s steps(5,end) forwards;
+      pointer-events: none;
+    }
+
+    #capriPortal.capri-disappearing .capri-rgb {
+      opacity: .8;
+      animation: rgbDisintegration .48s steps(5,end) forwards;
+    }
+
+    #capriPortal.capri-gone {
+      opacity: 0;
+      visibility: hidden;
+    }
+
+    #capriPortal.capri-gone #capriFlight {
+      opacity: 0;
+      visibility: hidden;
     }
 
     /* ======================================
@@ -1782,10 +1819,117 @@
       }
     }
 
+    @keyframes capriOutsideScreen {
+      0% {
+        opacity: 1;
+        transform: translate3d(0,0,0) scale(1);
+        filter: contrast(1);
+      }
+      18% {
+        opacity: 1;
+        transform: translate3d(8px,-5px,0) scale(1.12);
+        filter: contrast(1.2);
+      }
+      45% {
+        opacity: 1;
+        transform: translate3d(22px,-12px,0) scale(1.42);
+        filter: contrast(1.35);
+      }
+      72% {
+        opacity: 1;
+        transform: translate3d(18px,-9px,0) scale(1.55);
+        filter: contrast(1.2);
+      }
+      100% {
+        opacity: 1;
+        transform: translate3d(18px,-9px,0) scale(1.55);
+        filter: contrast(1.15);
+      }
+    }
+
+    @keyframes capriDigitalDisintegration {
+      0% {
+        opacity: 1;
+        transform: translate3d(18px,-9px,0) scale(1.55);
+        clip-path: inset(0);
+        filter: contrast(1.2);
+      }
+      18% {
+        opacity: 1;
+        transform: translate3d(30px,-5px,0) scale(1.6);
+        clip-path: polygon(
+          0 0, 100% 0, 100% 22%,
+          72% 22%, 72% 35%, 100% 35%,
+          100% 100%, 0 100%
+        );
+        filter: contrast(1.8);
+      }
+      38% {
+        opacity: .85;
+        transform: translate3d(-15px,8px,0) scale(1.45);
+        clip-path: polygon(
+          0 0, 58% 0, 58% 18%,
+          100% 18%, 100% 42%, 35% 42%,
+          35% 65%, 100% 65%, 100% 100%, 0 100%
+        );
+        filter: contrast(2) saturate(1.8);
+      }
+      62% {
+        opacity: .5;
+        transform: translate3d(25px,-12px,0) scale(1.25);
+        clip-path: polygon(
+          0 0, 35% 0, 35% 20%,
+          80% 20%, 80% 40%, 25% 40%,
+          25% 60%, 65% 60%, 65% 80%,
+          100% 80%, 100% 100%, 0 100%
+        );
+        filter: contrast(2.5);
+      }
+      82% {
+        opacity: .2;
+        transform: translate3d(-35px,15px,0) scale(1.05);
+        clip-path: polygon(
+          0 0, 18% 0, 18% 30%,
+          52% 30%, 52% 48%, 12% 48%,
+          12% 75%, 40% 75%, 40% 100%, 0 100%
+        );
+        filter: contrast(3);
+      }
+      100% {
+        opacity: 0;
+        transform: translate3d(55px,-25px,0) scale(.72);
+        clip-path: inset(45% 45% 45% 45%);
+        filter: contrast(4);
+      }
+    }
+
     @keyframes rgbSnap {
       0% { transform: translateX(-8px); opacity: .65; }
       50% { transform: translateX(8px); opacity: .35; }
       100% { transform: translateX(0); opacity: .5; }
+    }
+
+    @keyframes rgbDisintegration {
+      0% {
+        opacity: .8;
+        transform: translateX(-8px);
+        clip-path: inset(0);
+      }
+      35% {
+        opacity: .9;
+        transform: translateX(18px);
+        clip-path: inset(0 0 45% 0);
+      }
+      70% {
+        opacity: .55;
+        transform: translateX(-25px);
+        clip-path: inset(35% 0 15% 0);
+      }
+      100% {
+        opacity: 0;
+        transform: translateX(45px);
+        clip-path: inset(50% 50% 50% 50%);
+      }
     }
 
     @media (min-width: 651px) {
@@ -1814,6 +1958,21 @@
 
       #myrloreSecretOverlay p {
         font-size: 9px;
+      }
+
+      @keyframes capriOutsideScreen {
+        0% {
+          opacity: 1;
+          transform: translate3d(0,0,0) scale(1);
+        }
+        45% {
+          opacity: 1;
+          transform: translate3d(0,-8px,0) scale(1.35);
+        }
+        100% {
+          opacity: 1;
+          transform: translate3d(0,-8px,0) scale(1.4);
+        }
       }
     }
 
@@ -2066,7 +2225,6 @@
 
     if (reducedMotion) return;
 
-    // Isolated digital errors begin appearing.
     for (let i = 0; i < 7; i++) {
       scheduleSequence(() => {
         createGlitchPatch({
@@ -2078,7 +2236,6 @@
       }, 250 + i * 190);
     }
 
-    // The display starts losing horizontal synchronisation.
     scheduleSequence(() => {
       createScreenStrip();
       createGlitchPatch({
@@ -2090,7 +2247,6 @@
       });
     }, 850);
 
-    // Increase corruption gradually across the full display.
     const buildUp = setInterval(() => {
       if (!secretActive) {
         clearInterval(buildUp);
@@ -2120,7 +2276,6 @@
 
     glitchTimers.push(buildUp);
 
-    // Heavy corruption: the entire display begins tearing.
     scheduleSequence(() => {
       secretOverlay.classList.add("fracture-heavy");
 
@@ -2153,7 +2308,6 @@
 
     secretOverlay.classList.remove("fracture-heavy");
 
-    // Remove leftover fragments in a short, controlled fade.
     if (patchContainer) {
       [...patchContainer.children].forEach(element => {
         element.classList.remove("visible");
@@ -2170,16 +2324,14 @@
   }
 
   /* ==========================================
-     CAPRI EMERGES THROUGH THE SCREEN TEAR
+     CAPRI BREAKS OUT, HOLDS, THEN DISAPPEARS
   ========================================== */
 
   function emergeCapri() {
     if (!capriPortal || !capriFlight) return;
 
-    // Stop the repeated background corruption before the reveal.
     stopScreenFracture();
 
-    // Create the initial tear at Capri's final position.
     createGlitchPatch({
       x: window.innerWidth <= 650 ? 50 : 15.5,
       y: window.innerWidth <= 650 ? 24 : 52,
@@ -2191,7 +2343,6 @@
 
     createScreenStrip();
 
-    // Open the actual jagged cut in the screen.
     capriPortal.classList.add("portal-open");
 
     if (reducedMotion) {
@@ -2202,11 +2353,10 @@
       return;
     }
 
-    // Give the screen tear time to open before Capri appears.
+    // Stage 1: Capri starts emerging through the tear.
     scheduleSequence(() => {
       capriPortal.classList.add("capri-emerging");
 
-      // A brief RGB split occurs as she crosses the tear.
       for (let i = 0; i < 9; i++) {
         createGlitchPatch({
           x: (window.innerWidth <= 650 ? 50 : 15.5) +
@@ -2225,7 +2375,7 @@
       }
     }, 650);
 
-    // Lock Capri into her final still position after the entrance.
+    // Stage 2: Finish the entrance and hold her still.
     scheduleSequence(() => {
       capriPortal.classList.remove("capri-emerging");
       capriPortal.classList.add("capri-settled");
@@ -2234,10 +2384,8 @@
       capriFlight.style.transform = "translate3d(0,0,0) scale(1)";
       capriFlight.style.clipPath = "inset(0)";
 
-      // The tear closes behind her.
       capriPortal.classList.remove("portal-open");
 
-      // Remove any remaining glitch fragments.
       if (patchContainer) {
         [...patchContainer.children].forEach(element => {
           element.classList.remove("visible");
@@ -2247,6 +2395,83 @@
         });
       }
     }, 2450);
+
+    // Stage 3: Capri suddenly pushes out towards the viewer.
+    scheduleSequence(() => {
+      capriPortal.classList.add("capri-breakout");
+
+      createScreenStrip();
+
+      for (let i = 0; i < 7; i++) {
+        createGlitchPatch({
+          x: (window.innerWidth <= 650 ? 50 : 15.5) +
+            (Math.random() - .5) * 18,
+          y: (window.innerWidth <= 650 ? 24 : 52) +
+            (Math.random() - .5) * 30,
+          width: 45 + Math.random() * 190,
+          height: 4 + Math.random() * 18,
+          lifetime: 220 + Math.random() * 350,
+          block: true
+        });
+      }
+    }, 2600);
+
+    // Stage 4: Hold outside the screen for about one second.
+    // The breakout animation lasts 620ms, so this delay gives
+    // the enlarged image a full second before disintegration.
+    scheduleSequence(() => {
+      capriPortal.classList.remove("capri-breakout");
+      capriPortal.classList.add("capri-disappearing");
+
+      secretOverlay.classList.add("fracture-heavy");
+
+      for (let i = 0; i < 22; i++) {
+        createGlitchPatch({
+          lifetime: 250 + Math.random() * 350,
+          width: 45 + Math.random() * 240,
+          height: 4 + Math.random() * 24,
+          block: true
+        });
+      }
+
+      for (let i = 0; i < 9; i++) {
+        createScreenStrip();
+      }
+    }, 4220);
+
+    // Stage 5: Remove Capri completely.
+    scheduleSequence(() => {
+      capriPortal.classList.remove("capri-disappearing");
+      capriPortal.classList.add("capri-gone");
+
+      capriFlight.style.opacity = "0";
+
+      secretOverlay.classList.remove("fracture-heavy");
+
+      if (patchContainer) {
+        [...patchContainer.children].forEach(element => {
+          element.classList.remove("visible");
+          element.classList.add("fade");
+
+          setTimeout(() => element.remove(), 250);
+        });
+      }
+    }, 4720);
+
+    // Final cleanup: archive remains, Capri is gone.
+    scheduleSequence(() => {
+      clearPatchTimers();
+
+      capriPortal.classList.remove(
+        "portal-open",
+        "capri-emerging",
+        "capri-settled",
+        "capri-breakout",
+        "capri-disappearing"
+      );
+
+      capriPortal.classList.add("capri-gone");
+    }, 5100);
   }
 
   /* ==========================================
@@ -2271,7 +2496,10 @@
     capriPortal.classList.remove(
       "portal-open",
       "capri-emerging",
-      "capri-settled"
+      "capri-settled",
+      "capri-breakout",
+      "capri-disappearing",
+      "capri-gone"
     );
 
     capriFlight.style.opacity = "0";
@@ -2280,7 +2508,6 @@
 
     startScreenFracture();
 
-    // The screen corruption builds before the tear opens.
     scheduleSequence(() => {
       emergeCapri();
       secretCloseButton?.focus();
@@ -2321,7 +2548,10 @@
     capriPortal.classList.remove(
       "portal-open",
       "capri-emerging",
-      "capri-settled"
+      "capri-settled",
+      "capri-breakout",
+      "capri-disappearing",
+      "capri-gone"
     );
 
     secretOverlay.setAttribute("aria-hidden", "true");
@@ -2407,7 +2637,7 @@
   menuToggle?.setAttribute("aria-expanded", "false");
 
   /* ==========================================
-     MYRL​​ORE® — SYSTEM READY
+     MYRLORE® — SYSTEM READY
   ========================================== */
 
   console.log(
