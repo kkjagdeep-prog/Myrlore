@@ -1,4 +1,4 @@
-/* ==========================================
+```/* ==========================================
    MYRLORE® — MAIN INTERACTION SYSTEM
    A2 CHROME SCULPTURE · GSAP · UI
    CAPRI CINEMATIC SECRET ARCHIVE
@@ -562,7 +562,7 @@
           duration: 0.45,
           ease: "power2.out"
         }, "-=0.1");
-      }
+              }
 
       if (transitionProgress) {
         timeline.to(transitionProgress, {
@@ -605,26 +605,38 @@
         event.altKey
       ) return;
 
-      const target = new URL(href, window.location.href);
+      let destination;
 
-      if (target.origin !== window.location.origin) return;
+      try {
+        destination = new URL(href, window.location.href);
+      } catch {
+        return;
+      }
+
+      if (destination.origin !== location.origin) return;
+      if (destination.pathname === location.pathname) return;
 
       event.preventDefault();
-      runPageTransition(target.href);
+      runPageTransition(destination.href);
     });
   });
 
   /* ==========================================
-     THREE.JS CHROME SCULPTURE
+     THREE.JS — A2 CHROME SCULPTURE
   ========================================== */
 
-  const canvas = $("#chromeCanvas");
+  const canvas = $("#webgl");
 
+  let THREE = null;
   let renderer = null;
   let scene = null;
   let camera = null;
   let sculpture = null;
+  let particleSystem = null;
+  let clock = null;
   let animationFrame = null;
+  let resizeObserver = null;
+
   let threeReady = false;
   let pageVisible = !document.hidden;
 
@@ -632,230 +644,446 @@
   let pointerY = 0;
   let scrollRotation = 0;
 
-  let resizeObserver = null;
+  const BLADE_SEGMENTS = 84;
+  const RADIAL_SEGMENTS = 24;
 
-  const clock = {
-    startTime: 0,
-    getElapsedTime() {
-      return (performance.now() - this.startTime) / 1000;
-    },
-    start() {
-      this.startTime = performance.now();
+  function createBladeGeometry(options = {}) {
+    const {
+      length = 2.8,
+      width = 0.42,
+      thickness = 0.11,
+      twist = 1.2,
+      bend = 0.35,
+      taper = 0.72,
+      ridge = 0.12
+    } = options;
+
+    const positions = [];
+    const uvs = [];
+    const indices = [];
+    const curvePoints = [];
+
+    for (let i = 0; i <= BLADE_SEGMENTS; i++) {
+      const t = i / BLADE_SEGMENTS;
+
+      curvePoints.push(
+        new THREE.Vector3(
+          Math.sin(t * Math.PI) * bend,
+          (t - 0.5) * length,
+          Math.sin(t * Math.PI * 2) * bend * 0.25
+        )
+      );
     }
-  };
+
+    const centerCurve = new THREE.CatmullRomCurve3(curvePoints);
+    const frames = centerCurve.computeFrenetFrames(
+      BLADE_SEGMENTS,
+      false
+    );
+
+    for (let i = 0; i <= BLADE_SEGMENTS; i++) {
+      const t = i / BLADE_SEGMENTS;
+      const center = centerCurve.getPointAt(t);
+
+      const envelope = Math.pow(
+        Math.sin(Math.PI * t),
+        taper
+      );
+
+      const asymmetry =
+        1 + Math.sin(t * Math.PI * 2.5) * 0.16;
+
+      const bladeWidth = Math.max(
+        0.003,
+        width * envelope * asymmetry
+      );
+
+      const bladeThickness = Math.max(
+        0.002,
+        thickness * envelope
+      );
+
+      const twistAngle = twist * t;
+      const normal = frames.normals[i];
+      const binormal = frames.binormals[i];
+
+      const twistedNormal = normal.clone()
+        .multiplyScalar(Math.cos(twistAngle))
+        .add(
+          binormal.clone().multiplyScalar(Math.sin(twistAngle))
+        );
+
+      const twistedBinormal = binormal.clone()
+        .multiplyScalar(Math.cos(twistAngle))
+        .sub(
+          normal.clone().multiplyScalar(Math.sin(twistAngle))
+        );
+
+      for (let j = 0; j <= RADIAL_SEGMENTS; j++) {
+        const u = j / RADIAL_SEGMENTS;
+        const angle = u * Math.PI * 2;
+
+        const side = Math.cos(angle) * bladeWidth;
+        const depth = Math.sin(angle) * bladeThickness;
+
+        const ridgeFactor =
+          Math.pow(Math.abs(Math.cos(angle)), 8) *
+          ridge * envelope;
+
+        const point = center.clone()
+          .addScaledVector(twistedNormal, side)
+          .addScaledVector(
+            twistedBinormal,
+            depth + ridgeFactor
+          );
+
+        positions.push(point.x, point.y, point.z);
+        uvs.push(u, t);
+      }
+    }
+
+    for (let i = 0; i < BLADE_SEGMENTS; i++) {
+      for (let j = 0; j < RADIAL_SEGMENTS; j++) {
+        const a = i * (RADIAL_SEGMENTS + 1) + j;
+        const b = a + RADIAL_SEGMENTS + 1;
+
+        indices.push(
+          a, b, a + 1,
+          b, b + 1, a + 1
+        );
+      }
+    }
+
+    const geometry = new THREE.BufferGeometry();
+
+    geometry.setAttribute(
+      "position",
+      new THREE.Float32BufferAttribute(positions, 3)
+    );
+
+    geometry.setAttribute(
+      "uv",
+      new THREE.Float32BufferAttribute(uvs, 2)
+    );
+
+    geometry.setIndex(indices);
+    geometry.computeVertexNormals();
+
+    return geometry;
+  }
+
+  function createChromeCurve(points, material, radius = 0.018) {
+    const curve = new THREE.CatmullRomCurve3(points);
+
+    const geometry = new THREE.TubeGeometry(
+      curve,
+      180,
+      radius,
+      12,
+      false
+    );
+
+    return new THREE.Mesh(geometry, material);
+  }
+
+  function createEnvironment(rendererInstance) {
+    const pmrem = new THREE.PMREMGenerator(rendererInstance);
+
+    const environmentScene = new THREE.Scene();
+    environmentScene.background = new THREE.Color(0x17191e);
+
+    const panels = [
+      { position: [0, 5, 2], size: [5, 0.15, 2], color: 0xffffff },
+      { position: [-5, 1, 1], size: [0.15, 5, 2], color: 0xdce5f0 },
+      { position: [5, 0, -1], size: [0.15, 4, 2], color: 0xc6b69a },
+      { position: [0, -4, -2], size: [4, 0.15, 2], color: 0x8995a4 },
+      { position: [0, 0, -5], size: [4, 4, 0.15], color: 0xffffff }
+    ];
+
+    panels.forEach(data => {
+      const panel = new THREE.Mesh(
+        new THREE.BoxGeometry(...data.size),
+        new THREE.MeshBasicMaterial({ color: data.color })
+      );
+
+      panel.position.set(...data.position);
+      environmentScene.add(panel);
+    });
+
+    const texture = pmrem.fromScene(environmentScene, 0.04).texture;
+
+    pmrem.dispose();
+
+    return texture;
+  }
 
   function animateThreeAgain() {
-    if (!renderer || !scene || !camera || !pageVisible) return;
-
-    cancelAnimationFrame(animationFrame);
+    if (!pageVisible || !threeReady) return;
 
     animationFrame = requestAnimationFrame(animateThreeAgain);
 
     const elapsed = clock.getElapsedTime();
 
-    if (sculpture) {
-      sculpture.rotation.x =
-        Math.sin(elapsed * 0.18) * 0.12 + pointerY;
+    sculpture.rotation.y = elapsed * 0.13 + scrollRotation;
 
-      sculpture.rotation.y =
-        elapsed * 0.12 + pointerX + scrollRotation;
+    sculpture.rotation.x =
+      Math.sin(elapsed * 0.25) * 0.13 + pointerY * 0.3;
 
-      sculpture.rotation.z =
-        Math.sin(elapsed * 0.12) * 0.04;
-    }
+    sculpture.rotation.z =
+      Math.cos(elapsed * 0.2) * 0.08 + pointerX * 0.2;
+
+    sculpture.position.y = Math.sin(elapsed * 0.5) * 0.08;
+
+    particleSystem.rotation.y = elapsed * 0.025;
+    particleSystem.rotation.x = elapsed * 0.012;
 
     renderer.render(scene, camera);
   }
 
-  function initialiseThree() {
-    if (!canvas || threeReady) return;
+  async function initialiseThree() {
+    if (!canvas || threeReady || reducedMotion) return;
 
-    import("three")
-      .then(THREE => {
-        if (!canvas) return;
+    try {
+      THREE = await import("three");
 
-        const width = canvas.clientWidth || window.innerWidth;
-        const height = canvas.clientHeight || window.innerHeight;
+      const { RectAreaLightUniformsLib } =
+        await import("three/addons/lights/RectAreaLightUniformsLib.js");
 
-        scene = new THREE.Scene();
+      RectAreaLightUniformsLib.init();
 
-        camera = new THREE.PerspectiveCamera(
-          35,
-          width / height,
-          0.1,
-          100
+      clock = new THREE.Clock();
+      scene = new THREE.Scene();
+
+      camera = new THREE.PerspectiveCamera(35, 1, 0.1, 100);
+      camera.position.set(0, 0, 8);
+
+      renderer = new THREE.WebGLRenderer({
+        canvas,
+        alpha: true,
+        antialias: true,
+        powerPreference: "high-performance"
+      });
+
+      renderer.setPixelRatio(
+        Math.min(window.devicePixelRatio || 1, 1.75)
+      );
+
+      renderer.outputColorSpace = THREE.SRGBColorSpace;
+      renderer.toneMapping = THREE.ACESFilmicToneMapping;
+      renderer.toneMappingExposure = 1.15;
+
+      const chromeMaterial = new THREE.MeshPhysicalMaterial({
+        color: 0xc8c9c7,
+        metalness: 1,
+        roughness: 0.16,
+        envMapIntensity: 1.8,
+        clearcoat: 1,
+        clearcoatRoughness: 0.08
+      });
+
+      const darkMetal = new THREE.MeshPhysicalMaterial({
+        color: 0x777b80,
+        metalness: 0.95,
+        roughness: 0.25,
+        envMapIntensity: 1.7,
+        clearcoat: 1
+      });
+
+      const champagneMaterial = new THREE.MeshPhysicalMaterial({
+        color: 0xc6b69a,
+        metalness: 1,
+        roughness: 0.2,
+        envMapIntensity: 1.6,
+        clearcoat: 1
+      });
+
+      scene.environment = createEnvironment(renderer);
+
+      scene.add(new THREE.AmbientLight(0xffffff, 0.5));
+
+      const keyLight = new THREE.DirectionalLight(0xffffff, 3.2);
+      keyLight.position.set(4, 5, 6);
+      scene.add(keyLight);
+
+      const rimLight = new THREE.DirectionalLight(0xc6b69a, 2.8);
+      rimLight.position.set(-5, 1, -4);
+      scene.add(rimLight);
+
+      const lowerLight = new THREE.PointLight(0x89939d, 22, 14);
+      lowerLight.position.set(0, -3, 3);
+      scene.add(lowerLight);
+
+      const areaLight = new THREE.RectAreaLight(0xffffff, 6, 5, 2);
+      areaLight.position.set(0, 4, 4);
+      areaLight.lookAt(0, 0, 0);
+      scene.add(areaLight);
+
+      sculpture = new THREE.Group();
+      scene.add(sculpture);
+
+      const bladeConfigurations = [
+        { length: 2.9, width: 0.43, twist: 1.25, bend: 0.34 },
+        { length: 2.65, width: 0.39, twist: -1.05, bend: 0.42 },
+        { length: 2.8, width: 0.44, twist: 1.4, bend: 0.3 },
+        { length: 2.7, width: 0.38, twist: -1.2, bend: 0.4 },
+        { length: 2.95, width: 0.42, twist: 1.1, bend: 0.36 },
+        { length: 2.65, width: 0.4, twist: -1.35, bend: 0.38 },
+        { length: 2.85, width: 0.43, twist: 1.25, bend: 0.32 },
+        { length: 2.7, width: 0.39, twist: -1.15, bend: 0.4 },
+        { length: 2.9, width: 0.42, twist: 1.3, bend: 0.35 }
+      ];
+
+      bladeConfigurations.forEach((config, index) => {
+        const geometry = createBladeGeometry(config);
+
+        const blade = new THREE.Mesh(
+          geometry,
+          index % 3 === 0 ? champagneMaterial : chromeMaterial
         );
 
-        camera.position.set(0, 0, 8);
+        const angle =
+          (index / bladeConfigurations.length) * Math.PI * 2;
 
-        renderer = new THREE.WebGLRenderer({
-          canvas,
-          alpha: true,
-          antialias: true,
-          powerPreference: "high-performance"
-        });
-
-        renderer.setPixelRatio(
-          Math.min(window.devicePixelRatio || 1, 2)
+        blade.rotation.set(
+          Math.sin(angle) * 0.5,
+          angle,
+          Math.cos(angle) * 0.45
         );
 
-        renderer.setSize(width, height, false);
-        renderer.outputColorSpace = THREE.SRGBColorSpace;
-
-        const ambient = new THREE.AmbientLight(
-          0xffffff,
-          1.8
+        blade.position.set(
+          Math.cos(angle) * 0.22,
+          Math.sin(angle) * 0.22,
+          Math.sin(angle * 2) * 0.18
         );
 
-        scene.add(ambient);
-
-        const keyLight = new THREE.DirectionalLight(
-          0xffffff,
-          3.2
+        blade.scale.setScalar(
+          0.88 + Math.sin(index * 1.7) * 0.08
         );
 
-        keyLight.position.set(3, 4, 5);
-        scene.add(keyLight);
+        sculpture.add(blade);
+      });
 
-        const rimLight = new THREE.PointLight(
-          0xc6b69a,
-          45,
-          20
-        );
+      const core = new THREE.Mesh(
+        new THREE.IcosahedronGeometry(0.48, 3),
+        darkMetal
+      );
 
-        rimLight.position.set(-4, 1, 3);
-        scene.add(rimLight);
+      core.scale.set(1, 1.12, 0.88);
+      sculpture.add(core);
 
-        const coolLight = new THREE.PointLight(
-          0x9dbbd0,
-          28,
-          18
-        );
+      const innerCore = new THREE.Mesh(
+        new THREE.SphereGeometry(0.19, 48, 48),
+        chromeMaterial
+      );
 
-        coolLight.position.set(4, -2, 2);
-        scene.add(coolLight);
+      sculpture.add(innerCore);
 
-        const geometry = new THREE.BufferGeometry();
+      for (let i = 0; i < 3; i++) {
+        const points = [];
+        const offset = i * (Math.PI * 2 / 3);
 
-        const vertices = new Float32Array([
-          -1.05, -2.1, 0,
-           0.0,  2.2, 0.18,
-           1.05, -2.1, 0,
+        for (let j = 0; j <= 100; j++) {
+          const t = j / 100;
+          const angle = t * Math.PI * 2 + offset;
 
-          -1.05, -2.1, 0,
-           0.0,  2.2, 0.18,
-          -0.12, -1.9, 0.32,
+          const radius =
+            1.35 + Math.sin(angle * 2.5 + i) * 0.24;
 
-           1.05, -2.1, 0,
-           0.0,  2.2, 0.18,
-           0.12, -1.9, -0.32
-        ]);
-
-        geometry.setAttribute(
-          "position",
-          new THREE.BufferAttribute(vertices, 3)
-        );
-
-        geometry.computeVertexNormals();
-
-        const material = new THREE.MeshPhysicalMaterial({
-          color: 0xbfc1c3,
-          metalness: 1,
-          roughness: 0.16,
-          clearcoat: 1,
-          clearcoatRoughness: 0.08,
-          reflectivity: 1,
-          side: THREE.DoubleSide
-        });
-
-        sculpture = new THREE.Mesh(geometry, material);
-        sculpture.scale.set(1.1, 1.1, 1.1);
-        scene.add(sculpture);
-
-        const particleCount = 220;
-        const particlePositions = new Float32Array(
-          particleCount * 3
-        );
-
-        for (let i = 0; i < particleCount; i++) {
-          particlePositions[i * 3] =
-            (Math.random() - 0.5) * 12;
-
-          particlePositions[i * 3 + 1] =
-            (Math.random() - 0.5) * 9;
-
-          particlePositions[i * 3 + 2] =
-            (Math.random() - 0.5) * 5;
+          points.push(
+            new THREE.Vector3(
+              Math.cos(angle) * radius,
+              Math.sin(angle * 1.5 + i) * 0.55,
+              Math.sin(angle) * radius
+            )
+          );
         }
 
-        const particleGeometry = new THREE.BufferGeometry();
-
-        particleGeometry.setAttribute(
-          "position",
-          new THREE.BufferAttribute(particlePositions, 3)
+        sculpture.add(
+          createChromeCurve(
+            points,
+            i === 1 ? champagneMaterial : chromeMaterial,
+            0.014
+          )
         );
+      }
 
-        const particleMaterial = new THREE.PointsMaterial({
+      const particleCount = 180;
+      const particlePositions = new Float32Array(particleCount * 3);
+
+      for (let i = 0; i < particleCount; i++) {
+        particlePositions[i * 3] = (Math.random() - 0.5) * 7;
+        particlePositions[i * 3 + 1] = (Math.random() - 0.5) * 7;
+        particlePositions[i * 3 + 2] = (Math.random() - 0.5) * 5;
+      }
+
+      const particleGeometry = new THREE.BufferGeometry();
+
+      particleGeometry.setAttribute(
+        "position",
+        new THREE.BufferAttribute(particlePositions, 3)
+      );
+
+      particleSystem = new THREE.Points(
+        particleGeometry,
+        new THREE.PointsMaterial({
           color: 0xc6b69a,
           size: 0.018,
           transparent: true,
-          opacity: 0.58,
+          opacity: 0.55,
           sizeAttenuation: true
+        })
+      );
+
+      scene.add(particleSystem);
+
+      function resizeRenderer() {
+        if (!renderer || !camera || !canvas) return;
+
+        const rect = canvas.getBoundingClientRect();
+        const width = Math.max(1, rect.width);
+        const height = Math.max(1, rect.height);
+
+        renderer.setSize(width, height, false);
+
+        camera.aspect = width / height;
+        camera.updateProjectionMatrix();
+      }
+
+      resizeRenderer();
+
+      if ("ResizeObserver" in window) {
+        resizeObserver = new ResizeObserver(resizeRenderer);
+        resizeObserver.observe(canvas);
+      } else {
+        window.addEventListener("resize", resizeRenderer);
+      }
+
+      if (!touchDevice) {
+        window.addEventListener("mousemove", event => {
+          pointerX =
+            (event.clientX / window.innerWidth - 0.5) * 0.4;
+
+          pointerY =
+            (event.clientY / window.innerHeight - 0.5) * 0.3;
         });
+      }
 
-        const particles = new THREE.Points(
-          particleGeometry,
-          particleMaterial
-        );
+      window.addEventListener("scroll", () => {
+        scrollRotation = window.scrollY * 0.00015;
+      }, { passive: true });
 
-        scene.add(particles);
+      threeReady = true;
 
-        const resizeRenderer = () => {
-          if (!renderer || !camera) return;
+      if (pageVisible) {
+        clock.start();
+        animateThreeAgain();
+      }
 
-          const nextWidth = canvas.clientWidth || window.innerWidth;
-          const nextHeight = canvas.clientHeight || window.innerHeight;
+    } catch (error) {
+      console.error("MYRLORE sculpture initialisation failed:", error);
 
-          camera.aspect = nextWidth / nextHeight;
-          camera.updateProjectionMatrix();
-
-          renderer.setSize(nextWidth, nextHeight, false);
-        };
-
-        if ("ResizeObserver" in window) {
-          resizeObserver = new ResizeObserver(resizeRenderer);
-          resizeObserver.observe(canvas);
-        } else {
-          window.addEventListener("resize", resizeRenderer);
-        }
-
-        if (!touchDevice) {
-          window.addEventListener("mousemove", event => {
-            pointerX =
-              (event.clientX / window.innerWidth - 0.5) * 0.4;
-
-            pointerY =
-              (event.clientY / window.innerHeight - 0.5) * 0.3;
-          });
-        }
-
-        window.addEventListener("scroll", () => {
-          scrollRotation = window.scrollY * 0.00015;
-        }, { passive: true });
-
-        threeReady = true;
-
-        if (pageVisible) {
-          clock.start();
-          animateThreeAgain();
-        }
-
-      })
-      .catch(error => {
-        console.error("MYRLORE sculpture initialisation failed:", error);
-
-        if (canvas) canvas.style.opacity = "0";
-      });
+      if (canvas) canvas.style.opacity = "0";
+    }
   }
 
   if (canvas) {
@@ -892,15 +1120,14 @@
   /* ==========================================
      MYRLORE® — CAPRI SECRET ARCHIVE
 
-     4×4 SPRITE SHEET.
-     16 FRAMES.
+     ONE IMAGE.
      ONE CANVAS.
-     CURVED SCREEN MOVEMENT.
+     REAL SCREEN MOVEMENT.
      NO SLIDESHOW.
   ========================================== */
 
   const konamiSequence = [
-    "ArrowUp",
+      "ArrowUp",
     "ArrowUp",
     "ArrowDown",
     "ArrowDown",
@@ -921,11 +1148,13 @@
   let capriImage = null;
   let capriFrameIndex = 0;
   let capriLastFrameTime = 0;
+
   const CAPRI_COLUMNS = 4;
   const CAPRI_ROWS = 4;
   const CAPRI_FRAME_COUNT = CAPRI_COLUMNS * CAPRI_ROWS;
   const CAPRI_FRAME_RATE = 12;
   const CAPRI_FRAME_INTERVAL = 1000 / CAPRI_FRAME_RATE;
+
   let capriCanvas = null;
   let capriContext = null;
 
@@ -1158,9 +1387,17 @@
       const sample = document.createElement("canvas");
       sample.width = 140;
       sample.height = 140;
-      const context = sample.getContext("2d", { willReadFrequently: true });
+
+      const context = sample.getContext("2d", {
+        willReadFrequently: true
+      });
+
       context.drawImage(image, 0, 0, 140, 140);
-      const pixels = context.getImageData(0, 0, 140, 140).data;
+
+      const pixels = context.getImageData(
+        0, 0, 140, 140
+      ).data;
+
       const colours = new Map();
 
       for (let i = 0; i < pixels.length; i += 16) {
@@ -1168,11 +1405,15 @@
         const g = pixels[i + 1];
         const b = pixels[i + 2];
         const a = pixels[i + 3];
+
         if (a < 140) continue;
 
         const max = Math.max(r, g, b);
         const min = Math.min(r, g, b);
-        const saturation = max === 0 ? 0 : (max - min) / max;
+        const saturation = max === 0
+          ? 0
+          : (max - min) / max;
+
         if (saturation < .22 || max < 35) continue;
 
         const key = [
@@ -1180,13 +1421,21 @@
           Math.min(255, Math.round(g / 16) * 16),
           Math.min(255, Math.round(b / 16) * 16)
         ].join(",");
-        colours.set(key, (colours.get(key) || 0) + 1);
+
+        colours.set(
+          key,
+          (colours.get(key) || 0) + 1
+        );
       }
 
-      const sorted = [...colours.entries()].sort((a, b) => b[1] - a[1]);
+      const sorted = [...colours.entries()]
+        .sort((a, b) => b[1] - a[1]);
+
       const selected = [];
+
       for (const [colour] of sorted) {
         const rgb = colour.split(",").map(Number);
+
         const tooSimilar = selected.some(existing =>
           Math.sqrt(
             (rgb[0] - existing[0]) ** 2 +
@@ -1194,30 +1443,55 @@
             (rgb[2] - existing[2]) ** 2
           ) < 65
         );
+
         if (!tooSimilar) selected.push(rgb);
         if (selected.length === 3) break;
       }
 
       if (selected.length) {
         capriPalette.magenta = rgbToHex(...selected[0]);
-        capriPalette.green = rgbToHex(...(selected[1] || selected[0]));
-        capriPalette.violet = rgbToHex(...(selected[2] || selected[0]));
+        capriPalette.green = rgbToHex(
+          ...(selected[1] || selected[0])
+        );
+        capriPalette.violet = rgbToHex(
+          ...(selected[2] || selected[0])
+        );
       }
 
-      secretOverlay.style.setProperty("--capri-magenta", capriPalette.magenta);
-      secretOverlay.style.setProperty("--capri-green", capriPalette.green);
-      secretOverlay.style.setProperty("--capri-violet", capriPalette.violet);
+      secretOverlay.style.setProperty(
+        "--capri-magenta",
+        capriPalette.magenta
+      );
+
+      secretOverlay.style.setProperty(
+        "--capri-green",
+        capriPalette.green
+      );
+
+      secretOverlay.style.setProperty(
+        "--capri-violet",
+        capriPalette.violet
+      );
+
     } catch (error) {
       console.warn("Capri palette extraction failed:", error);
     }
   }
 
   function getCapriFrameRect(frameIndex) {
-    const frameWidth = capriImage.naturalWidth / CAPRI_COLUMNS;
-    const frameHeight = capriImage.naturalHeight / CAPRI_ROWS;
-    const safeIndex = ((frameIndex % CAPRI_FRAME_COUNT) + CAPRI_FRAME_COUNT) % CAPRI_FRAME_COUNT;
+    const frameWidth =
+      capriImage.naturalWidth / CAPRI_COLUMNS;
+
+    const frameHeight =
+      capriImage.naturalHeight / CAPRI_ROWS;
+
+    const safeIndex =
+      ((frameIndex % CAPRI_FRAME_COUNT) + CAPRI_FRAME_COUNT) %
+      CAPRI_FRAME_COUNT;
+
     const column = safeIndex % CAPRI_COLUMNS;
     const row = Math.floor(safeIndex / CAPRI_COLUMNS);
+
     return {
       sx: column * frameWidth,
       sy: row * frameHeight,
@@ -1226,59 +1500,115 @@
     };
   }
 
-  function drawCapriFrame(frameIndex = capriFrameIndex, offsetX = 0, alpha = 1) {
-    if (!capriContext || !capriImage?.complete || !capriCanvas.width) return;
+  function drawCapriFrame(
+    frameIndex = capriFrameIndex,
+    offsetX = 0,
+    alpha = 1
+  ) {
+    if (
+      !capriContext ||
+      !capriImage?.complete ||
+      !capriCanvas.width
+    ) return;
+
     const frame = getCapriFrameRect(frameIndex);
+
     capriContext.globalAlpha = alpha;
+
     capriContext.drawImage(
       capriImage,
-      frame.sx, frame.sy, frame.sw, frame.sh,
-      offsetX, 0, capriCanvas.width, capriCanvas.height
+      frame.sx,
+      frame.sy,
+      frame.sw,
+      frame.sh,
+      offsetX,
+      0,
+      capriCanvas.width,
+      capriCanvas.height
     );
+
     capriContext.globalAlpha = 1;
   }
 
   function loadCapri() {
     if (capriImage) return;
+
     capriImage = new Image();
     capriImage.decoding = "async";
 
     capriImage.onload = () => {
       if (!capriCanvas || !capriContext) return;
-      const frameWidth = Math.floor(capriImage.naturalWidth / CAPRI_COLUMNS);
-      const frameHeight = Math.floor(capriImage.naturalHeight / CAPRI_ROWS);
+
+      const frameWidth = Math.floor(
+        capriImage.naturalWidth / CAPRI_COLUMNS
+      );
+
+      const frameHeight = Math.floor(
+        capriImage.naturalHeight / CAPRI_ROWS
+      );
+
       if (!frameWidth || !frameHeight) {
         console.error("Capri sprite sheet has invalid dimensions.");
         return;
       }
+
       capriCanvas.width = frameWidth;
       capriCanvas.height = frameHeight;
+
       capriFrameIndex = 0;
+
       extractCapriPalette(capriImage);
       drawCapriClean();
     };
 
     capriImage.onerror = () => {
-      console.error("Capri sprite sheet could not load. Make sure capri-spritesheet.png is in the website root folder.");
+      console.error(
+        "Capri sprite sheet could not load. Make sure capri-spritesheet.png is in the website root folder."
+      );
     };
 
     capriImage.src = "capri-spritesheet.png";
   }
 
   function drawCapriClean() {
-    if (!capriContext || !capriImage?.complete || !capriCanvas.width) return;
-    capriContext.clearRect(0, 0, capriCanvas.width, capriCanvas.height);
+    if (
+      !capriContext ||
+      !capriImage?.complete ||
+      !capriCanvas.width
+    ) return;
+
+    capriContext.clearRect(
+      0,
+      0,
+      capriCanvas.width,
+      capriCanvas.height
+    );
+
     capriContext.globalAlpha = 1;
     capriContext.globalCompositeOperation = "source-over";
+
     drawCapriFrame(capriFrameIndex);
   }
 
   function updateCapriFrame(timestamp) {
     if (!capriImage?.complete) return;
-    if (!capriLastFrameTime) capriLastFrameTime = timestamp;
-    if (timestamp - capriLastFrameTime >= CAPRI_FRAME_INTERVAL) {
-      const steps = Math.floor((timestamp - capriLastFrameTime) / CAPRI_FRAME_INTERVAL);
-      capriFrameIndex = (capriFrameIndex + steps) % CAPRI_FRAME_COUNT;
+
+    if (!capriLastFrameTime) {
+      capriLastFrameTime = timestamp;
+    }
+
+    if (
+      timestamp - capriLastFrameTime >=
+      CAPRI_FRAME_INTERVAL
+    ) {
+      const steps = Math.floor(
+        (timestamp - capriLastFrameTime) /
+        CAPRI_FRAME_INTERVAL
+      );
+
+      capriFrameIndex =
+        (capriFrameIndex + steps) % CAPRI_FRAME_COUNT;
+
       capriLastFrameTime = timestamp;
     }
   }
@@ -1290,70 +1620,94 @@
   ========================================== */
 
   function drawCapriGlitch(intensity) {
-    if (!capriContext || !capriImage?.complete || !capriCanvas.width) return;
+    if (
+      !capriContext ||
+      !capriImage?.complete ||
+      !capriCanvas.width
+    ) return;
+
     const ctx = capriContext;
     const width = capriCanvas.width;
     const height = capriCanvas.height;
-    const burst = Math.max(0, Math.min(1, intensity));
+
+    const burst = Math.max(
+      0,
+      Math.min(1, intensity)
+    );
 
     ctx.clearRect(0, 0, width, height);
+
     if (burst < .025) {
       drawCapriFrame(capriFrameIndex);
       return;
     }
 
     const frame = getCapriFrameRect(capriFrameIndex);
+
     ctx.globalCompositeOperation = "screen";
-    drawCapriFrame(capriFrameIndex, -5 * burst, .12 * burst);
-    drawCapriFrame(capriFrameIndex, 5 * burst, .1 * burst);
+
+    drawCapriFrame(
+      capriFrameIndex,
+      -5 * burst,
+      .12 * burst
+    );
+
+    drawCapriFrame(
+      capriFrameIndex,
+      5 * burst,
+      .1 * burst
+    );
+
     ctx.globalCompositeOperation = "source-over";
+
     drawCapriFrame(capriFrameIndex);
 
-    const sliceCount = Math.floor(5 + burst * 12);
+    const sliceCount = Math.floor(
+      5 + burst * 12
+    );
+
     const sliceHeight = height / sliceCount;
+
     for (let i = 0; i < sliceCount; i++) {
       if (Math.random() > .35 + burst * .4) continue;
+
       const sy = i * sliceHeight;
-      const sh = Math.min(sliceHeight + 1, height - sy);
-      const shift = (Math.random() - .5) * 28 * burst;
+      const sh = Math.min(
+        sliceHeight + 1,
+        height - sy
+      );
+
+      const shift =
+        (Math.random() - .5) * 28 * burst;
+
       ctx.drawImage(
         capriImage,
-        frame.sx, frame.sy + (sy / height) * frame.sh,
-        frame.sw, (sh / height) * frame.sh,
-        shift, sy, width, sh
+        frame.sx,
+        frame.sy + (sy / height) * frame.sh,
+        frame.sw,
+        (sh / height) * frame.sh,
+        shift,
+        sy,
+        width,
+        sh
       );
     }
+
     ctx.globalAlpha = 1;
     ctx.globalCompositeOperation = "source-over";
   }
+    /* ==========================================
+     CAPRI — CINEMATIC FLIGHT PATH
 
-  /* ==========================================
-     CAPRI MOVEMENT SYSTEM
+     Capri travels across the screen on a
+     curved path, then settles beside the
+     secret archive text.
 
-     Smooth curved path:
-     1. Enters from bottom-left.
-     2. Sweeps across the upper screen.
-     3. Curves around the right edge.
-     4. Crosses the lower screen.
-     5. Moves towards the text.
-     6. Settles beside the archive.
+     Character poses animate independently
+     using the 16 sprite-sheet frames.
   ========================================== */
 
-  function smoothProgress(value) {
-    return value * value * (3 - 2 * value);
-  }
-
-  function easeOutCubic(value) {
-    return 1 - Math.pow(1 - value, 3);
-  }
-
-  function easeInOutCubic(value) {
-    return value < .5
-      ? 4 * value * value * value
-      : 1 - Math.pow(-2 * value + 2, 3) / 2;
-  }
-
-  function cubicBezier(p0, p1, p2, p3, t) {
+  function cubicBezierPoint(p0, p1, p2, p3, t) {
     const inverse = 1 - t;
 
     return (
@@ -1367,532 +1721,311 @@
   function getCapriPosition(progress) {
     const width = window.innerWidth;
     const height = window.innerHeight;
+
     const mobile = width <= 650;
 
-    const finalX = mobile
-      ? width * .5
-      : width * .245;
+    const startX = width * -0.18;
+    const startY = height * 0.82;
 
-    const finalY = mobile
-      ? height * .285
-      : height * .5;
+    const endX = mobile
+      ? width * 0.5
+      : width * 0.36;
 
-    const points = [
+    const endY = mobile
+      ? height * 0.27
+      : height * 0.52;
+
+    const paths = [
       {
-        x: -width * .45,
-        y: height * 1.05,
-        scale: .55,
-        rotation: -18
+        from: [startX, startY],
+        control1: [width * 0.08, height * 0.05],
+        control2: [width * 0.35, height * 0.12],
+        to: [width * 0.54, height * 0.24]
       },
       {
-        x: width * .18,
-        y: height * .08,
-        scale: .68,
-        rotation: 10
+        from: [width * 0.54, height * 0.24],
+        control1: [width * 0.85, height * 0.02],
+        control2: [width * 1.02, height * 0.62],
+        to: [width * 0.76, height * 0.76]
       },
       {
-        x: width * .82,
-        y: height * .12,
-        scale: .78,
-        rotation: 20
-      },
-      {
-        x: width * 1.12,
-        y: height * .62,
-        scale: .82,
-        rotation: 35
-      },
-      {
-        x: width * .72,
-        y: height * .94,
-        scale: .78,
-        rotation: -16
-      },
-      {
-        x: width * .18,
-        y: height * .75,
-        scale: .84,
-        rotation: -22
-      },
-      {
-        x: finalX,
-        y: finalY,
-        scale: mobile ? .64 : .88,
-        rotation: 0
+        from: [width * 0.76, height * 0.76],
+        control1: [width * 0.53, height * 1.02],
+        control2: [width * 0.16, height * 0.86],
+        to: [endX, endY]
       }
     ];
 
-    const segmentCount = points.length - 1;
-    const scaled = progress * segmentCount;
-
-    const index = Math.min(
-      segmentCount - 1,
-      Math.floor(scaled)
+    const pathProgress = Math.min(
+      0.9999,
+      Math.max(0, progress) * 3
     );
 
-    const local = progress >= 1
-      ? 1
-      : scaled - index;
+    const segment = Math.min(
+      2,
+      Math.floor(pathProgress)
+    );
 
-    const current = points[index];
-    const next = points[index + 1];
+    const localProgress = pathProgress - segment;
+    const path = paths[segment];
 
-    const previous = points[Math.max(0, index - 1)];
-    const after = points[Math.min(points.length - 1, index + 2)];
+    const x = cubicBezierPoint(
+      path.from[0],
+      path.control1[0],
+      path.control2[0],
+      path.to[0],
+      localProgress
+    );
 
-    const tension = .16;
+    const y = cubicBezierPoint(
+      path.from[1],
+      path.control1[1],
+      path.control2[1],
+      path.to[1],
+      localProgress
+    );
 
-    const control1 = {
-      x: current.x + (next.x - previous.x) * tension,
-      y: current.y + (next.y - previous.y) * tension
-    };
+    const settle = Math.max(
+      0,
+      Math.min(1, (progress - 0.76) / 0.24)
+    );
 
-    const control2 = {
-      x: next.x - (after.x - current.x) * tension,
-      y: next.y - (after.y - current.y) * tension
-    };
+    const easeSettle =
+      settle * settle * (3 - 2 * settle);
+
+    const scale = 0.72 +
+      (mobile ? 0.64 : 0.88 - 0.72) *
+      easeSettle;
+
+    const rotation =
+      Math.sin(progress * Math.PI * 5) * 12 *
+      (1 - easeSettle);
+
+    const opacity = Math.min(
+      1,
+      progress * 7,
+      (1 - progress) * 9 + 0.35
+    );
+
+    const glitch = Math.max(
+      0,
+      Math.sin(progress * Math.PI * 12) *
+      (1 - easeSettle) * 0.65
+    );
 
     return {
-      x: cubicBezier(
-        current.x,
-        control1.x,
-        control2.x,
-        next.x,
-        local
-      ),
-      y: cubicBezier(
-        current.y,
-        control1.y,
-        control2.y,
-        next.y,
-        local
-      ),
-      scale: current.scale + (next.scale - current.scale) * local,
-      rotation: current.rotation + (next.rotation - current.rotation) * local
+      x,
+      y,
+      scale,
+      rotation,
+      opacity,
+      glitch,
+      settle: easeSettle
     };
   }
 
   /* ==========================================
-     CAPRI GLITCH TIMING
+     CAPRI — ANIMATION LOOP
   ========================================== */
 
-  function getCapriGlitchIntensity(progress) {
-    const bursts = [
-      { at: .12, strength: .25, width: .035 },
-      { at: .31, strength: .45, width: .045 },
-      { at: .52, strength: .3, width: .04 },
-      { at: .73, strength: .62, width: .055 },
-      { at: .89, strength: .9, width: .07 }
-    ];
-
-    let intensity = 0;
-
-    bursts.forEach(burst => {
-      const distance = Math.abs(progress - burst.at);
-
-      if (distance < burst.width) {
-        const local = 1 - distance / burst.width;
-
-        intensity = Math.max(
-          intensity,
-          Math.sin(local * Math.PI) * burst.strength
-        );
-      }
-    });
-
-    return intensity;
-  }
-
-  /* ==========================================
-     CAPRI ANIMATION LOOP
-  ========================================== */
+  const CAPRI_FLIGHT_DURATION = 5600;
 
   function animateCapri(timestamp) {
-    if (!secretActive || !capriFlight) return;
+    if (!secretActive) return;
 
     if (!capriAnimationStart) {
       capriAnimationStart = timestamp;
     }
 
     const elapsed = timestamp - capriAnimationStart;
+
+    const progress = Math.min(
+      1,
+      elapsed / CAPRI_FLIGHT_DURATION
+    );
+
+    const position = getCapriPosition(progress);
+
     updateCapriFrame(timestamp);
-    const duration = 5600;
 
-    const progress = Math.min(1, elapsed / duration);
+    if (capriFlight) {
+      capriFlight.style.opacity = position.opacity;
 
-    const pathProgress = easeInOutCubic(progress);
-    const position = getCapriPosition(pathProgress);
-
-    const mobile = window.innerWidth <= 650;
-
-    let x = position.x;
-    let y = position.y;
-    let scale = position.scale;
-    let rotation = position.rotation;
-
-    const intensity = reducedMotion
-      ? 0
-      : getCapriGlitchIntensity(progress);
-
-    /* Gentle movement while travelling */
-
-    if (progress < .88) {
-      x += Math.sin(elapsed * .004) * 5;
-      y += Math.cos(elapsed * .005) * 5;
-      rotation += Math.sin(elapsed * .003) * 2;
-    }
-
-    /* Initial fade */
-
-    const opacity = progress < .045
-      ? progress / .045
-      : 1;
-
-    /* Final approach to the text */
-
-    if (progress >= .88) {
-      const settle = smoothProgress(
-        (progress - .88) / .12
-      );
-
-      const targetX = mobile
-        ? window.innerWidth * .5
-        : window.innerWidth * .245;
-
-      const targetY = mobile
-        ? window.innerHeight * .285
-        : window.innerHeight * .5;
-
-      x += (targetX - x) * settle;
-      y += (targetY - y) * settle;
-
-      scale = position.scale + ((mobile ? .64 : .88) - position.scale) * settle;
-      rotation *= 1 - settle;
-
-      if (progress >= .91) {
-        secretInner.classList.add("capri-text-visible");
-      }
-
-      if (progress >= .88 && !secretOverlay.classList.contains("capri-impact")) {
-        secretOverlay.classList.add("capri-impact");
-      }
-    }
-
-    capriFlight.style.transform = `
-      translate3d(${x}px, ${y}px, 0)
-      translate(-50%, -50%)
-      scale(${scale})
-      rotate(${rotation}deg)
-    `;
-
-    capriFlight.style.opacity = String(opacity);
-
-    if (intensity > .02) {
-      capriFlight.style.filter = `
-        drop-shadow(0 0 ${20 + intensity * 28}px ${capriPalette.magenta})
-        drop-shadow(0 0 ${12 + intensity * 18}px ${capriPalette.green})
-      `;
-    } else {
-      capriFlight.style.filter = `
-        drop-shadow(0 0 20px ${capriPalette.magenta})
-        drop-shadow(0 0 11px ${capriPalette.green})
-      `;
-    }
-
-    drawCapriGlitch(intensity);
-
-    if (progress < 1) {
-      capriAnimationFrame = requestAnimationFrame(animateCapri);
-    } else {
       capriFlight.style.transform = `
         translate3d(
-          ${mobile ? window.innerWidth * .5 : window.innerWidth * .245}px,
-          ${mobile ? window.innerHeight * .285 : window.innerHeight * .5}px,
+          ${position.x}px,
+          ${position.y}px,
           0
         )
         translate(-50%, -50%)
-        scale(${mobile ? .64 : .88})
+        rotate(${position.rotation}deg)
+        scale(${position.scale})
       `;
-
-      capriFlight.style.opacity = "1";
 
       capriFlight.style.filter = `
-        drop-shadow(0 0 20px ${capriPalette.magenta})
-        drop-shadow(0 0 11px ${capriPalette.green})
+        drop-shadow(
+          0 0 ${18 + position.glitch * 20}px
+          var(--capri-magenta)
+        )
+        drop-shadow(
+          0 0 ${10 + position.glitch * 12}px
+          var(--capri-green)
+        )
+      `;
+    }
+
+    drawCapriGlitch(position.glitch);
+
+    if (progress < 1) {
+      capriAnimationFrame =
+        requestAnimationFrame(animateCapri);
+    } else {
+      capriFlight.style.opacity = "1";
+
+      capriFlight.style.transform = `
+        translate3d(
+          ${position.x}px,
+          ${position.y}px,
+          0
+        )
+        translate(-50%, -50%)
+        rotate(0deg)
+        scale(${position.scale})
       `;
 
-      secretInner.classList.add("capri-text-visible");
-      secretOverlay.classList.remove("capri-impact");
-
       drawCapriClean();
+      capriAnimationFrame = null;
     }
   }
 
-  function startCapriAnimation() {
-    cancelAnimationFrame(capriAnimationFrame);
+  /* ==========================================
+     CAPRI — OPEN SECRET ARCHIVE
+  ========================================== */
 
-    capriAnimationFrame = null;
+  function activateSecretArchive() {
+    if (secretActive) return;
+
+    secretActive = true;
+    secretPreviousFocus = document.activeElement;
+
+    secretOverlay.classList.add("active");
+    secretOverlay.setAttribute("aria-hidden", "false");
+    secretOverlay.removeAttribute("inert");
+
+    body.style.overflow = "hidden";
+
     capriAnimationStart = 0;
     capriLastFrameTime = 0;
     capriFrameIndex = 0;
 
-    secretInner.classList.remove("capri-text-visible");
-    secretOverlay.classList.remove("capri-impact");
-
-    capriFlight.style.opacity = "0";
-    capriFlight.style.filter = "none";
-
-    capriFlight.style.transform = `
-      translate3d(
-        ${-window.innerWidth * .45}px,
-        ${window.innerHeight * 1.05}px,
-        0
-      )
-      translate(-50%, -50%)
-      scale(.55)
-    `;
+    if (capriFlight) {
+      capriFlight.style.opacity = "0";
+      capriFlight.style.transform =
+        "translate3d(-50%, -50%, 0) scale(.6)";
+    }
 
     drawCapriClean();
 
-    if (reducedMotion) {
-      capriFlight.style.opacity = "1";
+    secretOverlay.classList.remove("capri-impact");
 
-      capriFlight.style.transform = `
-        translate3d(
-          ${window.innerWidth <= 650
-            ? window.innerWidth * .5
-            : window.innerWidth * .245}px,
-          ${window.innerWidth <= 650
-            ? window.innerHeight * .285
-            : window.innerHeight * .5}px,
-          0
-        )
-        translate(-50%, -50%)
-        scale(.85)
-      `;
+    requestAnimationFrame(() => {
+      secretOverlay.classList.add("capri-impact");
+    });
 
-      secretInner.classList.add("capri-text-visible");
-      return;
-    }
+    setTimeout(() => {
+      if (!secretActive) return;
 
-    capriAnimationFrame = requestAnimationFrame(animateCapri);
+      secretCloseButton?.focus();
+
+      if (reducedMotion) {
+        const position = getCapriPosition(1);
+
+        capriFlight.style.opacity = "1";
+
+        capriFlight.style.transform = `
+          translate3d(
+            ${position.x}px,
+            ${position.y}px,
+            0
+          )
+          translate(-50%, -50%)
+          scale(${position.scale})
+        `;
+
+        drawCapriClean();
+        return;
+      }
+
+      cancelAnimationFrame(capriAnimationFrame);
+
+      capriAnimationFrame =
+        requestAnimationFrame(animateCapri);
+
+    }, 250);
+
+    console.log("MYRLORE® — SECRET ARCHIVE UNLOCKED");
   }
 
   /* ==========================================
-     OPEN / CLOSE SECRET ARCHIVE
+     CAPRI — CLOSE SECRET ARCHIVE
   ========================================== */
 
-  function closeSecret() {
+  function closeSecretArchive() {
     if (!secretActive) return;
 
     secretActive = false;
 
     cancelAnimationFrame(capriAnimationFrame);
-    capriAnimationFrame = null;
 
-    secretOverlay.classList.remove(
-      "active",
-      "capri-impact"
-    );
+    capriAnimationFrame = null;
+    capriAnimationStart = 0;
+    capriLastFrameTime = 0;
+
+    secretOverlay.classList.remove("active");
+    secretOverlay.classList.remove("capri-impact");
 
     secretOverlay.setAttribute("aria-hidden", "true");
+    secretOverlay.setAttribute("inert", "");
 
-    secretInner.classList.remove("capri-text-visible");
-
-    body.classList.remove("myrlore-secret");
     body.style.overflow = "";
+
+    if (capriFlight) {
+      capriFlight.style.opacity = "0";
+    }
 
     if (secretPreviousFocus?.focus) {
       secretPreviousFocus.focus();
     }
   }
 
-  function activateSecret() {
-    if (secretActive) return;
-
-    secretActive = true;
-    secretPreviousFocus = document.activeElement;
-
-    body.classList.add("myrlore-secret");
-    body.style.overflow = "hidden";
-
-    secretOverlay.classList.remove("active");
-
-    void secretOverlay.offsetWidth;
-
-    secretOverlay.classList.add("active");
-    secretOverlay.setAttribute("aria-hidden", "false");
-
-    startCapriAnimation();
-
-    secretCloseButton?.focus();
-
-    console.log(
-      "%c MYRLORE® — CAPRI ARCHIVE UNLOCKED ",
-      "background:#444;color:#ffffff;padding:10px;font-weight:bold;"
-    );
-  }
-
   secretCloseButton?.addEventListener(
     "click",
-    closeSecret
+    closeSecretArchive
   );
 
-  secretOverlay.addEventListener("click", event => {
-    if (event.target === secretOverlay) {
-      closeSecret();
-    }
-  });
+  /* ==========================================
+     KONAMI CODE DETECTION
+  ========================================== */
 
   document.addEventListener("keydown", event => {
-    if (secretActive) {
-      if (event.key === "Escape") closeSecret();
-      return;
-    }
+    if (secretActive) return;
 
-    if (
-      event.target instanceof HTMLElement &&
-      (
-        event.target.isContentEditable ||
-        ["INPUT", "TEXTAREA", "SELECT"].includes(
-          event.target.tagName
-        )
-      )
-    ) return;
-
-    const expected = konamiSequence[konamiPosition];
-
-    const pressed = event.key.length === 1
+    const key = event.key.length === 1
       ? event.key.toLowerCase()
       : event.key;
 
-    if (pressed === expected) {
+    if (key === konamiSequence[konamiPosition]) {
       konamiPosition++;
 
       if (konamiPosition === konamiSequence.length) {
         konamiPosition = 0;
-        activateSecret();
+        activateSecretArchive();
       }
     } else {
       konamiPosition =
-        pressed === konamiSequence[0] ? 1 : 0;
+        key === konamiSequence[0] ? 1 : 0;
     }
   });
-
-  /* ==========================================
-     OPTIONAL CHROME RESONANCE
-  ========================================== */
-
-  let audioContext = null;
-  let audioEnabled = false;
-
-  function playResonance() {
-    if (!audioEnabled) return;
-
-    try {
-      const AudioContextClass =
-        window.AudioContext || window.webkitAudioContext;
-
-      if (!AudioContextClass) return;
-
-      audioContext ??= new AudioContextClass();
-
-      if (audioContext.state === "suspended") {
-        audioContext.resume();
-      }
-
-      const oscillator = audioContext.createOscillator();
-      const gain = audioContext.createGain();
-
-      oscillator.type = "sine";
-
-      oscillator.frequency.setValueAtTime(
-        440,
-        audioContext.currentTime
-      );
-
-      oscillator.frequency.exponentialRampToValueAtTime(
-        660,
-        audioContext.currentTime + 0.35
-      );
-
-      gain.gain.setValueAtTime(
-        0.0001,
-        audioContext.currentTime
-      );
-
-      gain.gain.exponentialRampToValueAtTime(
-        0.045,
-        audioContext.currentTime + 0.04
-      );
-
-      gain.gain.exponentialRampToValueAtTime(
-        0.0001,
-        audioContext.currentTime + 0.7
-      );
-
-      oscillator.connect(gain);
-      gain.connect(audioContext.destination);
-
-      oscillator.start();
-      oscillator.stop(audioContext.currentTime + 0.72);
-
-    } catch (error) {
-      console.warn("MYRLORE audio unavailable:", error);
-    }
-  }
-
-  if (!touchDevice) {
-    const soundToggle = document.createElement("button");
-
-    soundToggle.type = "button";
-    soundToggle.className = "sound-toggle";
-    soundToggle.textContent = "SOUND OFF";
-    soundToggle.setAttribute("aria-pressed", "false");
-    soundToggle.setAttribute("aria-label", "Enable interface sounds");
-
-    soundToggle.style.cssText = `
-      position: fixed;
-      left: 28px;
-      bottom: 25px;
-      z-index: 90;
-      padding: 10px 12px;
-      border: 1px solid rgba(198,182,154,.25);
-      background: rgba(8,9,11,.75);
-      color: #c6b69a;
-      font: 8px "DM Mono", monospace;
-      letter-spacing: .12em;
-      cursor: pointer;
-      backdrop-filter: blur(10px);
-    `;
-
-    document.body.appendChild(soundToggle);
-
-    soundToggle.addEventListener("click", () => {
-      audioEnabled = !audioEnabled;
-
-      soundToggle.textContent =
-        audioEnabled ? "SOUND ON" : "SOUND OFF";
-
-      soundToggle.setAttribute(
-        "aria-pressed",
-        String(audioEnabled)
-      );
-
-      soundToggle.setAttribute(
-        "aria-label",
-        audioEnabled
-          ? "Disable interface sounds"
-          : "Enable interface sounds"
-      );
-
-      if (audioEnabled) playResonance();
-    });
-
-    $$(".work-card, .round-link, .service-trigger").forEach(element => {
-      element.addEventListener("mouseenter", playResonance);
-    });
-  }
 
   /* ==========================================
      GLOBAL ESCAPE HANDLING
@@ -1901,10 +2034,18 @@
   document.addEventListener("keydown", event => {
     if (event.key !== "Escape") return;
 
-    closeMenu();
+    if (secretActive) {
+      closeSecretArchive();
+      return;
+    }
 
     if (caseModal?.classList.contains("is-open")) {
       closeCaseStudy();
+      return;
+    }
+
+    if (menuPanel?.classList.contains("open")) {
+      closeMenu();
     }
   });
 
@@ -1912,29 +2053,38 @@
      INITIAL ACCESSIBILITY STATES
   ========================================== */
 
-  if (caseModal && !caseModal.classList.contains("is-open")) {
-    caseModal.setAttribute("aria-hidden", "true");
-    caseModal.setAttribute("inert", "");
-  }
-
-  if (pageTransition && !pageTransition.classList.contains("active")) {
-    pageTransition.setAttribute("aria-hidden", "true");
-    pageTransition.setAttribute("inert", "");
-  }
-
-  if (menuPanel && !menuPanel.classList.contains("open")) {
+  if (menuPanel) {
     menuPanel.setAttribute("aria-hidden", "true");
     menuPanel.setAttribute("inert", "");
   }
 
+  if (caseModal) {
+    caseModal.setAttribute("aria-hidden", "true");
+    caseModal.setAttribute("inert", "");
+  }
+
+  secretOverlay.setAttribute("aria-hidden", "true");
+  secretOverlay.setAttribute("inert", "");
+
+  menuToggle?.setAttribute("aria-expanded", "false");
+
+  /* ==========================================
+     MYRLORE® — SYSTEM READY
+  ========================================== */
+
   console.log(
-    "%c MYRLORE® ",
-    "background:#c6b69a;color:#08090b;padding:8px 12px;font-weight:bold;"
+    "%cMYRLORE®",
+    "font-size:22px;font-weight:800;letter-spacing:5px;color:#c6b69a;"
   );
 
   console.log(
-    "%c Independent by nature. Creative by design.",
-    "color:#85868a;font-size:10px;"
+    "%cIndependent by nature. Creative by design.",
+    "font-size:11px;color:#85868a;letter-spacing:2px;"
+  );
+
+  console.log(
+    "%cSecret archive: ↑ ↑ ↓ ↓ ← → ← → B A",
+    "font-size:10px;color:#c6b69a;"
   );
 
 })();
