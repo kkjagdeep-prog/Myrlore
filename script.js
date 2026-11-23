@@ -1,4 +1,3 @@
-
 /* ==========================================
    MYRLORE® — MAIN INTERACTION SYSTEM
    A2 CHROME SCULPTURE · GSAP · UI
@@ -606,38 +605,26 @@
         event.altKey
       ) return;
 
-      let destination;
+      const target = new URL(href, window.location.href);
 
-      try {
-        destination = new URL(href, window.location.href);
-      } catch {
-        return;
-      }
-
-      if (destination.origin !== location.origin) return;
-      if (destination.pathname === location.pathname) return;
+      if (target.origin !== window.location.origin) return;
 
       event.preventDefault();
-      runPageTransition(destination.href);
+      runPageTransition(target.href);
     });
   });
 
   /* ==========================================
-     THREE.JS — A2 CHROME SCULPTURE
+     THREE.JS CHROME SCULPTURE
   ========================================== */
 
-  const canvas = $("#webgl");
+  const canvas = $("#chromeCanvas");
 
-  let THREE = null;
   let renderer = null;
   let scene = null;
   let camera = null;
   let sculpture = null;
-  let particleSystem = null;
-  let clock = null;
   let animationFrame = null;
-  let resizeObserver = null;
-
   let threeReady = false;
   let pageVisible = !document.hidden;
 
@@ -645,446 +632,230 @@
   let pointerY = 0;
   let scrollRotation = 0;
 
-  const BLADE_SEGMENTS = 84;
-  const RADIAL_SEGMENTS = 24;
+  let resizeObserver = null;
 
-  function createBladeGeometry(options = {}) {
-    const {
-      length = 2.8,
-      width = 0.42,
-      thickness = 0.11,
-      twist = 1.2,
-      bend = 0.35,
-      taper = 0.72,
-      ridge = 0.12
-    } = options;
-
-    const positions = [];
-    const uvs = [];
-    const indices = [];
-    const curvePoints = [];
-
-    for (let i = 0; i <= BLADE_SEGMENTS; i++) {
-      const t = i / BLADE_SEGMENTS;
-
-      curvePoints.push(
-        new THREE.Vector3(
-          Math.sin(t * Math.PI) * bend,
-          (t - 0.5) * length,
-          Math.sin(t * Math.PI * 2) * bend * 0.25
-        )
-      );
+  const clock = {
+    startTime: 0,
+    getElapsedTime() {
+      return (performance.now() - this.startTime) / 1000;
+    },
+    start() {
+      this.startTime = performance.now();
     }
-
-    const centerCurve = new THREE.CatmullRomCurve3(curvePoints);
-    const frames = centerCurve.computeFrenetFrames(
-      BLADE_SEGMENTS,
-      false
-    );
-
-    for (let i = 0; i <= BLADE_SEGMENTS; i++) {
-      const t = i / BLADE_SEGMENTS;
-      const center = centerCurve.getPointAt(t);
-
-      const envelope = Math.pow(
-        Math.sin(Math.PI * t),
-        taper
-      );
-
-      const asymmetry =
-        1 + Math.sin(t * Math.PI * 2.5) * 0.16;
-
-      const bladeWidth = Math.max(
-        0.003,
-        width * envelope * asymmetry
-      );
-
-      const bladeThickness = Math.max(
-        0.002,
-        thickness * envelope
-      );
-
-      const twistAngle = twist * t;
-      const normal = frames.normals[i];
-      const binormal = frames.binormals[i];
-
-      const twistedNormal = normal.clone()
-        .multiplyScalar(Math.cos(twistAngle))
-        .add(
-          binormal.clone().multiplyScalar(Math.sin(twistAngle))
-        );
-
-      const twistedBinormal = binormal.clone()
-        .multiplyScalar(Math.cos(twistAngle))
-        .sub(
-          normal.clone().multiplyScalar(Math.sin(twistAngle))
-        );
-
-      for (let j = 0; j <= RADIAL_SEGMENTS; j++) {
-        const u = j / RADIAL_SEGMENTS;
-        const angle = u * Math.PI * 2;
-
-        const side = Math.cos(angle) * bladeWidth;
-        const depth = Math.sin(angle) * bladeThickness;
-
-        const ridgeFactor =
-          Math.pow(Math.abs(Math.cos(angle)), 8) *
-          ridge * envelope;
-
-        const point = center.clone()
-          .addScaledVector(twistedNormal, side)
-          .addScaledVector(
-            twistedBinormal,
-            depth + ridgeFactor
-          );
-
-        positions.push(point.x, point.y, point.z);
-        uvs.push(u, t);
-      }
-    }
-
-    for (let i = 0; i < BLADE_SEGMENTS; i++) {
-      for (let j = 0; j < RADIAL_SEGMENTS; j++) {
-        const a = i * (RADIAL_SEGMENTS + 1) + j;
-        const b = a + RADIAL_SEGMENTS + 1;
-
-        indices.push(
-          a, b, a + 1,
-          b, b + 1, a + 1
-        );
-      }
-    }
-
-    const geometry = new THREE.BufferGeometry();
-
-    geometry.setAttribute(
-      "position",
-      new THREE.Float32BufferAttribute(positions, 3)
-    );
-
-    geometry.setAttribute(
-      "uv",
-      new THREE.Float32BufferAttribute(uvs, 2)
-    );
-
-    geometry.setIndex(indices);
-    geometry.computeVertexNormals();
-
-    return geometry;
-  }
-
-  function createChromeCurve(points, material, radius = 0.018) {
-    const curve = new THREE.CatmullRomCurve3(points);
-
-    const geometry = new THREE.TubeGeometry(
-      curve,
-      180,
-      radius,
-      12,
-      false
-    );
-
-    return new THREE.Mesh(geometry, material);
-  }
-
-  function createEnvironment(rendererInstance) {
-    const pmrem = new THREE.PMREMGenerator(rendererInstance);
-
-    const environmentScene = new THREE.Scene();
-    environmentScene.background = new THREE.Color(0x17191e);
-
-    const panels = [
-      { position: [0, 5, 2], size: [5, 0.15, 2], color: 0xffffff },
-      { position: [-5, 1, 1], size: [0.15, 5, 2], color: 0xdce5f0 },
-      { position: [5, 0, -1], size: [0.15, 4, 2], color: 0xc6b69a },
-      { position: [0, -4, -2], size: [4, 0.15, 2], color: 0x8995a4 },
-      { position: [0, 0, -5], size: [4, 4, 0.15], color: 0xffffff }
-    ];
-
-    panels.forEach(data => {
-      const panel = new THREE.Mesh(
-        new THREE.BoxGeometry(...data.size),
-        new THREE.MeshBasicMaterial({ color: data.color })
-      );
-
-      panel.position.set(...data.position);
-      environmentScene.add(panel);
-    });
-
-    const texture = pmrem.fromScene(environmentScene, 0.04).texture;
-
-    pmrem.dispose();
-
-    return texture;
-  }
+  };
 
   function animateThreeAgain() {
-    if (!pageVisible || !threeReady) return;
+    if (!renderer || !scene || !camera || !pageVisible) return;
+
+    cancelAnimationFrame(animationFrame);
 
     animationFrame = requestAnimationFrame(animateThreeAgain);
 
     const elapsed = clock.getElapsedTime();
 
-    sculpture.rotation.y = elapsed * 0.13 + scrollRotation;
+    if (sculpture) {
+      sculpture.rotation.x =
+        Math.sin(elapsed * 0.18) * 0.12 + pointerY;
 
-    sculpture.rotation.x =
-      Math.sin(elapsed * 0.25) * 0.13 + pointerY * 0.3;
+      sculpture.rotation.y =
+        elapsed * 0.12 + pointerX + scrollRotation;
 
-    sculpture.rotation.z =
-      Math.cos(elapsed * 0.2) * 0.08 + pointerX * 0.2;
-
-    sculpture.position.y = Math.sin(elapsed * 0.5) * 0.08;
-
-    particleSystem.rotation.y = elapsed * 0.025;
-    particleSystem.rotation.x = elapsed * 0.012;
+      sculpture.rotation.z =
+        Math.sin(elapsed * 0.12) * 0.04;
+    }
 
     renderer.render(scene, camera);
   }
 
-  async function initialiseThree() {
-    if (!canvas || threeReady || reducedMotion) return;
+  function initialiseThree() {
+    if (!canvas || threeReady) return;
 
-    try {
-      THREE = await import("three");
+    import("three")
+      .then(THREE => {
+        if (!canvas) return;
 
-      const { RectAreaLightUniformsLib } =
-        await import("three/addons/lights/RectAreaLightUniformsLib.js");
+        const width = canvas.clientWidth || window.innerWidth;
+        const height = canvas.clientHeight || window.innerHeight;
 
-      RectAreaLightUniformsLib.init();
+        scene = new THREE.Scene();
 
-      clock = new THREE.Clock();
-      scene = new THREE.Scene();
-
-      camera = new THREE.PerspectiveCamera(35, 1, 0.1, 100);
-      camera.position.set(0, 0, 8);
-
-      renderer = new THREE.WebGLRenderer({
-        canvas,
-        alpha: true,
-        antialias: true,
-        powerPreference: "high-performance"
-      });
-
-      renderer.setPixelRatio(
-        Math.min(window.devicePixelRatio || 1, 1.75)
-      );
-
-      renderer.outputColorSpace = THREE.SRGBColorSpace;
-      renderer.toneMapping = THREE.ACESFilmicToneMapping;
-      renderer.toneMappingExposure = 1.15;
-
-      const chromeMaterial = new THREE.MeshPhysicalMaterial({
-        color: 0xc8c9c7,
-        metalness: 1,
-        roughness: 0.16,
-        envMapIntensity: 1.8,
-        clearcoat: 1,
-        clearcoatRoughness: 0.08
-      });
-
-      const darkMetal = new THREE.MeshPhysicalMaterial({
-        color: 0x777b80,
-        metalness: 0.95,
-        roughness: 0.25,
-        envMapIntensity: 1.7,
-        clearcoat: 1
-      });
-
-      const champagneMaterial = new THREE.MeshPhysicalMaterial({
-        color: 0xc6b69a,
-        metalness: 1,
-        roughness: 0.2,
-        envMapIntensity: 1.6,
-        clearcoat: 1
-      });
-
-      scene.environment = createEnvironment(renderer);
-
-      scene.add(new THREE.AmbientLight(0xffffff, 0.5));
-
-      const keyLight = new THREE.DirectionalLight(0xffffff, 3.2);
-      keyLight.position.set(4, 5, 6);
-      scene.add(keyLight);
-
-      const rimLight = new THREE.DirectionalLight(0xc6b69a, 2.8);
-      rimLight.position.set(-5, 1, -4);
-      scene.add(rimLight);
-
-      const lowerLight = new THREE.PointLight(0x89939d, 22, 14);
-      lowerLight.position.set(0, -3, 3);
-      scene.add(lowerLight);
-
-      const areaLight = new THREE.RectAreaLight(0xffffff, 6, 5, 2);
-      areaLight.position.set(0, 4, 4);
-      areaLight.lookAt(0, 0, 0);
-      scene.add(areaLight);
-
-      sculpture = new THREE.Group();
-      scene.add(sculpture);
-
-      const bladeConfigurations = [
-        { length: 2.9, width: 0.43, twist: 1.25, bend: 0.34 },
-        { length: 2.65, width: 0.39, twist: -1.05, bend: 0.42 },
-        { length: 2.8, width: 0.44, twist: 1.4, bend: 0.3 },
-        { length: 2.7, width: 0.38, twist: -1.2, bend: 0.4 },
-        { length: 2.95, width: 0.42, twist: 1.1, bend: 0.36 },
-        { length: 2.65, width: 0.4, twist: -1.35, bend: 0.38 },
-        { length: 2.85, width: 0.43, twist: 1.25, bend: 0.32 },
-        { length: 2.7, width: 0.39, twist: -1.15, bend: 0.4 },
-        { length: 2.9, width: 0.42, twist: 1.3, bend: 0.35 }
-      ];
-
-      bladeConfigurations.forEach((config, index) => {
-        const geometry = createBladeGeometry(config);
-
-        const blade = new THREE.Mesh(
-          geometry,
-          index % 3 === 0 ? champagneMaterial : chromeMaterial
+        camera = new THREE.PerspectiveCamera(
+          35,
+          width / height,
+          0.1,
+          100
         );
 
-        const angle =
-          (index / bladeConfigurations.length) * Math.PI * 2;
+        camera.position.set(0, 0, 8);
 
-        blade.rotation.set(
-          Math.sin(angle) * 0.5,
-          angle,
-          Math.cos(angle) * 0.45
+        renderer = new THREE.WebGLRenderer({
+          canvas,
+          alpha: true,
+          antialias: true,
+          powerPreference: "high-performance"
+        });
+
+        renderer.setPixelRatio(
+          Math.min(window.devicePixelRatio || 1, 2)
         );
 
-        blade.position.set(
-          Math.cos(angle) * 0.22,
-          Math.sin(angle) * 0.22,
-          Math.sin(angle * 2) * 0.18
+        renderer.setSize(width, height, false);
+        renderer.outputColorSpace = THREE.SRGBColorSpace;
+
+        const ambient = new THREE.AmbientLight(
+          0xffffff,
+          1.8
         );
 
-        blade.scale.setScalar(
-          0.88 + Math.sin(index * 1.7) * 0.08
+        scene.add(ambient);
+
+        const keyLight = new THREE.DirectionalLight(
+          0xffffff,
+          3.2
         );
 
-        sculpture.add(blade);
-      });
+        keyLight.position.set(3, 4, 5);
+        scene.add(keyLight);
 
-      const core = new THREE.Mesh(
-        new THREE.IcosahedronGeometry(0.48, 3),
-        darkMetal
-      );
+        const rimLight = new THREE.PointLight(
+          0xc6b69a,
+          45,
+          20
+        );
 
-      core.scale.set(1, 1.12, 0.88);
-      sculpture.add(core);
+        rimLight.position.set(-4, 1, 3);
+        scene.add(rimLight);
 
-      const innerCore = new THREE.Mesh(
-        new THREE.SphereGeometry(0.19, 48, 48),
-        chromeMaterial
-      );
+        const coolLight = new THREE.PointLight(
+          0x9dbbd0,
+          28,
+          18
+        );
 
-      sculpture.add(innerCore);
+        coolLight.position.set(4, -2, 2);
+        scene.add(coolLight);
 
-      for (let i = 0; i < 3; i++) {
-        const points = [];
-        const offset = i * (Math.PI * 2 / 3);
+        const geometry = new THREE.BufferGeometry();
 
-        for (let j = 0; j <= 100; j++) {
-          const t = j / 100;
-          const angle = t * Math.PI * 2 + offset;
+        const vertices = new Float32Array([
+          -1.05, -2.1, 0,
+           0.0,  2.2, 0.18,
+           1.05, -2.1, 0,
 
-          const radius =
-            1.35 + Math.sin(angle * 2.5 + i) * 0.24;
+          -1.05, -2.1, 0,
+           0.0,  2.2, 0.18,
+          -0.12, -1.9, 0.32,
 
-          points.push(
-            new THREE.Vector3(
-              Math.cos(angle) * radius,
-              Math.sin(angle * 1.5 + i) * 0.55,
-              Math.sin(angle) * radius
-            )
-          );
+           1.05, -2.1, 0,
+           0.0,  2.2, 0.18,
+           0.12, -1.9, -0.32
+        ]);
+
+        geometry.setAttribute(
+          "position",
+          new THREE.BufferAttribute(vertices, 3)
+        );
+
+        geometry.computeVertexNormals();
+
+        const material = new THREE.MeshPhysicalMaterial({
+          color: 0xbfc1c3,
+          metalness: 1,
+          roughness: 0.16,
+          clearcoat: 1,
+          clearcoatRoughness: 0.08,
+          reflectivity: 1,
+          side: THREE.DoubleSide
+        });
+
+        sculpture = new THREE.Mesh(geometry, material);
+        sculpture.scale.set(1.1, 1.1, 1.1);
+        scene.add(sculpture);
+
+        const particleCount = 220;
+        const particlePositions = new Float32Array(
+          particleCount * 3
+        );
+
+        for (let i = 0; i < particleCount; i++) {
+          particlePositions[i * 3] =
+            (Math.random() - 0.5) * 12;
+
+          particlePositions[i * 3 + 1] =
+            (Math.random() - 0.5) * 9;
+
+          particlePositions[i * 3 + 2] =
+            (Math.random() - 0.5) * 5;
         }
 
-        sculpture.add(
-          createChromeCurve(
-            points,
-            i === 1 ? champagneMaterial : chromeMaterial,
-            0.014
-          )
+        const particleGeometry = new THREE.BufferGeometry();
+
+        particleGeometry.setAttribute(
+          "position",
+          new THREE.BufferAttribute(particlePositions, 3)
         );
-      }
 
-      const particleCount = 180;
-      const particlePositions = new Float32Array(particleCount * 3);
-
-      for (let i = 0; i < particleCount; i++) {
-        particlePositions[i * 3] = (Math.random() - 0.5) * 7;
-        particlePositions[i * 3 + 1] = (Math.random() - 0.5) * 7;
-        particlePositions[i * 3 + 2] = (Math.random() - 0.5) * 5;
-      }
-
-      const particleGeometry = new THREE.BufferGeometry();
-
-      particleGeometry.setAttribute(
-        "position",
-        new THREE.BufferAttribute(particlePositions, 3)
-      );
-
-      particleSystem = new THREE.Points(
-        particleGeometry,
-        new THREE.PointsMaterial({
+        const particleMaterial = new THREE.PointsMaterial({
           color: 0xc6b69a,
           size: 0.018,
           transparent: true,
-          opacity: 0.55,
+          opacity: 0.58,
           sizeAttenuation: true
-        })
-      );
-
-      scene.add(particleSystem);
-
-      function resizeRenderer() {
-        if (!renderer || !camera || !canvas) return;
-
-        const rect = canvas.getBoundingClientRect();
-        const width = Math.max(1, rect.width);
-        const height = Math.max(1, rect.height);
-
-        renderer.setSize(width, height, false);
-
-        camera.aspect = width / height;
-        camera.updateProjectionMatrix();
-      }
-
-      resizeRenderer();
-
-      if ("ResizeObserver" in window) {
-        resizeObserver = new ResizeObserver(resizeRenderer);
-        resizeObserver.observe(canvas);
-      } else {
-        window.addEventListener("resize", resizeRenderer);
-      }
-
-      if (!touchDevice) {
-        window.addEventListener("mousemove", event => {
-          pointerX =
-            (event.clientX / window.innerWidth - 0.5) * 0.4;
-
-          pointerY =
-            (event.clientY / window.innerHeight - 0.5) * 0.3;
         });
-      }
 
-      window.addEventListener("scroll", () => {
-        scrollRotation = window.scrollY * 0.00015;
-      }, { passive: true });
+        const particles = new THREE.Points(
+          particleGeometry,
+          particleMaterial
+        );
 
-      threeReady = true;
+        scene.add(particles);
 
-      if (pageVisible) {
-        clock.start();
-        animateThreeAgain();
-      }
+        const resizeRenderer = () => {
+          if (!renderer || !camera) return;
 
-    } catch (error) {
-      console.error("MYRLORE sculpture initialisation failed:", error);
+          const nextWidth = canvas.clientWidth || window.innerWidth;
+          const nextHeight = canvas.clientHeight || window.innerHeight;
 
-      if (canvas) canvas.style.opacity = "0";
-    }
+          camera.aspect = nextWidth / nextHeight;
+          camera.updateProjectionMatrix();
+
+          renderer.setSize(nextWidth, nextHeight, false);
+        };
+
+        if ("ResizeObserver" in window) {
+          resizeObserver = new ResizeObserver(resizeRenderer);
+          resizeObserver.observe(canvas);
+        } else {
+          window.addEventListener("resize", resizeRenderer);
+        }
+
+        if (!touchDevice) {
+          window.addEventListener("mousemove", event => {
+            pointerX =
+              (event.clientX / window.innerWidth - 0.5) * 0.4;
+
+            pointerY =
+              (event.clientY / window.innerHeight - 0.5) * 0.3;
+          });
+        }
+
+        window.addEventListener("scroll", () => {
+          scrollRotation = window.scrollY * 0.00015;
+        }, { passive: true });
+
+        threeReady = true;
+
+        if (pageVisible) {
+          clock.start();
+          animateThreeAgain();
+        }
+
+      })
+      .catch(error => {
+        console.error("MYRLORE sculpture initialisation failed:", error);
+
+        if (canvas) canvas.style.opacity = "0";
+      });
   }
 
   if (canvas) {
@@ -1121,9 +892,10 @@
   /* ==========================================
      MYRLORE® — CAPRI SECRET ARCHIVE
 
-     ONE IMAGE.
+     4×4 SPRITE SHEET.
+     16 FRAMES.
      ONE CANVAS.
-     REAL SCREEN MOVEMENT.
+     CURVED SCREEN MOVEMENT.
      NO SLIDESHOW.
   ========================================== */
 
@@ -1147,6 +919,13 @@
   let capriAnimationFrame = null;
   let capriAnimationStart = 0;
   let capriImage = null;
+  let capriFrameIndex = 0;
+  let capriLastFrameTime = 0;
+  const CAPRI_COLUMNS = 4;
+  const CAPRI_ROWS = 4;
+  const CAPRI_FRAME_COUNT = CAPRI_COLUMNS * CAPRI_ROWS;
+  const CAPRI_FRAME_RATE = 12;
+  const CAPRI_FRAME_INTERVAL = 1000 / CAPRI_FRAME_RATE;
   let capriCanvas = null;
   let capriContext = null;
 
@@ -1179,34 +958,24 @@
           transparent 38%
         ),
         radial-gradient(
-          ellipse at 70% 55%,
-          color-mix(in srgb, var(--capri-green) 7%, transparent),
+          ellipse at 75% 55%,
+          color-mix(in srgb, var(--capri-green) 8%, transparent),
           transparent 42%
         ),
-        #030305;
+        #08090b;
       color: #eeeDE8;
       opacity: 0;
       visibility: hidden;
-      transition: opacity .45s ease, visibility .45s ease;
-      font-family: "Manrope", sans-serif;
+      pointer-events: none;
+      transition:
+        opacity .65s ease,
+        visibility .65s ease;
     }
 
     #myrloreSecretOverlay.active {
       opacity: 1;
       visibility: visible;
-    }
-
-    #myrloreSecretOverlay::before {
-      content: "";
-      position: absolute;
-      inset: 0;
-      z-index: 0;
-      pointer-events: none;
-      opacity: .13;
-      background-image:
-        linear-gradient(rgba(255,255,255,.035) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(255,255,255,.035) 1px, transparent 1px);
-      background-size: 4px 4px;
+      pointer-events: auto;
     }
 
     #myrloreSecretOverlay .secret-noise {
@@ -1214,88 +983,9 @@
       inset: -50%;
       z-index: 1;
       pointer-events: none;
-      opacity: .045;
-      background: repeating-linear-gradient(
-        transparent 0 3px,
-        rgba(255,255,255,.13) 4px
-      );
-      animation: capriNoise .18s steps(2) infinite;
-    }
-
-    #myrloreSecretOverlay .secret-inner {
-      position: relative;
-      z-index: 3;
-      width: min(650px, 90vw);
-      text-align: center;
-      opacity: 0;
-      transform: translateY(20px);
-      transition:
-        opacity .8s ease,
-        transform .8s cubic-bezier(.16,1,.3,1);
-    }
-
-    #myrloreSecretOverlay .secret-inner.capri-text-visible {
-      opacity: 1;
-      transform: translateY(0);
-    }
-
-    #myrloreSecretOverlay .secret-index {
-      color: #b5a6aa;
-      font: 10px "DM Mono", monospace;
-      letter-spacing: .3em;
-      margin-bottom: 26px;
-    }
-
-    #myrloreSecretOverlay h2 {
-      margin: 0;
-      color: #eeeDE8;
-      font-size: clamp(42px, 8vw, 84px);
-      font-weight: 500;
-      letter-spacing: -.075em;
-      line-height: .95;
-    }
-
-    #myrloreSecretOverlay p {
-      color: #85868a;
-      font: 10px "DM Mono", monospace;
-      letter-spacing: .12em;
-      line-height: 2;
-      margin: 26px 0;
-    }
-
-    #myrloreSecretOverlay button {
-      position: relative;
-      z-index: 10;
-      margin-top: 14px;
-      padding: 13px 24px;
-      border: 1px solid color-mix(
-        in srgb,
-        var(--capri-magenta) 75%,
-        transparent
-      );
-      background: color-mix(
-        in srgb,
-        var(--capri-magenta) 7%,
-        transparent
-      );
-      color: #d6d1d1;
-      font: 10px "DM Mono", monospace;
-      letter-spacing: .16em;
-      cursor: pointer;
-      transition: background .3s ease, color .3s ease;
-    }
-
-    #myrloreSecretOverlay button:hover {
-      background: var(--capri-magenta);
-      color: #fff;
-    }
-
-    #myrloreSecretOverlay .secret-symbol {
-      display: block;
-      color: var(--capri-green);
-      font-size: 28px;
-      margin-bottom: 20px;
-      text-shadow: 0 0 18px var(--capri-green);
+      opacity: .08;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 180 180' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.92' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.5'/%3E%3C/svg%3E");
+      animation: capriNoise .2s steps(2) infinite;
     }
 
     #capriFlight {
@@ -1445,7 +1135,12 @@
   });
 
   /* ==========================================
-     CAPRI IMAGE + COLOUR EXTRACTION
+     CAPRI SPRITE SHEET + COLOUR EXTRACTION
+
+     4 columns × 4 rows = 16 animation frames.
+     Each frame is drawn from the same image onto
+     one canvas. This is frame animation, not a
+     slideshow and not 16 separate image elements.
   ========================================== */
 
   function rgbToHex(r, g, b) {
@@ -1461,20 +1156,11 @@
   function extractCapriPalette(image) {
     try {
       const sample = document.createElement("canvas");
-
       sample.width = 140;
       sample.height = 140;
-
-      const context = sample.getContext("2d", {
-        willReadFrequently: true
-      });
-
+      const context = sample.getContext("2d", { willReadFrequently: true });
       context.drawImage(image, 0, 0, 140, 140);
-
-      const pixels = context.getImageData(
-        0, 0, 140, 140
-      ).data;
-
+      const pixels = context.getImageData(0, 0, 140, 140).data;
       const colours = new Map();
 
       for (let i = 0; i < pixels.length; i += 16) {
@@ -1482,228 +1168,163 @@
         const g = pixels[i + 1];
         const b = pixels[i + 2];
         const a = pixels[i + 3];
-
         if (a < 140) continue;
 
         const max = Math.max(r, g, b);
         const min = Math.min(r, g, b);
-
-        const saturation = max === 0
-          ? 0
-          : (max - min) / max;
-
+        const saturation = max === 0 ? 0 : (max - min) / max;
         if (saturation < .22 || max < 35) continue;
 
-        const qr = Math.round(r / 16) * 16;
-        const qg = Math.round(g / 16) * 16;
-        const qb = Math.round(b / 16) * 16;
-
         const key = [
-          Math.min(255, qr),
-          Math.min(255, qg),
-          Math.min(255, qb)
+          Math.min(255, Math.round(r / 16) * 16),
+          Math.min(255, Math.round(g / 16) * 16),
+          Math.min(255, Math.round(b / 16) * 16)
         ].join(",");
-
         colours.set(key, (colours.get(key) || 0) + 1);
       }
 
-      const sorted = [...colours.entries()]
-        .sort((a, b) => b[1] - a[1]);
-
+      const sorted = [...colours.entries()].sort((a, b) => b[1] - a[1]);
       const selected = [];
-
       for (const [colour] of sorted) {
         const rgb = colour.split(",").map(Number);
-
-        const tooSimilar = selected.some(existing => {
-          const distance = Math.sqrt(
+        const tooSimilar = selected.some(existing =>
+          Math.sqrt(
             (rgb[0] - existing[0]) ** 2 +
             (rgb[1] - existing[1]) ** 2 +
             (rgb[2] - existing[2]) ** 2
-          );
-
-          return distance < 65;
-        });
-
+          ) < 65
+        );
         if (!tooSimilar) selected.push(rgb);
         if (selected.length === 3) break;
       }
 
-      if (selected.length > 0) {
+      if (selected.length) {
         capriPalette.magenta = rgbToHex(...selected[0]);
-        capriPalette.green = rgbToHex(
-          ...(selected[1] || selected[0])
-        );
-        capriPalette.violet = rgbToHex(
-          ...(selected[2] || selected[0])
-        );
+        capriPalette.green = rgbToHex(...(selected[1] || selected[0]));
+        capriPalette.violet = rgbToHex(...(selected[2] || selected[0]));
       }
 
-      secretOverlay.style.setProperty(
-        "--capri-magenta",
-        capriPalette.magenta
-      );
-
-      secretOverlay.style.setProperty(
-        "--capri-green",
-        capriPalette.green
-      );
-
-      secretOverlay.style.setProperty(
-        "--capri-violet",
-        capriPalette.violet
-      );
-
+      secretOverlay.style.setProperty("--capri-magenta", capriPalette.magenta);
+      secretOverlay.style.setProperty("--capri-green", capriPalette.green);
+      secretOverlay.style.setProperty("--capri-violet", capriPalette.violet);
     } catch (error) {
       console.warn("Capri palette extraction failed:", error);
     }
   }
 
+  function getCapriFrameRect(frameIndex) {
+    const frameWidth = capriImage.naturalWidth / CAPRI_COLUMNS;
+    const frameHeight = capriImage.naturalHeight / CAPRI_ROWS;
+    const safeIndex = ((frameIndex % CAPRI_FRAME_COUNT) + CAPRI_FRAME_COUNT) % CAPRI_FRAME_COUNT;
+    const column = safeIndex % CAPRI_COLUMNS;
+    const row = Math.floor(safeIndex / CAPRI_COLUMNS);
+    return {
+      sx: column * frameWidth,
+      sy: row * frameHeight,
+      sw: frameWidth,
+      sh: frameHeight
+    };
+  }
+
+  function drawCapriFrame(frameIndex = capriFrameIndex, offsetX = 0, alpha = 1) {
+    if (!capriContext || !capriImage?.complete || !capriCanvas.width) return;
+    const frame = getCapriFrameRect(frameIndex);
+    capriContext.globalAlpha = alpha;
+    capriContext.drawImage(
+      capriImage,
+      frame.sx, frame.sy, frame.sw, frame.sh,
+      offsetX, 0, capriCanvas.width, capriCanvas.height
+    );
+    capriContext.globalAlpha = 1;
+  }
+
   function loadCapri() {
     if (capriImage) return;
-
     capriImage = new Image();
     capriImage.decoding = "async";
 
     capriImage.onload = () => {
       if (!capriCanvas || !capriContext) return;
-
-      const maxDimension = 900;
-
-      const ratio = Math.min(
-        1,
-        maxDimension / Math.max(
-          capriImage.naturalWidth,
-          capriImage.naturalHeight
-        )
-      );
-
-      capriCanvas.width = Math.round(
-        capriImage.naturalWidth * ratio
-      );
-
-      capriCanvas.height = Math.round(
-        capriImage.naturalHeight * ratio
-      );
-
+      const frameWidth = Math.floor(capriImage.naturalWidth / CAPRI_COLUMNS);
+      const frameHeight = Math.floor(capriImage.naturalHeight / CAPRI_ROWS);
+      if (!frameWidth || !frameHeight) {
+        console.error("Capri sprite sheet has invalid dimensions.");
+        return;
+      }
+      capriCanvas.width = frameWidth;
+      capriCanvas.height = frameHeight;
+      capriFrameIndex = 0;
       extractCapriPalette(capriImage);
       drawCapriClean();
     };
 
     capriImage.onerror = () => {
-      console.error(
-        "Capri could not load. Make sure capri.png is in the website root folder."
-      );
+      console.error("Capri sprite sheet could not load. Make sure capri-spritesheet.png is in the website root folder.");
     };
 
-    capriImage.src = "capri.png";
+    capriImage.src = "capri-spritesheet.png";
   }
 
   function drawCapriClean() {
-    if (
-      !capriContext ||
-      !capriImage?.complete ||
-      !capriCanvas.width
-    ) return;
-
-    capriContext.clearRect(
-      0,
-      0,
-      capriCanvas.width,
-      capriCanvas.height
-    );
-
+    if (!capriContext || !capriImage?.complete || !capriCanvas.width) return;
+    capriContext.clearRect(0, 0, capriCanvas.width, capriCanvas.height);
     capriContext.globalAlpha = 1;
     capriContext.globalCompositeOperation = "source-over";
+    drawCapriFrame(capriFrameIndex);
+  }
 
-    capriContext.drawImage(
-      capriImage,
-      0,
-      0,
-      capriCanvas.width,
-      capriCanvas.height
-    );
+  function updateCapriFrame(timestamp) {
+    if (!capriImage?.complete) return;
+    if (!capriLastFrameTime) capriLastFrameTime = timestamp;
+    if (timestamp - capriLastFrameTime >= CAPRI_FRAME_INTERVAL) {
+      const steps = Math.floor((timestamp - capriLastFrameTime) / CAPRI_FRAME_INTERVAL);
+      capriFrameIndex = (capriFrameIndex + steps) % CAPRI_FRAME_COUNT;
+      capriLastFrameTime = timestamp;
+    }
   }
 
   loadCapri();
 
   /* ==========================================
      CAPRI GLITCH ENGINE
-
-     The same image is drawn every frame.
-     No frame swapping or image duplication.
   ========================================== */
 
   function drawCapriGlitch(intensity) {
-    if (
-      !capriContext ||
-      !capriImage?.complete ||
-      !capriCanvas.width
-    ) return;
-
+    if (!capriContext || !capriImage?.complete || !capriCanvas.width) return;
     const ctx = capriContext;
     const width = capriCanvas.width;
     const height = capriCanvas.height;
-
     const burst = Math.max(0, Math.min(1, intensity));
 
+    ctx.clearRect(0, 0, width, height);
     if (burst < .025) {
-      drawCapriClean();
+      drawCapriFrame(capriFrameIndex);
       return;
     }
 
-    ctx.clearRect(0, 0, width, height);
-
+    const frame = getCapriFrameRect(capriFrameIndex);
     ctx.globalCompositeOperation = "screen";
-    ctx.globalAlpha = .12 * burst;
-
-    ctx.drawImage(
-      capriImage,
-      -5 * burst,
-      0,
-      width,
-      height
-    );
-
-    ctx.globalAlpha = .1 * burst;
-
-    ctx.drawImage(
-      capriImage,
-      5 * burst,
-      0,
-      width,
-      height
-    );
-
+    drawCapriFrame(capriFrameIndex, -5 * burst, .12 * burst);
+    drawCapriFrame(capriFrameIndex, 5 * burst, .1 * burst);
     ctx.globalCompositeOperation = "source-over";
-    ctx.globalAlpha = 1;
-
-    ctx.drawImage(
-      capriImage,
-      0,
-      0,
-      width,
-      height
-    );
+    drawCapriFrame(capriFrameIndex);
 
     const sliceCount = Math.floor(5 + burst * 12);
     const sliceHeight = height / sliceCount;
-
     for (let i = 0; i < sliceCount; i++) {
       if (Math.random() > .35 + burst * .4) continue;
-
       const sy = i * sliceHeight;
       const sh = Math.min(sliceHeight + 1, height - sy);
       const shift = (Math.random() - .5) * 28 * burst;
-
       ctx.drawImage(
         capriImage,
-        0, sy, width, sh,
+        frame.sx, frame.sy + (sy / height) * frame.sh,
+        frame.sw, (sh / height) * frame.sh,
         shift, sy, width, sh
       );
     }
-
     ctx.globalAlpha = 1;
+    ctx.globalCompositeOperation = "source-over";
   }
 
   /* ==========================================
@@ -1821,64 +1442,60 @@
 
     const tension = .16;
 
-    function catmull(a, b, c, d, t) {
-      return .5 * (
-        2 * b +
-        (-a + c) * t +
-        (2 * a - 5 * b + 4 * c - d) * t * t +
-        (-a + 3 * b - 3 * c + d) * t * t * t
-      );
-    }
+    const control1 = {
+      x: current.x + (next.x - previous.x) * tension,
+      y: current.y + (next.y - previous.y) * tension
+    };
 
-    const x = catmull(
-      previous.x,
-      current.x,
-      next.x,
-      after.x,
-      local
-    );
-
-    const y = catmull(
-      previous.y,
-      current.y,
-      next.y,
-      after.y,
-      local
-    );
-
-    const scale = current.scale +
-      (next.scale - current.scale) * local;
-
-    const rotation = current.rotation +
-      (next.rotation - current.rotation) * local;
+    const control2 = {
+      x: next.x - (after.x - current.x) * tension,
+      y: next.y - (after.y - current.y) * tension
+    };
 
     return {
-      x,
-      y,
-      scale,
-      rotation,
-      tension
+      x: cubicBezier(
+        current.x,
+        control1.x,
+        control2.x,
+        next.x,
+        local
+      ),
+      y: cubicBezier(
+        current.y,
+        control1.y,
+        control2.y,
+        next.y,
+        local
+      ),
+      scale: current.scale + (next.scale - current.scale) * local,
+      rotation: current.rotation + (next.rotation - current.rotation) * local
     };
   }
 
+  /* ==========================================
+     CAPRI GLITCH TIMING
+  ========================================== */
+
   function getCapriGlitchIntensity(progress) {
     const bursts = [
-      [0.02, 0.09, .75],
-      [0.20, 0.26, .45],
-      [0.39, 0.46, .65],
-      [0.59, 0.65, .5],
-      [0.78, 0.88, .8]
+      { at: .12, strength: .25, width: .035 },
+      { at: .31, strength: .45, width: .045 },
+      { at: .52, strength: .3, width: .04 },
+      { at: .73, strength: .62, width: .055 },
+      { at: .89, strength: .9, width: .07 }
     ];
 
     let intensity = 0;
 
-    bursts.forEach(([start, end, strength]) => {
-      if (progress >= start && progress <= end) {
-        const local = (progress - start) / (end - start);
+    bursts.forEach(burst => {
+      const distance = Math.abs(progress - burst.at);
+
+      if (distance < burst.width) {
+        const local = 1 - distance / burst.width;
 
         intensity = Math.max(
           intensity,
-          Math.sin(local * Math.PI) * strength
+          Math.sin(local * Math.PI) * burst.strength
         );
       }
     });
@@ -1898,6 +1515,7 @@
     }
 
     const elapsed = timestamp - capriAnimationStart;
+    updateCapriFrame(timestamp);
     const duration = 5600;
 
     const progress = Math.min(1, elapsed / duration);
@@ -1948,7 +1566,7 @@
       x += (targetX - x) * settle;
       y += (targetY - y) * settle;
 
-      scale = position.scale + (mobile ? .64 : .88 - position.scale) * settle;
+      scale = position.scale + ((mobile ? .64 : .88) - position.scale) * settle;
       rotation *= 1 - settle;
 
       if (progress >= .91) {
@@ -2015,6 +1633,8 @@
 
     capriAnimationFrame = null;
     capriAnimationStart = 0;
+    capriLastFrameTime = 0;
+    capriFrameIndex = 0;
 
     secretInner.classList.remove("capri-text-visible");
     secretOverlay.classList.remove("capri-impact");
