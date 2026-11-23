@@ -2694,3 +2694,180 @@ a {
     animation: none !important;
   }
 }
+
+/* ==========================================
+   MYRLORE — PROJECT VAULT REDESIGN
+   PREMIUM EDITORIAL CARD SYSTEM
+========================================== */
+
+#vaultGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+  align-items: stretch;
+}
+
+#vaultGrid .work-card {
+  position: relative;
+  isolation: isolate;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 430px;
+  overflow: hidden;
+  padding: 0;
+  border: 1px solid rgba(235,232,222,.12);
+  border-radius: 5px;
+  background:
+    linear-gradient(145deg, #17191d 0%, #0d0f12 75%);
+  color: var(--text);
+  text-decoration: none;
+  transform: translateZ(0);
+  transition:
+    transform .55s cubic-bezier(.2,.7,.2,1),
+    border-color .4s ease,
+    box-shadow .5s ease;
+}
+
+#vaultGrid .work-card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  opacity: .55;
+  background:
+    radial-gradient(
+      circle at 50% 35%,
+      rgba(198,182,154,.10),
+      transparent 58%
+    );
+  transition: opacity .5s ease;
+}
+
+#vaultGrid .work-card::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  border: 1px solid rgba(255,255,255,.035);
+  opacity: 0;
+  transition: opacity .4s ease;
+}
+
+#vaultGrid .work-card:hover {
+  transform: translateY(-7px);
+  border-color: rgba(198,182,154,.38);
+  box-shadow:
+    0 24px 65px rgba(0,0,0,.34),
+    0 0 35px rgba(198,182,154,.055);
+}
+
+#vaultGrid .work-card:hover::before {
+  opacity: 1;
+}
+
+#vaultGrid .work-card:hover::after {
+  opacity: 1;
+}
+
+/* Project artwork */
+#vaultGrid .work-card [class*="art-"] {
+  position: relative;
+  overflow: hidden;
+  flex: 1 1 auto;
+  min-height: 245px;
+  margin: 12px 12px 0;
+  border-radius: 3px;
+  transition: transform .7s cubic-bezier(.2,.7,.2,1);
+}
+
+#vaultGrid .work-card:hover [class*="art-"] {
+  transform: scale(1.015);
+}
+
+/* Project titles */
+#vaultGrid .work-card h2,
+#vaultGrid .work-card h3 {
+  position: relative;
+  z-index: 1;
+  margin: 22px 22px 8px;
+  color: #eeede8;
+  font-family: var(--font);
+  font-size: clamp(22px, 2.5vw, 32px);
+  font-weight: 500;
+  letter-spacing: -.055em;
+  line-height: 1.05;
+  transition: color .35s ease;
+}
+
+#vaultGrid .work-card:hover h2,
+#vaultGrid .work-card:hover h3 {
+  color: var(--champagne);
+}
+
+/* Supporting text */
+#vaultGrid .work-card p {
+  position: relative;
+  z-index: 1;
+  margin: 0 22px 20px;
+  max-width: 390px;
+  color: #929398;
+  font-size: 12px;
+  line-height: 1.75;
+}
+
+/* Card metadata */
+#vaultGrid .work-card .work-meta,
+#vaultGrid .work-card .work-info {
+  position: relative;
+  z-index: 1;
+  padding: 0 22px;
+}
+
+/* Category labels */
+#vaultGrid .work-card [class*="category"],
+#vaultGrid .work-card [class*="tag"] {
+  color: var(--champagne);
+  font-family: var(--mono);
+  font-size: 9px;
+  letter-spacing: .13em;
+  text-transform: uppercase;
+}
+
+/* Keyboard accessibility */
+#vaultGrid .work-card:focus-visible {
+  outline: 2px solid var(--champagne);
+  outline-offset: 4px;
+}
+
+/* Hidden cards must remain hidden */
+#vaultGrid .work-card.vault-hidden {
+  display: none !important;
+}
+
+/* Responsive layout */
+@media (max-width: 700px) {
+  #vaultGrid {
+    grid-template-columns: 1fr;
+    gap: 14px;
+  }
+
+  #vaultGrid .work-card {
+    min-height: 390px;
+  }
+
+  #vaultGrid .work-card [class*="art-"] {
+    min-height: 225px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #vaultGrid .work-card,
+  #vaultGrid .work-card *,
+  #vaultGrid .work-card::before,
+  #vaultGrid .work-card::after {
+    transition-duration: .01ms !important;
+    animation-duration: .01ms !important;
+  }
+}
