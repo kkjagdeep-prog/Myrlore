@@ -2749,3 +2749,509 @@ if (!document.querySelector("#vaultAnimationStyle")) {
   `;
   document.head.appendChild(style);
 }
+
+/* ==========================================
+   MYRLORE® — PROJECT VAULT SYSTEM
+   12 PROJECTS · FILTERS · CASE STUDIES
+========================================== */
+
+(() => {
+  "use strict";
+
+  const $ = (selector, parent = document) =>
+    parent.querySelector(selector);
+
+  const $$ = (selector, parent = document) =>
+    [...parent.querySelectorAll(selector)];
+
+  const grid = $("#vaultGrid");
+  const filters = $$(".vault-filter");
+
+  if (!grid) return;
+
+  const cards = $$(".work-card[data-case-study]", grid);
+
+  /* ==========================================
+     PROJECT DATABASE
+  ========================================== */
+
+  const projects = {
+    corroguard: {
+      number: "01 / 12",
+      category: "ENGINEERING",
+      title: "CorroGuard",
+      summary: "An interactive engineering chemistry platform exploring corrosion behaviour, material compatibility and prevention.",
+      status: "PROJECT EXPLORATION",
+      overview: "CorroGuard transforms complex corrosion concepts into an accessible digital experience. It brings together material analysis, environmental factors and educational risk assessment in one interface.",
+      features: [
+        "Interactive corrosion risk calculator",
+        "Metal compatibility checker",
+        "Material analysis and corrosion types",
+        "Corrosion prevention information"
+      ],
+      tech: ["HTML", "CSS", "JavaScript", "Chart.js"],
+      symbol: "CG",
+      art: "CORROSION INTELLIGENCE"
+    },
+
+    floodwatch: {
+      number: "02 / 12",
+      category: "DATA & MAPPING",
+      title: "FloodWatch Chennai",
+      summary: "A web-based flood awareness and rainfall analysis platform focused on Chennai.",
+      status: "PROJECT EXPLORATION",
+      overview: "FloodWatch Chennai brings rainfall information, drainage infrastructure and geographical insights together to help communicate urban flood risk.",
+      features: [
+        "Interactive drainage network map",
+        "Rainfall visualisation and statistics",
+        "Zone and ward search",
+        "Flood risk insights and information"
+      ],
+      tech: ["HTML", "CSS", "JavaScript", "Leaflet", "Chart.js"],
+      symbol: "FW",
+      art: "URBAN FLOOD INTELLIGENCE"
+    },
+
+    aether: {
+      number: "03 / 12",
+      category: "DIGITAL",
+      title: "AETHER",
+      summary: "An immersive digital experience built around atmosphere, motion and dimensional visual storytelling.",
+      status: "CONCEPT EXPLORATION",
+      overview: "AETHER explores the intersection of digital art and interface design. Its visual direction uses abstract forms, cinematic transitions and immersive compositions.",
+      features: [
+        "Immersive landing experience",
+        "Abstract visual compositions",
+        "Motion-led transitions",
+        "Experimental interface direction"
+      ],
+      tech: ["HTML", "CSS", "JavaScript", "Three.js"],
+      symbol: "A",
+      art: "IMMERSIVE DIGITAL SPACE"
+    },
+
+    nexus: {
+      number: "04 / 12",
+      category: "DIGITAL",
+      title: "NEXUS AI",
+      summary: "A conceptual AI command interface designed around clarity, intelligent workflows and connected information.",
+      status: "CONCEPT EXPLORATION",
+      overview: "NEXUS AI imagines a central workspace where complex information and digital tools can be organised through a refined interface.",
+      features: [
+        "AI command dashboard concept",
+        "Modular information panels",
+        "Conversation interface direction",
+        "Data visualisation concepts"
+      ],
+      tech: ["HTML", "CSS", "JavaScript", "API Concepts"],
+      symbol: "NX",
+      art: "INTELLIGENCE INTERFACE"
+    },
+
+    monolith: {
+      number: "05 / 12",
+      category: "DIGITAL",
+      title: "MONOLITH",
+      summary: "A premium financial dashboard concept focused on information hierarchy and visual precision.",
+      status: "CONCEPT EXPLORATION",
+      overview: "MONOLITH explores a modern financial interface with a restrained visual language, analytical components and carefully structured data.",
+      features: [
+        "Financial overview concept",
+        "Analytical dashboard layouts",
+        "Data chart explorations",
+        "Minimal interface system"
+      ],
+      tech: ["HTML", "CSS", "JavaScript", "Chart.js"],
+      symbol: "M",
+      art: "FINANCIAL SYSTEMS"
+    },
+
+    sentinel: {
+      number: "06 / 12",
+      category: "EXPERIMENTS",
+      title: "SENTINEL",
+      summary: "A cybersecurity monitoring interface concept built around system visibility and digital awareness.",
+      status: "CONCEPT EXPLORATION",
+      overview: "SENTINEL explores how a monitoring dashboard could communicate system status, security events and network activity through a focused visual interface.",
+      features: [
+        "System monitoring dashboard concept",
+        "Network activity visualisation",
+        "Status indicator components",
+        "Security event interface"
+      ],
+      tech: ["HTML", "CSS", "JavaScript", "Data Visualisation"],
+      symbol: "S",
+      art: "SYSTEM MONITORING"
+    },
+
+    form01: {
+      number: "07 / 12",
+      category: "DIGITAL",
+      title: "FORM / 01",
+      summary: "An architectural portfolio concept inspired by geometric structure and editorial presentation.",
+      status: "CONCEPT EXPLORATION",
+      overview: "FORM / 01 explores a digital presentation system for architecture and spatial design, using strong typography and geometric compositions.",
+      features: [
+        "Architectural project showcase",
+        "Editorial layout direction",
+        "Geometric visual language",
+        "Responsive presentation concept"
+      ],
+      tech: ["HTML", "CSS", "JavaScript"],
+      symbol: "F/01",
+      art: "SPATIAL DESIGN"
+    },
+
+    orbital: {
+      number: "08 / 12",
+      category: "DATA & MAPPING",
+      title: "ORBITAL",
+      summary: "A planetary exploration concept combining orbital information and interactive data visualisation.",
+      status: "CONCEPT EXPLORATION",
+      overview: "ORBITAL imagines a digital environment for presenting planetary systems, orbital paths and space-related information.",
+      features: [
+        "Planetary interface concept",
+        "Orbital path visualisations",
+        "Exploration-focused navigation",
+        "Space data presentation"
+      ],
+      tech: ["HTML", "CSS", "JavaScript", "Three.js"],
+      symbol: "O",
+      art: "ORBITAL EXPLORATION"
+    },
+
+    sonora: {
+      number: "09 / 12",
+      category: "DIGITAL",
+      title: "SONORA",
+      summary: "A music discovery interface concept exploring sound, visual identity and audio-inspired interactions.",
+      status: "CONCEPT EXPLORATION",
+      overview: "SONORA explores a visual language for music discovery, bringing together editorial presentation, sound-inspired motion and a minimal interface.",
+      features: [
+        "Music discovery interface",
+        "Audio-inspired visualisation",
+        "Artist and album presentation",
+        "Interactive listening concepts"
+      ],
+      tech: ["HTML", "CSS", "JavaScript"],
+      symbol: "S",
+      art: "SOUND & VISUAL CULTURE"
+    },
+
+    atlas: {
+      number: "10 / 12",
+      category: "DATA & MAPPING",
+      title: "ATLAS GRID",
+      summary: "A smart-city digital twin concept exploring connected infrastructure and geographical information.",
+      status: "CONCEPT EXPLORATION",
+      overview: "ATLAS GRID imagines an interactive urban information system where locations, infrastructure and city data can be explored through a unified visual interface.",
+      features: [
+        "Interactive city map concept",
+        "Infrastructure information layers",
+        "Location-based data presentation",
+        "Urban dashboard direction"
+      ],
+      tech: ["HTML", "CSS", "JavaScript", "Leaflet"],
+      symbol: "AG",
+      art: "CONNECTED CITY SYSTEMS"
+    },
+
+    apex: {
+      number: "11 / 12",
+      category: "EXPERIMENTS",
+      title: "APEX",
+      summary: "An automotive digital configurator concept inspired by precision engineering and premium vehicle presentation.",
+      status: "CONCEPT EXPLORATION",
+      overview: "APEX explores an immersive automotive presentation where vehicle details, design options and visual storytelling come together.",
+      features: [
+        "Automotive showcase concept",
+        "Vehicle configuration interface",
+        "Premium product presentation",
+        "Interactive specification layouts"
+      ],
+      tech: ["HTML", "CSS", "JavaScript", "Three.js"],
+      symbol: "A",
+      art: "AUTOMOTIVE EXPERIENCE"
+    },
+
+    echo: {
+      number: "12 / 12",
+      category: "EXPERIMENTS",
+      title: "ECHO",
+      summary: "A digital identity concept exploring personal data, connected experiences and minimal interface design.",
+      status: "CONCEPT EXPLORATION",
+      overview: "ECHO explores how a personal digital space could bring identity, preferences and connected information together through a distinctive interface.",
+      features: [
+        "Digital identity concept",
+        "Personal dashboard direction",
+        "Connected information architecture",
+        "Minimal interface explorations"
+      ],
+      tech: ["HTML", "CSS", "JavaScript"],
+      symbol: "E",
+      art: "DIGITAL IDENTITY"
+    }
+  };
+
+  /* ==========================================
+     CATEGORY FILTERS
+  ========================================== */
+
+  const counts = {
+    all: cards.length,
+    digital: 0,
+    data: 0,
+    engineering: 0,
+    experiments: 0
+  };
+
+  cards.forEach(card => {
+    const category = card.dataset.projectCategory;
+
+    if (category === "data") counts.data++;
+    if (category === "digital") counts.digital++;
+    if (category === "engineering") counts.engineering++;
+    if (category === "experiments") counts.experiments++;
+  });
+
+  filters.forEach(button => {
+    const category = button.dataset.filter;
+    const count = $("span", button);
+
+    if (count && counts[category] !== undefined) {
+      count.textContent = counts[category];
+    }
+  });
+
+  function filterProjects(category) {
+    filters.forEach(button => {
+      const active = button.dataset.filter === category;
+
+      button.classList.toggle("active", active);
+      button.setAttribute("aria-pressed", String(active));
+    });
+
+    cards.forEach((card, index) => {
+      const matches =
+        category === "all" ||
+        card.dataset.projectCategory === category;
+
+      card.classList.toggle("vault-hidden", !matches);
+
+      if (matches) {
+        card.style.animation =
+          `vaultCardIn .45s ease ${Math.min(index * 35, 250)}ms both`;
+      } else {
+        card.style.animation = "none";
+      }
+    });
+  }
+
+  filters.forEach(button => {
+    button.addEventListener("click", () => {
+      filterProjects(button.dataset.filter);
+    });
+  });
+
+  /* ==========================================
+     CASE STUDY MODAL
+  ========================================== */
+
+  const modal = $("#caseStudyModal");
+
+  if (!modal) return;
+
+  const panel = $(".case-panel", modal);
+
+  const caseHeroArt = $("#caseHeroArt");
+  const caseIndex = $("#caseIndex");
+  const caseSymbol = $("#caseSymbol");
+  const caseArtCaption = $("#caseArtCaption");
+  const caseCategory = $("#caseCategory");
+  const caseTitle = $("#caseTitle");
+  const caseSummary = $("#caseSummary");
+  const caseStatus = $("#caseStatus");
+  const caseStatusText = $("#caseStatusText");
+  const caseOverview = $("#caseOverview");
+  const caseFeatures = $("#caseFeatures");
+  const caseTech = $("#caseTech");
+
+  const closeButton = $("#caseClose");
+
+  let previousFocus = null;
+
+  function populateList(container, items) {
+    if (!container) return;
+
+    container.replaceChildren();
+
+    items.forEach(item => {
+      const element = document.createElement("li");
+      element.textContent = item;
+      container.appendChild(element);
+    });
+  }
+
+  function openCaseStudy(projectId) {
+    const project = projects[projectId];
+
+    if (!project) return;
+
+    previousFocus = document.activeElement;
+
+    if (caseIndex) caseIndex.textContent = project.number;
+    if (caseSymbol) caseSymbol.textContent = project.symbol;
+    if (caseArtCaption) caseArtCaption.textContent = project.art;
+    if (caseCategory) caseCategory.textContent = project.category;
+    if (caseTitle) caseTitle.textContent = project.title;
+    if (caseSummary) caseSummary.textContent = project.summary;
+    if (caseStatusText) caseStatusText.textContent = project.status;
+    if (caseOverview) caseOverview.textContent = project.overview;
+
+    if (caseStatus) {
+      caseStatus.textContent = project.status;
+    }
+
+    populateList(caseFeatures, project.features);
+    populateList(caseTech, project.tech);
+
+    if (caseHeroArt) {
+      caseHeroArt.dataset.project = projectId;
+      caseHeroArt.style.background = `
+        radial-gradient(
+          ellipse at 50% 45%,
+          rgba(220,225,230,.24),
+          transparent 38%
+        ),
+        linear-gradient(
+          135deg,
+          #08090b,
+          #343b41 50%,
+          #101216
+        )
+      `;
+    }
+
+    modal.classList.add("active", "is-open", "open");
+    modal.setAttribute("aria-hidden", "false");
+    modal.removeAttribute("inert");
+
+    modal.style.display = "flex";
+    modal.style.visibility = "visible";
+    modal.style.opacity = "1";
+    modal.style.pointerEvents = "auto";
+
+    document.body.style.overflow = "hidden";
+
+    if (panel) {
+      panel.scrollTop = 0;
+    }
+
+    if (closeButton) {
+      closeButton.focus();
+    }
+  }
+
+  function closeCaseStudy() {
+    if (
+      modal.getAttribute("aria-hidden") === "true"
+    ) return;
+
+    modal.classList.remove("active", "is-open", "open");
+    modal.setAttribute("aria-hidden", "true");
+    modal.setAttribute("inert", "");
+
+    modal.style.opacity = "0";
+    modal.style.pointerEvents = "none";
+
+    document.body.style.overflow = "";
+
+    window.setTimeout(() => {
+      if (modal.getAttribute("aria-hidden") === "true") {
+        modal.style.display = "none";
+        modal.style.visibility = "hidden";
+      }
+    }, 350);
+
+    if (previousFocus && typeof previousFocus.focus === "function") {
+      previousFocus.focus();
+    }
+  }
+
+  /* ==========================================
+     OPEN PROJECTS
+  ========================================== */
+
+  cards.forEach(card => {
+    card.addEventListener("click", event => {
+      event.preventDefault();
+
+      const projectId = card.dataset.caseStudy;
+      openCaseStudy(projectId);
+    });
+  });
+
+  /* ==========================================
+     CLOSE CONTROLS
+  ========================================== */
+
+  if (closeButton) {
+    closeButton.addEventListener("click", closeCaseStudy);
+  }
+
+  $$("[data-case-close]", modal).forEach(element => {
+    element.addEventListener("click", event => {
+      if (
+        element === event.target ||
+        element.hasAttribute("data-case-close")
+      ) {
+        closeCaseStudy();
+      }
+    });
+  });
+
+  document.addEventListener("keydown", event => {
+    if (modal.getAttribute("aria-hidden") === "true") return;
+
+    if (event.key === "Escape") {
+      closeCaseStudy();
+    }
+
+    if (event.key === "Tab") {
+      const focusable = $$(
+        'button:not([disabled]), a[href], input:not([disabled]), [tabindex]:not([tabindex="-1"])',
+        modal
+      ).filter(element => element.offsetParent !== null);
+
+      if (!focusable.length) return;
+
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (
+        !event.shiftKey &&
+        document.activeElement === last
+      ) {
+        event.preventDefault();
+        first.focus();
+      }
+    }
+  });
+
+  /* ==========================================
+     INITIAL STATE
+  ========================================== */
+
+  modal.setAttribute("aria-hidden", "true");
+  modal.setAttribute("inert", "");
+  modal.style.display = "none";
+  modal.style.visibility = "hidden";
+
+  filterProjects("all");
+
+  console.log("MYRLORE Project Vault initialized.");
+
+})();
