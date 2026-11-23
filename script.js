@@ -1,4 +1,5 @@
-```/* ==========================================
+
+/* ==========================================
    MYRLORE® — MAIN INTERACTION SYSTEM
    A2 CHROME SCULPTURE · GSAP · UI
    CAPRI CINEMATIC SECRET ARCHIVE
@@ -546,6 +547,8 @@
         }
       });
 
+      let hasAnimation = false;
+
       if (transitionCurtain) {
         timeline.to(transitionCurtain, {
           scaleY: 1,
@@ -553,6 +556,8 @@
           ease: "power4.inOut",
           transformOrigin: "bottom center"
         });
+
+        hasAnimation = true;
       }
 
       if (transitionContent) {
@@ -562,7 +567,9 @@
           duration: 0.45,
           ease: "power2.out"
         }, "-=0.1");
-              }
+
+        hasAnimation = true;
+      }
 
       if (transitionProgress) {
         timeline.to(transitionProgress, {
@@ -570,9 +577,11 @@
           duration: 0.7,
           ease: "power2.inOut"
         }, "-=0.1");
+
+        hasAnimation = true;
       }
 
-      if (!transitionCurtain && !transitionContent && !transitionProgress) {
+      if (!hasAnimation) {
         window.location.href = url;
       }
     } else {
@@ -623,6 +632,9 @@
 
   /* ==========================================
      THREE.JS — A2 CHROME SCULPTURE
+
+     Loads Three.js directly from jsDelivr.
+     No bare module imports or addon required.
   ========================================== */
 
   const canvas = $("#webgl");
@@ -676,6 +688,7 @@
     }
 
     const centerCurve = new THREE.CatmullRomCurve3(curvePoints);
+
     const frames = centerCurve.computeFrenetFrames(
       BLADE_SEGMENTS,
       false
@@ -810,7 +823,10 @@
       environmentScene.add(panel);
     });
 
-    const texture = pmrem.fromScene(environmentScene, 0.04).texture;
+    const texture = pmrem.fromScene(
+      environmentScene,
+      0.04
+    ).texture;
 
     pmrem.dispose();
 
@@ -844,12 +860,9 @@
     if (!canvas || threeReady || reducedMotion) return;
 
     try {
-      THREE = await import("three");
-
-      const { RectAreaLightUniformsLib } =
-        await import("three/addons/lights/RectAreaLightUniformsLib.js");
-
-      RectAreaLightUniformsLib.init();
+      THREE = await import(
+        "https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js"
+      );
 
       clock = new THREE.Clock();
       scene = new THREE.Scene();
@@ -913,10 +926,9 @@
       lowerLight.position.set(0, -3, 3);
       scene.add(lowerLight);
 
-      const areaLight = new THREE.RectAreaLight(0xffffff, 6, 5, 2);
-      areaLight.position.set(0, 4, 4);
-      areaLight.lookAt(0, 0, 0);
-      scene.add(areaLight);
+      const topLight = new THREE.DirectionalLight(0xffffff, 1.5);
+      topLight.position.set(0, 4, 4);
+      scene.add(topLight);
 
       sculpture = new THREE.Group();
       scene.add(sculpture);
@@ -1008,7 +1020,9 @@
       }
 
       const particleCount = 180;
-      const particlePositions = new Float32Array(particleCount * 3);
+      const particlePositions = new Float32Array(
+        particleCount * 3
+      );
 
       for (let i = 0; i < particleCount; i++) {
         particlePositions[i * 3] = (Math.random() - 0.5) * 7;
@@ -1080,7 +1094,10 @@
       }
 
     } catch (error) {
-      console.error("MYRLORE sculpture initialisation failed:", error);
+      console.error(
+        "MYRLORE sculpture initialisation failed:",
+        error
+      );
 
       if (canvas) canvas.style.opacity = "0";
     }
@@ -1119,15 +1136,10 @@
 
   /* ==========================================
      MYRLORE® — CAPRI SECRET ARCHIVE
-
-     ONE IMAGE.
-     ONE CANVAS.
-     REAL SCREEN MOVEMENT.
-     NO SLIDESHOW.
   ========================================== */
 
   const konamiSequence = [
-      "ArrowUp",
+    "ArrowUp",
     "ArrowUp",
     "ArrowDown",
     "ArrowDown",
@@ -1354,7 +1366,6 @@
   document.body.appendChild(secretOverlay);
 
   const capriFlight = $("#capriFlight", secretOverlay);
-  const secretInner = $(".secret-inner", secretOverlay);
   const secretCloseButton = $("#secretClose", secretOverlay);
 
   capriCanvas = $("#capriCanvas", secretOverlay);
@@ -1367,9 +1378,6 @@
      CAPRI SPRITE SHEET + COLOUR EXTRACTION
 
      4 columns × 4 rows = 16 animation frames.
-     Each frame is drawn from the same image onto
-     one canvas. This is frame animation, not a
-     slideshow and not 16 separate image elements.
   ========================================== */
 
   function rgbToHex(r, g, b) {
@@ -1410,11 +1418,12 @@
 
         const max = Math.max(r, g, b);
         const min = Math.min(r, g, b);
+
         const saturation = max === 0
           ? 0
           : (max - min) / max;
 
-        if (saturation < .22 || max < 35) continue;
+        if (saturation < 0.22 || max < 35) continue;
 
         const key = [
           Math.min(255, Math.round(r / 16) * 16),
@@ -1474,7 +1483,10 @@
       );
 
     } catch (error) {
-      console.warn("Capri palette extraction failed:", error);
+      console.warn(
+        "Capri palette extraction failed:",
+        error
+      );
     }
   }
 
@@ -1548,7 +1560,9 @@
       );
 
       if (!frameWidth || !frameHeight) {
-        console.error("Capri sprite sheet has invalid dimensions.");
+        console.error(
+          "Capri sprite sheet has invalid dimensions."
+        );
         return;
       }
 
@@ -1637,7 +1651,7 @@
 
     ctx.clearRect(0, 0, width, height);
 
-    if (burst < .025) {
+    if (burst < 0.025) {
       drawCapriFrame(capriFrameIndex);
       return;
     }
@@ -1649,13 +1663,13 @@
     drawCapriFrame(
       capriFrameIndex,
       -5 * burst,
-      .12 * burst
+      0.12 * burst
     );
 
     drawCapriFrame(
       capriFrameIndex,
       5 * burst,
-      .1 * burst
+      0.1 * burst
     );
 
     ctx.globalCompositeOperation = "source-over";
@@ -1669,7 +1683,7 @@
     const sliceHeight = height / sliceCount;
 
     for (let i = 0; i < sliceCount; i++) {
-      if (Math.random() > .35 + burst * .4) continue;
+      if (Math.random() > 0.35 + burst * 0.4) continue;
 
       const sy = i * sliceHeight;
       const sh = Math.min(
@@ -1678,7 +1692,7 @@
       );
 
       const shift =
-        (Math.random() - .5) * 28 * burst;
+        (Math.random() - 0.5) * 28 * burst;
 
       ctx.drawImage(
         capriImage,
@@ -1696,15 +1710,9 @@
     ctx.globalAlpha = 1;
     ctx.globalCompositeOperation = "source-over";
   }
-    /* ==========================================
+
+  /* ==========================================
      CAPRI — CINEMATIC FLIGHT PATH
-
-     Capri travels across the screen on a
-     curved path, then settles beside the
-     secret archive text.
-
-     Character poses animate independently
-     using the 16 sprite-sheet frames.
   ========================================== */
 
   function cubicBezierPoint(p0, p1, p2, p3, t) {
@@ -1794,7 +1802,7 @@
       settle * settle * (3 - 2 * settle);
 
     const scale = 0.72 +
-      (mobile ? 0.64 : 0.88 - 0.72) *
+      ((mobile ? 0.64 : 0.88) - 0.72) *
       easeSettle;
 
     const rotation =
