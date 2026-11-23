@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -6,17 +5,14 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="theme-color" content="#08090b">
 
-  <!-- SEO -->
   <meta name="description" content="MYRLORE is an independent creative studio shaping distinctive brands and immersive digital experiences.">
   <meta name="author" content="MYRLORE">
   <meta name="robots" content="index, follow">
 
   <title>MYRLORE® — Independent Creative Studio</title>
 
-  <!-- FAVICON -->
   <link rel="icon" type="image/svg+xml" href="/favicon.svg">
 
-  <!-- OPEN GRAPH / DISCORD / FACEBOOK -->
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="MYRLORE">
   <meta property="og:title" content="MYRLORE® — Independent Creative Studio">
@@ -30,22 +26,18 @@
   <meta property="og:image:alt" content="MYRLORE — Independent Creative Studio, platinum monogram on a dark cinematic background.">
   <meta property="og:locale" content="en_IN">
 
-  <!-- TWITTER / X -->
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="MYRLORE® — Independent Creative Studio">
   <meta name="twitter:description" content="We shape brands, build digital experiences and turn ambitious ideas into something extraordinary.">
   <meta name="twitter:image" content="https://myrlore-6fufsiyxa-xtremetoy.vercel.app/myrlore-social-preview.jpg">
   <meta name="twitter:image:alt" content="MYRLORE — Independent Creative Studio">
 
-  <!-- FONTS -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
-  <!-- MAIN STYLESHEET -->
   <link rel="stylesheet" href="style.css">
 
-  <!-- THREE.JS IMPORT MAP -->
   <script type="importmap">
   {
     "imports": {
@@ -55,7 +47,6 @@
   }
   </script>
 
-  <!-- GSAP -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js" defer></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js" defer></script>
 </head>
@@ -105,11 +96,13 @@
   <nav class="menu-panel" id="menuPanel" aria-label="Main navigation">
     <button class="menu-close" id="menuClose" type="button">CLOSE ×</button>
     <div class="menu-label">EXPLORE MYRLORE</div>
+
     <a href="#studio"><span>01</span> Studio</a>
-<a href="services.html"><span>02</span> Expertise <span>↗</span></a>
-    <a href="#work"><span>03</span> Selected work</a>
+    <a href="services.html"><span>02</span> Expertise <span>↗</span></a>
+    <a href="#work"><span>03</span> Project Vault</a>
     <a href="form-lab.html"><span>04</span> Form Lab <span>↗</span></a>
     <a href="#contact"><span>05</span> Contact</a>
+
     <div class="menu-bottom">INDEPENDENT BY NATURE. CREATIVE BY DESIGN.</div>
   </nav>
 
@@ -226,7 +219,6 @@
 
       <div class="service-list">
 
-        <!-- SERVICE 01 -->
         <article class="service-item">
           <button class="service-trigger" id="serviceTrigger01" type="button" aria-expanded="false" aria-controls="servicePanel01">
             <span class="service-num">01</span>
@@ -264,7 +256,6 @@
           </div>
         </article>
 
-        <!-- SERVICE 02 -->
         <article class="service-item">
           <button class="service-trigger" id="serviceTrigger02" type="button" aria-expanded="false" aria-controls="servicePanel02">
             <span class="service-num">02</span>
@@ -303,7 +294,6 @@
           </div>
         </article>
 
-        <!-- SERVICE 03 -->
         <article class="service-item">
           <button class="service-trigger" id="serviceTrigger03" type="button" aria-expanded="false" aria-controls="servicePanel03">
             <span class="service-num">03</span>
@@ -342,7 +332,6 @@
           </div>
         </article>
 
-        <!-- SERVICE 04 -->
         <article class="service-item">
           <button class="service-trigger" id="serviceTrigger04" type="button" aria-expanded="false" aria-controls="servicePanel04">
             <span class="service-num">04</span>
@@ -380,6 +369,7 @@
             </div>
           </div>
         </article>
+
       </div>
 
       <div class="services-footer">
@@ -388,25 +378,71 @@
       </div>
     </section>
 
-    <!-- SELECTED WORK -->
+    <!-- PROJECT VAULT -->
     <section class="work section-pad" id="work">
+
       <div class="section-top">
-        <span class="section-number">03 / SELECTED WORK</span>
-        <span class="section-aside">INDEPENDENT PROJECTS & EXPLORATIONS</span>
+        <span class="section-number">03 / THE PROJECT VAULT</span>
+        <span class="section-aside">A COLLECTION OF IDEAS & EXPERIMENTS</span>
       </div>
 
       <div class="work-heading-row">
         <h2 class="reveal">
-          Made with<br>
-          <span>intention.</span>
+          Beyond the<br>
+          <span>ordinary.</span>
         </h2>
-        <p>A selection of digital projects and creative explorations.</p>
+
+        <p>
+          A growing collection of digital products, technical explorations
+          and imaginative concepts. Each project starts with a question:
+          what else is possible?
+        </p>
       </div>
 
-      <div class="work-grid">
+      <!-- VAULT INTRO -->
+      <div class="vault-intro">
+        <div class="vault-count">
+          <span class="vault-count-number">12</span>
+          <span>PROJECTS IN THE VAULT</span>
+        </div>
 
-        <!-- CORROGUARD -->
-        <a class="work-card work-large" href="#case-study" data-case-study="corroguard" aria-label="Explore CorroGuard case study">
+        <span class="vault-intro-note">INDEPENDENT WORK / 2026</span>
+      </div>
+
+      <!-- PROJECT FILTERS -->
+      <div class="vault-filters" role="group" aria-label="Filter projects">
+
+        <button class="vault-filter active" type="button" data-filter="all" aria-pressed="true">
+          ALL PROJECTS <span>12</span>
+        </button>
+
+        <button class="vault-filter" type="button" data-filter="digital" aria-pressed="false">
+          DIGITAL <span>5</span>
+        </button>
+
+        <button class="vault-filter" type="button" data-filter="data" aria-pressed="false">
+          DATA & MAPPING <span>3</span>
+        </button>
+
+        <button class="vault-filter" type="button" data-filter="engineering" aria-pressed="false">
+          ENGINEERING <span>1</span>
+        </button>
+
+        <button class="vault-filter" type="button" data-filter="experiments" aria-pressed="false">
+          EXPERIMENTS <span>3</span>
+        </button>
+
+      </div>
+
+      <!-- PROJECT GRID -->
+      <div class="work-grid vault-grid" id="vaultGrid">
+
+        <!-- 001 CORROGUARD -->
+        <a class="work-card work-large" href="#case-study"
+           data-case-study="corroguard"
+           data-project-category="engineering"
+           aria-label="Explore CorroGuard project">
+
           <div class="work-art art-corro">
             <div class="art-orbit"></div>
             <div class="art-core">CG<span>®</span></div>
@@ -416,15 +452,20 @@
 
           <div class="work-info">
             <div>
+              <span class="work-number">001 / ENGINEERING</span>
               <h3>CorroGuard</h3>
-              <p>Engineering · Digital platform</p>
+              <p>Engineering · Corrosion analysis platform</p>
             </div>
             <span>↗</span>
           </div>
         </a>
 
-        <!-- FLOODWATCH CHENNAI -->
-        <a class="work-card work-small" href="#case-study" data-case-study="floodwatch" aria-label="Explore FloodWatch Chennai case study">
+        <!-- 002 FLOODWATCH -->
+        <a class="work-card work-small" href="#case-study"
+           data-case-study="floodwatch"
+           data-project-category="data"
+           aria-label="Explore FloodWatch Chennai project">
+
           <div class="work-art art-flood">
             <div class="flood-lines"></div>
             <div class="flood-title">FLOOD<br>WATCH<span>.</span></div>
@@ -434,6 +475,7 @@
 
           <div class="work-info">
             <div>
+              <span class="work-number">002 / DATA & MAPPING</span>
               <h3>FloodWatch Chennai</h3>
               <p>Data · Mapping · Web platform</p>
             </div>
@@ -441,12 +483,278 @@
           </div>
         </a>
 
-        <!-- WORK NOTE -->
-        <div class="work-note">
-          <span>MORE TO COME</span>
-          <p>Good work takes curiosity.<br>We're just getting started.</p>
-        </div>
+        <!-- 003 AETHER -->
+        <a class="work-card" href="#case-study"
+           data-case-study="aether"
+           data-project-category="digital"
+           aria-label="Explore AETHER concept">
+
+          <div class="work-art art-aether">
+            <div class="aether-orb"></div>
+            <div class="aether-ring aether-ring-one"></div>
+            <div class="aether-ring aether-ring-two"></div>
+            <div class="aether-word">AETHER</div>
+            <span class="art-label">IMMERSIVE DIGITAL WORLDS</span>
+            <span class="work-view-label">EXPLORE CONCEPT ↗</span>
+          </div>
+
+          <div class="work-info">
+            <div>
+              <span class="work-number">003 / DIGITAL EXPERIENCE</span>
+              <h3>AETHER</h3>
+              <p>Immersive design · 3D experience</p>
+            </div>
+            <span>↗</span>
+          </div>
+        </a>
+
+        <!-- 004 NEXUS AI -->
+        <a class="work-card" href="#case-study"
+           data-case-study="nexus"
+           data-project-category="digital"
+           aria-label="Explore NEXUS AI concept">
+
+          <div class="work-art art-nexus">
+            <div class="nexus-grid"></div>
+            <div class="nexus-core">N<span>.</span></div>
+            <div class="nexus-orbit"></div>
+            <span class="art-label">INTELLIGENCE INTERFACE</span>
+            <span class="work-view-label">EXPLORE CONCEPT ↗</span>
+          </div>
+
+          <div class="work-info">
+            <div>
+              <span class="work-number">004 / DIGITAL PRODUCT</span>
+              <h3>NEXUS AI</h3>
+              <p>AI interface · Command dashboard</p>
+            </div>
+            <span>↗</span>
+          </div>
+        </a>
+
+        <!-- 005 MONOLITH -->
+        <a class="work-card" href="#case-study"
+           data-case-study="monolith"
+           data-project-category="digital"
+           aria-label="Explore MONOLITH concept">
+
+          <div class="work-art art-monolith">
+            <div class="monolith-panel">
+              <span>MONOLITH</span>
+              <strong>08.42</strong>
+              <div class="monolith-chart">
+                <i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i>
+              </div>
+              <small>FINANCIAL SYSTEMS / 001</small>
+            </div>
+            <span class="art-label">FINANCIAL INTERFACE</span>
+            <span class="work-view-label">EXPLORE CONCEPT ↗</span>
+          </div>
+
+          <div class="work-info">
+            <div>
+              <span class="work-number">005 / PRODUCT DESIGN</span>
+              <h3>MONOLITH</h3>
+              <p>Fintech · Data visualisation</p>
+            </div>
+            <span>↗</span>
+          </div>
+        </a>
+
+        <!-- 006 SENTINEL -->
+        <a class="work-card" href="#case-study"
+           data-case-study="sentinel"
+           data-project-category="experiments"
+           aria-label="Explore SENTINEL concept">
+
+          <div class="work-art art-sentinel">
+            <div class="sentinel-radar">
+              <div class="sentinel-sweep"></div>
+              <span></span>
+            </div>
+            <div class="sentinel-word">SENTINEL<span>_</span></div>
+            <span class="art-label">SYSTEM MONITORING</span>
+            <span class="work-view-label">EXPLORE CONCEPT ↗</span>
+          </div>
+
+          <div class="work-info">
+            <div>
+              <span class="work-number">006 / EXPERIMENT</span>
+              <h3>SENTINEL</h3>
+              <p>Cybersecurity concept · Monitoring UI</p>
+            </div>
+            <span>↗</span>
+          </div>
+        </a>
+
+        <!-- 007 FORM / 01 -->
+        <a class="work-card" href="#case-study"
+           data-case-study="form01"
+           data-project-category="digital"
+           aria-label="Explore FORM 01 concept">
+
+          <div class="work-art art-form01">
+            <div class="form-shape form-shape-one"></div>
+            <div class="form-shape form-shape-two"></div>
+            <div class="form-shape form-shape-three"></div>
+            <div class="form01-title">FORM<span>/01</span></div>
+            <span class="art-label">SPACES & STRUCTURES</span>
+            <span class="work-view-label">EXPLORE CONCEPT ↗</span>
+          </div>
+
+          <div class="work-info">
+            <div>
+              <span class="work-number">007 / DIGITAL SHOWCASE</span>
+              <h3>FORM / 01</h3>
+              <p>Architecture · Editorial experience</p>
+            </div>
+            <span>↗</span>
+          </div>
+        </a>
+
+        <!-- 008 ORBITAL -->
+        <a class="work-card" href="#case-study"
+           data-case-study="orbital"
+           data-project-category="data"
+           aria-label="Explore ORBITAL concept">
+
+          <div class="work-art art-orbital">
+            <div class="orbital-planet"></div>
+            <div class="orbital-path orbital-path-one"></div>
+            <div class="orbital-path orbital-path-two"></div>
+            <div class="orbital-path orbital-path-three"></div>
+            <span class="orbital-label">ORBITAL</span>
+            <span class="art-label">BEYOND THE KNOWN</span>
+            <span class="work-view-label">EXPLORE CONCEPT ↗</span>
+          </div>
+
+          <div class="work-info">
+            <div>
+              <span class="work-number">008 / DATA VISUALISATION</span>
+              <h3>ORBITAL</h3>
+              <p>Space exploration · Orbital data</p>
+            </div>
+            <span>↗</span>
+          </div>
+        </a>
+
+        <!-- 009 SONORA -->
+        <a class="work-card" href="#case-study"
+           data-case-study="sonora"
+           data-project-category="digital"
+           aria-label="Explore SONORA concept">
+
+          <div class="work-art art-sonora">
+            <div class="sonora-disc">
+              <div class="sonora-center"></div>
+            </div>
+            <div class="sonora-wave">
+              <i></i><i></i><i></i><i></i><i></i><i></i>
+              <i></i><i></i><i></i><i></i><i></i><i></i>
+            </div>
+            <span class="art-label">SOUND IN MOTION</span>
+            <span class="work-view-label">EXPLORE CONCEPT ↗</span>
+          </div>
+
+          <div class="work-info">
+            <div>
+              <span class="work-number">009 / INTERACTIVE MEDIA</span>
+              <h3>SONORA</h3>
+              <p>Music discovery · Audio visualisation</p>
+            </div>
+            <span>↗</span>
+          </div>
+        </a>
+
+        <!-- 010 ATLAS GRID -->
+        <a class="work-card" href="#case-study"
+           data-case-study="atlas"
+           data-project-category="data"
+           aria-label="Explore ATLAS GRID concept">
+
+          <div class="work-art art-atlas">
+            <div class="atlas-map">
+              <div class="atlas-streets"></div>
+              <span class="atlas-pin atlas-pin-one"></span>
+              <span class="atlas-pin atlas-pin-two"></span>
+              <span class="atlas-pin atlas-pin-three"></span>
+            </div>
+            <div class="atlas-title">ATLAS<br>GRID<span>.</span></div>
+            <span class="art-label">CONNECTED CITIES</span>
+            <span class="work-view-label">EXPLORE CONCEPT ↗</span>
+          </div>
+
+          <div class="work-info">
+            <div>
+              <span class="work-number">010 / SPATIAL DATA</span>
+              <h3>ATLAS GRID</h3>
+              <p>Smart city · Digital twin concept</p>
+            </div>
+            <span>↗</span>
+          </div>
+        </a>
+
+        <!-- 011 APEX -->
+        <a class="work-card" href="#case-study"
+           data-case-study="apex"
+           data-project-category="experiments"
+           aria-label="Explore APEX concept">
+
+          <div class="work-art art-apex">
+            <div class="apex-light"></div>
+            <div class="apex-car">
+              <div class="apex-car-body"></div>
+              <div class="apex-wheel apex-wheel-one"></div>
+              <div class="apex-wheel apex-wheel-two"></div>
+            </div>
+            <div class="apex-title">APEX<span> / 01</span></div>
+            <span class="art-label">AUTOMOTIVE CONFIGURATION</span>
+            <span class="work-view-label">EXPLORE CONCEPT ↗</span>
+          </div>
+
+          <div class="work-info">
+            <div>
+              <span class="work-number">011 / INTERACTIVE CONCEPT</span>
+              <h3>APEX</h3>
+              <p>Automotive · Digital configurator</p>
+            </div>
+            <span>↗</span>
+          </div>
+        </a>
+
+        <!-- 012 ECHO -->
+        <a class="work-card" href="#case-study"
+           data-case-study="echo"
+           data-project-category="experiments"
+           aria-label="Explore ECHO concept">
+
+          <div class="work-art art-echo">
+            <div class="echo-rings">
+              <i></i><i></i><i></i><i></i><i></i>
+            </div>
+            <div class="echo-title">ECHO</div>
+            <span class="art-label">DIGITAL IDENTITY STUDY</span>
+            <span class="work-view-label">EXPLORE CONCEPT ↗</span>
+          </div>
+
+          <div class="work-info">
+            <div>
+              <span class="work-number">012 / CREATIVE EXPERIMENT</span>
+              <h3>ECHO</h3>
+              <p>Digital identity · Personal data concept</p>
+            </div>
+            <span>↗</span>
+          </div>
+        </a>
+
       </div>
+
+      <!-- VAULT FOOTER -->
+      <div class="vault-footer">
+        <span>12 PROJECTS / 01 CREATIVE DIRECTION</span>
+        <span>MORE IDEAS ARE TAKING SHAPE <b>✳</b></span>
+      </div>
+
     </section>
 
     <!-- MANIFESTO -->
@@ -492,6 +800,7 @@
     <div class="case-backdrop" data-case-close></div>
 
     <section class="case-panel" role="dialog" aria-modal="true" aria-labelledby="caseTitle" tabindex="-1">
+
       <div class="case-topbar">
         <a class="case-logo" href="#home">MYRLORE<span>®</span></a>
 
@@ -501,6 +810,7 @@
       </div>
 
       <div class="case-content">
+
         <div class="case-hero-art" id="caseHeroArt">
           <span class="case-art-index" id="caseIndex">PROJECT / 001</span>
           <div class="case-art-symbol" id="caseSymbol">CG</div>
@@ -508,6 +818,7 @@
         </div>
 
         <div class="case-intro">
+
           <div class="case-eyebrow">
             <span class="status-dot"></span>
             <span id="caseCategory">ENGINEERING · DIGITAL PLATFORM</span>
@@ -519,9 +830,17 @@
             An interactive engineering chemistry platform
             exploring corrosion analysis and prevention.
           </p>
+
+          <!-- PROJECT STATUS -->
+          <div class="case-status" id="caseStatus">
+            <span class="case-status-dot"></span>
+            <span id="caseStatusText">INDEPENDENT PROJECT</span>
+          </div>
+
         </div>
 
         <div class="case-details">
+
           <div class="case-detail-block">
             <span class="case-label">01 / OVERVIEW</span>
             <p id="caseOverview"></p>
@@ -536,15 +855,17 @@
             <span class="case-label">03 / TECHNOLOGY</span>
             <div class="case-tech-list" id="caseTech"></div>
           </div>
+
         </div>
 
         <div class="case-bottom">
           <span>INDEPENDENT PROJECT / MYRLORE®</span>
 
           <button class="case-bottom-close" type="button" data-case-close>
-            BACK TO SELECTED WORK ↑
+            BACK TO PROJECT VAULT ↑
           </button>
         </div>
+
       </div>
     </section>
   </div>
@@ -555,7 +876,6 @@
     <span>INDEPENDENT CREATIVE STUDIO</span>
     <span>© <span id="year"></span> MYRLORE. ALL RIGHTS RESERVED.</span>
 
-    <!-- STUDIO ARCHIVE LINK -->
     <a href="archive.html" class="studio-archive-link">
       STUDIO ARCHIVE <span>↗</span>
     </a>
