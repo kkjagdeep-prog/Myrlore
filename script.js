@@ -2657,3 +2657,95 @@
   );
 
 })();
+
+/* ==========================================
+   MYRLORE — PROJECT VAULT FILTER SYSTEM
+========================================== */
+
+(() => {
+  "use strict";
+
+  const grid = document.querySelector("#vaultGrid");
+  const filters = document.querySelectorAll(".vault-filter");
+  const cards = grid
+    ? [...grid.querySelectorAll(".work-card[data-project-category]")]
+    : [];
+
+  if (!grid || !filters.length || !cards.length) return;
+
+  const counts = {
+    all: cards.length,
+    digital: 0,
+    data: 0,
+    engineering: 0,
+    experiments: 0
+  };
+
+  cards.forEach(card => {
+    const category = card.dataset.projectCategory;
+
+    if (Object.hasOwn(counts, category)) {
+      counts[category]++;
+    }
+  });
+
+  filters.forEach(button => {
+    const category = button.dataset.filter;
+    const count = button.querySelector("span");
+
+    if (count && Object.hasOwn(counts, category)) {
+      count.textContent = counts[category];
+    }
+  });
+
+  function filterProjects(category) {
+    filters.forEach(button => {
+      const active = button.dataset.filter === category;
+
+      button.classList.toggle("active", active);
+      button.setAttribute("aria-pressed", String(active));
+    });
+
+    cards.forEach((card, index) => {
+      const matches =
+        category === "all" ||
+        card.dataset.projectCategory === category;
+
+      card.classList.toggle("vault-hidden", !matches);
+
+      if (matches) {
+        card.style.animation = "none";
+        void card.offsetWidth;
+        card.style.animation = `vaultCardIn .45s ease ${Math.min(index * 35, 250)}ms both`;
+      }
+    });
+  }
+
+  filters.forEach(button => {
+    button.addEventListener("click", () => {
+      filterProjects(button.dataset.filter);
+    });
+  });
+
+  filterProjects("all");
+})();
+
+/* VAULT CARD ENTRANCE */
+
+if (!document.querySelector("#vaultAnimationStyle")) {
+  const style = document.createElement("style");
+  style.id = "vaultAnimationStyle";
+  style.textContent = `
+    @keyframes vaultCardIn {
+      from {
+        opacity: 0;
+        transform: translateY(14px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+  `;
+  document.head.appendChild(style);
+}
