@@ -462,6 +462,7 @@ body.loaded .page-loader { opacity: 0; visibility: hidden; }
   padding: 35px 7% 55px;
 }
 
+
 .case-hero-art {
   height: 330px;
   position: relative;
@@ -469,7 +470,20 @@ body.loaded .page-loader { opacity: 0; visibility: hidden; }
   place-items: center;
   overflow: hidden;
   isolation: isolate;
-  background: radial-gradient(circle at 50% 45%,#555a5d,#24282c 48%,#121417 100%);
+
+  background:
+    radial-gradient(
+      ellipse at 50% 45%,
+      rgba(198,182,154,.09),
+      transparent 48%
+    ),
+    linear-gradient(
+      135deg,
+      #08090b,
+      #15181c 50%,
+      #090a0c
+    );
+
   border: 1px solid rgba(235,232,222,.08);
 }
 
