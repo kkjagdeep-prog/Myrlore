@@ -1,4 +1,3 @@
-
 /* ==========================================
    MYRLORE® — MAIN INTERACTION SYSTEM
    A2 CHROME SCULPTURE · GSAP · UI
@@ -336,571 +335,46 @@
       }
     });
   });
-
-  /* ==========================================
-     CASE STUDY CONTENT
+     /* ==========================================
+     THREE.JS — HERO CHROME SCULPTURE
   ========================================== */
 
-  const caseStudies = {
-    corroguard: {
-      index: "PROJECT / 001",
-      symbol: "CG",
-      caption: "MATERIAL INTELLIGENCE",
-      category: "ENGINEERING · DIGITAL PLATFORM",
-      title: "CorroGuard",
-      summary:
-        "An interactive engineering chemistry platform exploring corrosion analysis, material behaviour and prevention strategies.",
-      overview:
-        "CorroGuard is an educational digital platform designed to make corrosion science more accessible through interactive tools, material information and practical engineering concepts.",
-      features: [
-        "Interactive corrosion risk calculator",
-        "Metal material information and comparisons",
-        "Metal compatibility checker",
-        "Corrosion types and case studies",
-        "Corrosion prevention information"
-      ],
-      technology: ["HTML", "CSS", "JavaScript", "Chart.js"]
-    },
+  const webglCanvas = $("#webgl");
 
-    floodwatch: {
-      index: "PROJECT / 002",
-      symbol: "FW",
-      caption: "RAINFALL · MAPPING · INSIGHT",
-      category: "DATA · MAPPING · WEB PLATFORM",
-      title: "FloodWatch Chennai",
-      summary:
-        "A web-based flood awareness and risk analysis platform focused on rainfall information and urban drainage infrastructure.",
-      overview:
-        "FloodWatch Chennai explores how rainfall information, drainage infrastructure data and interactive mapping can be brought together to support better understanding of urban flood-related conditions.",
-      features: [
-        "Rainfall data visualisation",
-        "Historical annual rainfall comparisons",
-        "Interactive drainage infrastructure map",
-        "Zone and ward-based search",
-        "Drainage condition information",
-        "Flood awareness insights"
-      ],
-      technology: [
-        "HTML", "CSS", "JavaScript",
-        "Leaflet", "Chart.js", "GeoJSON"
-      ]
-    }
-  };
+  if (webglCanvas && window.THREE) {
+    const THREE = window.THREE;
 
-  /* ==========================================
-     CASE STUDY MODAL
-  ========================================== */
+    let renderer;
+    let scene;
+    let camera;
+    let sculpture;
+    let animationFrame;
 
-  const caseModal = $("#caseStudyModal");
-  const casePanel = $(".case-panel", caseModal || document);
-  const caseClose = $("#caseClose");
+    let targetRotationX = 0;
+    let targetRotationY = 0;
 
-  let previousFocus = null;
+    let currentRotationX = 0;
+    let currentRotationY = 0;
 
-  function populateCaseStudy(project) {
-    const data = caseStudies[project];
+    let pointerX = 0;
+    let pointerY = 0;
 
-    if (!data) return false;
-
-    const setText = (selector, value) => {
-      const element = $(selector);
-      if (element) element.textContent = value;
-    };
-
-    setText("#caseIndex", data.index);
-    setText("#caseSymbol", data.symbol);
-    setText("#caseArtCaption", data.caption);
-    setText("#caseCategory", data.category);
-    setText("#caseTitle", data.title);
-    setText("#caseSummary", data.summary);
-    setText("#caseOverview", data.overview);
-
-    const features = $("#caseFeatures");
-    const technology = $("#caseTech");
-
-    if (features) {
-      features.replaceChildren();
-
-      data.features.forEach(feature => {
-        const li = document.createElement("li");
-        li.textContent = feature;
-        features.appendChild(li);
-      });
-    }
-
-    if (technology) {
-      technology.replaceChildren();
-
-      data.technology.forEach(item => {
-        const span = document.createElement("span");
-        span.textContent = item;
-        technology.appendChild(span);
-      });
-    }
-
-    $("#caseHeroArt")?.classList.toggle(
-      "case-flood",
-      project === "floodwatch"
-    );
-
-    return true;
-  }
-
-  function openCaseStudy(project, trigger) {
-    if (!caseModal || !casePanel) return;
-    if (!populateCaseStudy(project)) return;
-
-    previousFocus = trigger || document.activeElement;
-
-    caseModal.classList.add("is-open");
-    caseModal.setAttribute("aria-hidden", "false");
-    caseModal.removeAttribute("inert");
-
-    body.classList.add("case-open");
-
-    requestAnimationFrame(() => caseClose?.focus());
-  }
-
-  function closeCaseStudy() {
-    if (!caseModal) return;
-
-    caseModal.classList.remove("is-open");
-    caseModal.setAttribute("aria-hidden", "true");
-    caseModal.setAttribute("inert", "");
-
-    body.classList.remove("case-open");
-
-    previousFocus?.focus?.();
-  }
-
-  $$("[data-case-study]").forEach(card => {
-    card.addEventListener("click", event => {
-      event.preventDefault();
-      openCaseStudy(card.dataset.caseStudy, card);
-    });
-  });
-
-  $$("[data-case-close]").forEach(element => {
-    element.addEventListener("click", closeCaseStudy);
-  });
-
-  caseClose?.addEventListener("click", closeCaseStudy);
-
-  casePanel?.addEventListener("keydown", event => {
-    if (event.key !== "Tab") return;
-
-    const focusable = $$(
-      'a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])',
-      casePanel
-    ).filter(element => element.offsetParent !== null);
-
-    if (!focusable.length) return;
-
-    const first = focusable[0];
-    const last = focusable[focusable.length - 1];
-
-    if (event.shiftKey && document.activeElement === first) {
-      event.preventDefault();
-      last.focus();
-    } else if (!event.shiftKey && document.activeElement === last) {
-      event.preventDefault();
-      first.focus();
-    }
-  });
-
-  /* ==========================================
-     MAGNETIC INTERACTIONS
-  ========================================== */
-
-  const magneticElements = $$(
-    ".round-link, .contact-link, .text-link, .menu-toggle, .case-close, .case-bottom-close"
-  );
-
-  if (!touchDevice && !reducedMotion) {
-    magneticElements.forEach(element => {
-      element.addEventListener("mousemove", event => {
-        const rect = element.getBoundingClientRect();
-
-        const x = event.clientX - rect.left - rect.width / 2;
-        const y = event.clientY - rect.top - rect.height / 2;
-
-        element.style.translate =
-          `${x * 0.12}px ${y * 0.12}px`;
-      });
-
-      element.addEventListener("mouseleave", () => {
-        element.style.translate = "0 0";
-      });
-    });
-  }
-
-  /* ==========================================
-     PAGE TRANSITIONS
-  ========================================== */
-
-  const pageTransition = $("#pageTransition");
-  const transitionCurtain = $(".transition-curtain");
-  const transitionContent = $(".transition-content");
-  const transitionProgress = $(".transition-progress span");
-
-  let transitionRunning = false;
-
-  function setTransitionState(active) {
-    if (!pageTransition) return;
-
-    pageTransition.classList.toggle("active", active);
-    pageTransition.classList.toggle("is-active", active);
-
-    pageTransition.setAttribute(
-      "aria-hidden",
-      active ? "false" : "true"
-    );
-
-    if (active) {
-      pageTransition.removeAttribute("inert");
-    } else {
-      pageTransition.setAttribute("inert", "");
-    }
-  }
-
-  function runPageTransition(url) {
-    if (transitionRunning || !pageTransition) {
-      window.location.href = url;
-      return;
-    }
-
-    transitionRunning = true;
-    setTransitionState(true);
-
-    if (gsapInstance && !reducedMotion) {
-      const timeline = gsapInstance.timeline({
-        onComplete: () => {
-          window.location.href = url;
-        }
-      });
-
-      let hasAnimation = false;
-
-      if (transitionCurtain) {
-        timeline.to(transitionCurtain, {
-          scaleY: 1,
-          duration: 0.65,
-          ease: "power4.inOut",
-          transformOrigin: "bottom center"
-        });
-
-        hasAnimation = true;
-      }
-
-      if (transitionContent) {
-        timeline.to(transitionContent, {
-          opacity: 1,
-          y: 0,
-          duration: 0.45,
-          ease: "power2.out"
-        }, "-=0.1");
-
-        hasAnimation = true;
-      }
-
-      if (transitionProgress) {
-        timeline.to(transitionProgress, {
-          scaleX: 1,
-          duration: 0.7,
-          ease: "power2.inOut"
-        }, "-=0.1");
-
-        hasAnimation = true;
-      }
-
-      if (!hasAnimation) {
-        window.location.href = url;
-      }
-    } else {
-      pageTransition.style.visibility = "visible";
-      pageTransition.style.opacity = "1";
-
-      if (transitionCurtain) {
-        transitionCurtain.style.transform = "scaleY(1)";
-      }
-
-      setTimeout(() => {
-        window.location.href = url;
-      }, 150);
-    }
-  }
-
-  $$("a[href]").forEach(link => {
-    link.addEventListener("click", event => {
-      const href = link.getAttribute("href");
-
-      if (
-        !href ||
-        href.startsWith("#") ||
-        href.startsWith("mailto:") ||
-        href.startsWith("tel:") ||
-        link.target === "_blank" ||
-        event.ctrlKey ||
-        event.metaKey ||
-        event.shiftKey ||
-        event.altKey
-      ) return;
-
-      let destination;
-
-      try {
-        destination = new URL(href, window.location.href);
-      } catch {
-        return;
-      }
-
-      if (destination.origin !== location.origin) return;
-      if (destination.pathname === location.pathname) return;
-
-      event.preventDefault();
-      runPageTransition(destination.href);
-    });
-  });
-
-  /* ==========================================
-     THREE.JS — A2 CHROME SCULPTURE
-  ========================================== */
-
-  const canvas = $("#webgl");
-
-  let THREE = null;
-  let renderer = null;
-  let scene = null;
-  let camera = null;
-  let sculpture = null;
-  let particleSystem = null;
-  let clock = null;
-  let animationFrame = null;
-  let resizeObserver = null;
-
-  let threeReady = false;
-  let pageVisible = !document.hidden;
-
-  let pointerX = 0;
-  let pointerY = 0;
-  let scrollRotation = 0;
-
-  const BLADE_SEGMENTS = 84;
-  const RADIAL_SEGMENTS = 24;
-
-  function createBladeGeometry(options = {}) {
-    const {
-      length = 2.8,
-      width = 0.42,
-      thickness = 0.11,
-      twist = 1.2,
-      bend = 0.35,
-      taper = 0.72,
-      ridge = 0.12
-    } = options;
-
-    const positions = [];
-    const uvs = [];
-    const indices = [];
-    const curvePoints = [];
-
-    for (let i = 0; i <= BLADE_SEGMENTS; i++) {
-      const t = i / BLADE_SEGMENTS;
-
-      curvePoints.push(
-        new THREE.Vector3(
-          Math.sin(t * Math.PI) * bend,
-          (t - 0.5) * length,
-          Math.sin(t * Math.PI * 2) * bend * 0.25
-        )
-      );
-    }
-
-    const centerCurve = new THREE.CatmullRomCurve3(curvePoints);
-
-    const frames = centerCurve.computeFrenetFrames(
-      BLADE_SEGMENTS,
-      false
-    );
-
-    for (let i = 0; i <= BLADE_SEGMENTS; i++) {
-      const t = i / BLADE_SEGMENTS;
-      const center = centerCurve.getPointAt(t);
-
-      const envelope = Math.pow(
-        Math.sin(Math.PI * t),
-        taper
-      );
-
-      const asymmetry =
-        1 + Math.sin(t * Math.PI * 2.5) * 0.16;
-
-      const bladeWidth = Math.max(
-        0.003,
-        width * envelope * asymmetry
-      );
-
-      const bladeThickness = Math.max(
-        0.002,
-        thickness * envelope
-      );
-
-      const twistAngle = twist * t;
-      const normal = frames.normals[i];
-      const binormal = frames.binormals[i];
-
-      const twistedNormal = normal.clone()
-        .multiplyScalar(Math.cos(twistAngle))
-        .add(
-          binormal.clone().multiplyScalar(Math.sin(twistAngle))
-        );
-
-      const twistedBinormal = binormal.clone()
-        .multiplyScalar(Math.cos(twistAngle))
-        .sub(
-          normal.clone().multiplyScalar(Math.sin(twistAngle))
-        );
-
-      for (let j = 0; j <= RADIAL_SEGMENTS; j++) {
-        const u = j / RADIAL_SEGMENTS;
-        const angle = u * Math.PI * 2;
-
-        const side = Math.cos(angle) * bladeWidth;
-        const depth = Math.sin(angle) * bladeThickness;
-
-        const ridgeFactor =
-          Math.pow(Math.abs(Math.cos(angle)), 8) *
-          ridge * envelope;
-
-        const point = center.clone()
-          .addScaledVector(twistedNormal, side)
-          .addScaledVector(
-            twistedBinormal,
-            depth + ridgeFactor
-          );
-
-        positions.push(point.x, point.y, point.z);
-        uvs.push(u, t);
-      }
-    }
-
-    for (let i = 0; i < BLADE_SEGMENTS; i++) {
-      for (let j = 0; j < RADIAL_SEGMENTS; j++) {
-        const a = i * (RADIAL_SEGMENTS + 1) + j;
-        const b = a + RADIAL_SEGMENTS + 1;
-
-        indices.push(
-          a, b, a + 1,
-          b, b + 1, a + 1
-        );
-      }
-    }
-
-    const geometry = new THREE.BufferGeometry();
-
-    geometry.setAttribute(
-      "position",
-      new THREE.Float32BufferAttribute(positions, 3)
-    );
-
-    geometry.setAttribute(
-      "uv",
-      new THREE.Float32BufferAttribute(uvs, 2)
-    );
-
-    geometry.setIndex(indices);
-    geometry.computeVertexNormals();
-
-    return geometry;
-  }
-
-  function createChromeCurve(points, material, radius = 0.018) {
-    const curve = new THREE.CatmullRomCurve3(points);
-
-    const geometry = new THREE.TubeGeometry(
-      curve,
-      180,
-      radius,
-      12,
-      false
-    );
-
-    return new THREE.Mesh(geometry, material);
-  }
-
-  function createEnvironment(rendererInstance) {
-    const pmrem = new THREE.PMREMGenerator(rendererInstance);
-
-    const environmentScene = new THREE.Scene();
-    environmentScene.background = new THREE.Color(0x17191e);
-
-    const panels = [
-      { position: [0, 5, 2], size: [5, 0.15, 2], color: 0xffffff },
-      { position: [-5, 1, 1], size: [0.15, 5, 2], color: 0xdce5f0 },
-      { position: [5, 0, -1], size: [0.15, 4, 2], color: 0xc6b69a },
-      { position: [0, -4, -2], size: [4, 0.15, 2], color: 0x8995a4 },
-      { position: [0, 0, -5], size: [4, 4, 0.15], color: 0xffffff }
-    ];
-
-    panels.forEach(data => {
-      const panel = new THREE.Mesh(
-        new THREE.BoxGeometry(...data.size),
-        new THREE.MeshBasicMaterial({ color: data.color })
-      );
-
-      panel.position.set(...data.position);
-      environmentScene.add(panel);
-    });
-
-    const texture = pmrem.fromScene(
-      environmentScene,
-      0.04
-    ).texture;
-
-    pmrem.dispose();
-
-    return texture;
-  }
-
-  function animateThreeAgain() {
-    if (!pageVisible || !threeReady) return;
-
-    animationFrame = requestAnimationFrame(animateThreeAgain);
-
-    const elapsed = clock.getElapsedTime();
-
-    sculpture.rotation.y = elapsed * 0.13 + scrollRotation;
-
-    sculpture.rotation.x =
-      Math.sin(elapsed * 0.25) * 0.13 + pointerY * 0.3;
-
-    sculpture.rotation.z =
-      Math.cos(elapsed * 0.2) * 0.08 + pointerX * 0.2;
-
-    sculpture.position.y = Math.sin(elapsed * 0.5) * 0.08;
-
-    particleSystem.rotation.y = elapsed * 0.025;
-    particleSystem.rotation.x = elapsed * 0.012;
-
-    renderer.render(scene, camera);
-  }
-
-  async function initialiseThree() {
-    if (!canvas || threeReady || reducedMotion) return;
+    const heroVisual = $(".hero-visual");
 
     try {
-      THREE = await import(
-        "https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js"
-      );
-
-      clock = new THREE.Clock();
       scene = new THREE.Scene();
 
-      camera = new THREE.PerspectiveCamera(35, 1, 0.1, 100);
-      camera.position.set(0, 0, 8);
+      camera = new THREE.PerspectiveCamera(
+        38,
+        1,
+        0.1,
+        100
+      );
+
+      camera.position.set(0, 0, 7.5);
 
       renderer = new THREE.WebGLRenderer({
-        canvas,
+        canvas: webglCanvas,
         alpha: true,
         antialias: true,
         powerPreference: "high-performance"
@@ -911,152 +385,150 @@
       );
 
       renderer.outputColorSpace = THREE.SRGBColorSpace;
-      renderer.toneMapping = THREE.ACESFilmicToneMapping;
-      renderer.toneMappingExposure = 1.15;
 
-      const chromeMaterial = new THREE.MeshPhysicalMaterial({
-        color: 0xc8c9c7,
+      if ("toneMapping" in renderer) {
+        renderer.toneMapping = THREE.ACESFilmicToneMapping;
+        renderer.toneMappingExposure = 1.15;
+      }
+
+      const sculptureGroup = new THREE.Group();
+      scene.add(sculptureGroup);
+      sculpture = sculptureGroup;
+
+      /* Main chrome geometry */
+
+      const coreGeometry = new THREE.IcosahedronGeometry(
+        1.48,
+        5
+      );
+
+      const coreMaterial = new THREE.MeshPhysicalMaterial({
+        color: 0xd9d7d1,
         metalness: 1,
-        roughness: 0.16,
-        envMapIntensity: 1.8,
+        roughness: 0.19,
         clearcoat: 1,
-        clearcoatRoughness: 0.08
-      });
-
-      const darkMetal = new THREE.MeshPhysicalMaterial({
-        color: 0x777b80,
-        metalness: 0.95,
-        roughness: 0.25,
-        envMapIntensity: 1.7,
-        clearcoat: 1
-      });
-
-      const champagneMaterial = new THREE.MeshPhysicalMaterial({
-        color: 0xc6b69a,
-        metalness: 1,
-        roughness: 0.2,
-        envMapIntensity: 1.6,
-        clearcoat: 1
-      });
-
-      scene.environment = createEnvironment(renderer);
-
-      scene.add(new THREE.AmbientLight(0xffffff, 0.5));
-
-      const keyLight = new THREE.DirectionalLight(0xffffff, 3.2);
-      keyLight.position.set(4, 5, 6);
-      scene.add(keyLight);
-
-      const rimLight = new THREE.DirectionalLight(0xc6b69a, 2.8);
-      rimLight.position.set(-5, 1, -4);
-      scene.add(rimLight);
-
-      const lowerLight = new THREE.PointLight(0x89939d, 22, 14);
-      lowerLight.position.set(0, -3, 3);
-      scene.add(lowerLight);
-
-      const topLight = new THREE.DirectionalLight(0xffffff, 1.5);
-      topLight.position.set(0, 4, 4);
-      scene.add(topLight);
-
-      sculpture = new THREE.Group();
-      scene.add(sculpture);
-
-      const bladeConfigurations = [
-        { length: 2.9, width: 0.43, twist: 1.25, bend: 0.34 },
-        { length: 2.65, width: 0.39, twist: -1.05, bend: 0.42 },
-        { length: 2.8, width: 0.44, twist: 1.4, bend: 0.3 },
-        { length: 2.7, width: 0.38, twist: -1.2, bend: 0.4 },
-        { length: 2.95, width: 0.42, twist: 1.1, bend: 0.36 },
-        { length: 2.65, width: 0.4, twist: -1.35, bend: 0.38 },
-        { length: 2.85, width: 0.43, twist: 1.25, bend: 0.32 },
-        { length: 2.7, width: 0.39, twist: -1.15, bend: 0.4 },
-        { length: 2.9, width: 0.42, twist: 1.3, bend: 0.35 }
-      ];
-
-      bladeConfigurations.forEach((config, index) => {
-        const geometry = createBladeGeometry(config);
-
-        const blade = new THREE.Mesh(
-          geometry,
-          index % 3 === 0 ? champagneMaterial : chromeMaterial
-        );
-
-        const angle =
-          (index / bladeConfigurations.length) * Math.PI * 2;
-
-        blade.rotation.set(
-          Math.sin(angle) * 0.5,
-          angle,
-          Math.cos(angle) * 0.45
-        );
-
-        blade.position.set(
-          Math.cos(angle) * 0.22,
-          Math.sin(angle) * 0.22,
-          Math.sin(angle * 2) * 0.18
-        );
-
-        blade.scale.setScalar(
-          0.88 + Math.sin(index * 1.7) * 0.08
-        );
-
-        sculpture.add(blade);
+        clearcoatRoughness: 0.12,
+        reflectivity: 1
       });
 
       const core = new THREE.Mesh(
-        new THREE.IcosahedronGeometry(0.48, 3),
-        darkMetal
+        coreGeometry,
+        coreMaterial
       );
 
-      core.scale.set(1, 1.12, 0.88);
-      sculpture.add(core);
+      sculptureGroup.add(core);
 
-      const innerCore = new THREE.Mesh(
-        new THREE.SphereGeometry(0.19, 48, 48),
-        chromeMaterial
+      /* Inner dark metallic form */
+
+      const innerGeometry = new THREE.TorusKnotGeometry(
+        0.82,
+        0.19,
+        180,
+        24,
+        2,
+        5
       );
 
-      sculpture.add(innerCore);
+      const innerMaterial = new THREE.MeshPhysicalMaterial({
+        color: 0xaaa9a5,
+        metalness: 1,
+        roughness: 0.24,
+        clearcoat: 1
+      });
 
-      for (let i = 0; i < 3; i++) {
-        const points = [];
-        const offset = i * (Math.PI * 2 / 3);
+      const innerForm = new THREE.Mesh(
+        innerGeometry,
+        innerMaterial
+      );
 
-        for (let j = 0; j <= 100; j++) {
-          const t = j / 100;
-          const angle = t * Math.PI * 2 + offset;
+      innerForm.scale.set(0.72, 0.72, 0.72);
+      sculptureGroup.add(innerForm);
 
-          const radius =
-            1.35 + Math.sin(angle * 2.5 + i) * 0.24;
+      /* Orbit rings */
 
-          points.push(
-            new THREE.Vector3(
-              Math.cos(angle) * radius,
-              Math.sin(angle * 1.5 + i) * 0.55,
-              Math.sin(angle) * radius
-            )
-          );
-        }
+      const ringMaterial = new THREE.MeshBasicMaterial({
+        color: 0xc6b69a,
+        transparent: true,
+        opacity: 0.42,
+        side: THREE.DoubleSide
+      });
 
-        sculpture.add(
-          createChromeCurve(
-            points,
-            i === 1 ? champagneMaterial : chromeMaterial,
-            0.014
-          )
-        );
-      }
+      const ringOne = new THREE.Mesh(
+        new THREE.TorusGeometry(2.05, 0.006, 8, 180),
+        ringMaterial
+      );
 
-      const particleCount = 180;
+      ringOne.rotation.set(
+        THREE.MathUtils.degToRad(65),
+        0,
+        THREE.MathUtils.degToRad(-28)
+      );
+
+      sculptureGroup.add(ringOne);
+
+      const ringTwo = new THREE.Mesh(
+        new THREE.TorusGeometry(2.3, 0.004, 8, 180),
+        ringMaterial.clone()
+      );
+
+      ringTwo.material.opacity = 0.2;
+
+      ringTwo.rotation.set(
+        THREE.MathUtils.degToRad(35),
+        THREE.MathUtils.degToRad(55),
+        THREE.MathUtils.degToRad(18)
+      );
+
+      sculptureGroup.add(ringTwo);
+
+      /* Lighting */
+
+      scene.add(
+        new THREE.AmbientLight(0xffffff, 0.65)
+      );
+
+      const keyLight = new THREE.DirectionalLight(
+        0xffffff,
+        3.2
+      );
+
+      keyLight.position.set(4, 5, 6);
+      scene.add(keyLight);
+
+      const warmLight = new THREE.PointLight(
+        0xc6b69a,
+        75,
+        12
+      );
+
+      warmLight.position.set(-4, 1, 2);
+      scene.add(warmLight);
+
+      const coolLight = new THREE.PointLight(
+        0x9eabbc,
+        55,
+        12
+      );
+
+      coolLight.position.set(3, -3, -3);
+      scene.add(coolLight);
+
+      /* Small floating particles */
+
+      const particleCount = 220;
       const particlePositions = new Float32Array(
         particleCount * 3
       );
 
       for (let i = 0; i < particleCount; i++) {
-        particlePositions[i * 3] = (Math.random() - 0.5) * 7;
-        particlePositions[i * 3 + 1] = (Math.random() - 0.5) * 7;
-        particlePositions[i * 3 + 2] = (Math.random() - 0.5) * 5;
+        particlePositions[i * 3] =
+          (Math.random() - 0.5) * 8;
+
+        particlePositions[i * 3 + 1] =
+          (Math.random() - 0.5) * 8;
+
+        particlePositions[i * 3 + 2] =
+          (Math.random() - 0.5) * 6;
       }
 
       const particleGeometry = new THREE.BufferGeometry();
@@ -1066,2173 +538,1348 @@
         new THREE.BufferAttribute(particlePositions, 3)
       );
 
-      particleSystem = new THREE.Points(
+      const particleMaterial = new THREE.PointsMaterial({
+        color: 0xc6b69a,
+        size: 0.012,
+        transparent: true,
+        opacity: 0.55,
+        sizeAttenuation: true
+      });
+
+      const particles = new THREE.Points(
         particleGeometry,
-        new THREE.PointsMaterial({
-          color: 0xc6b69a,
-          size: 0.018,
-          transparent: true,
-          opacity: 0.55,
-          sizeAttenuation: true
-        })
+        particleMaterial
       );
 
-      scene.add(particleSystem);
+      scene.add(particles);
 
-      function resizeRenderer() {
-        if (!renderer || !camera || !canvas) return;
+      /* Responsive canvas sizing */
 
-        const rect = canvas.getBoundingClientRect();
-        const width = Math.max(1, rect.width);
-        const height = Math.max(1, rect.height);
+      function resizeHero() {
+        if (!renderer || !camera) return;
+
+        const width =
+          webglCanvas.clientWidth ||
+          heroVisual?.clientWidth ||
+          window.innerWidth;
+
+        const height =
+          webglCanvas.clientHeight ||
+          heroVisual?.clientHeight ||
+          window.innerHeight;
+
+        if (!width || !height) return;
 
         renderer.setSize(width, height, false);
 
         camera.aspect = width / height;
         camera.updateProjectionMatrix();
+
+        const mobile = window.innerWidth <= 600;
+
+        camera.position.z = mobile ? 8.5 : 7.5;
+
+        sculptureGroup.scale.setScalar(
+          mobile ? 0.82 : 1
+        );
       }
 
-      resizeRenderer();
+      resizeHero();
 
-      if ("ResizeObserver" in window) {
-        resizeObserver = new ResizeObserver(resizeRenderer);
-        resizeObserver.observe(canvas);
-      } else {
-        window.addEventListener("resize", resizeRenderer);
-      }
+      window.addEventListener(
+        "resize",
+        resizeHero,
+        { passive: true }
+      );
 
-      if (!touchDevice) {
-        window.addEventListener("mousemove", event => {
+      /* Mouse interaction */
+
+      if (!touchDevice && !reducedMotion) {
+        heroVisual?.addEventListener("pointermove", event => {
+          const rect = heroVisual.getBoundingClientRect();
+
           pointerX =
-            (event.clientX / window.innerWidth - 0.5) * 0.4;
+            ((event.clientX - rect.left) / rect.width - 0.5) * 2;
 
           pointerY =
-            (event.clientY / window.innerHeight - 0.5) * 0.3;
+            ((event.clientY - rect.top) / rect.height - 0.5) * 2;
+
+          targetRotationY = pointerX * 0.24;
+          targetRotationX = pointerY * 0.18;
+        });
+
+        heroVisual?.addEventListener("pointerleave", () => {
+          targetRotationX = 0;
+          targetRotationY = 0;
         });
       }
 
-      window.addEventListener("scroll", () => {
-        scrollRotation = window.scrollY * 0.00015;
-      }, { passive: true });
+      /* Animation loop */
 
-      threeReady = true;
+      const clock = new THREE.Clock();
 
-      if (pageVisible) {
-        clock.start();
-        animateThreeAgain();
+      function renderHero() {
+        animationFrame = requestAnimationFrame(renderHero);
+
+        const elapsed = clock.getElapsedTime();
+
+        if (!document.hidden) {
+          currentRotationX +=
+            (targetRotationX - currentRotationX) * 0.035;
+
+          currentRotationY +=
+            (targetRotationY - currentRotationY) * 0.035;
+
+          if (!reducedMotion) {
+            sculpture.rotation.x =
+              currentRotationX + Math.sin(elapsed * 0.22) * 0.08;
+
+            sculpture.rotation.y =
+              currentRotationY + elapsed * 0.11;
+
+            innerForm.rotation.x = elapsed * 0.12;
+            innerForm.rotation.y = -elapsed * 0.16;
+
+            ringOne.rotation.z = elapsed * 0.035;
+            ringTwo.rotation.y = elapsed * 0.045;
+
+            particles.rotation.y = elapsed * 0.012;
+          }
+
+          renderer.render(scene, camera);
+        }
       }
 
+      renderHero();
+
+      /* Pause rendering when the tab is hidden */
+
+      document.addEventListener("visibilitychange", () => {
+        if (!document.hidden && renderer) {
+          renderer.render(scene, camera);
+        }
+      });
+
+      /* Cleanup support */
+
+      window.addEventListener("pagehide", () => {
+        cancelAnimationFrame(animationFrame);
+
+        coreGeometry.dispose();
+        coreMaterial.dispose();
+
+        innerGeometry.dispose();
+        innerMaterial.dispose();
+
+        ringMaterial.dispose();
+        particleGeometry.dispose();
+        particleMaterial.dispose();
+
+        renderer?.dispose();
+      }, { once: true });
+
     } catch (error) {
-      console.error(
-        "MYRL​​ORE sculpture initialisation failed:",
+      console.warn(
+        "MYRLORE: Three.js hero could not initialize.",
         error
       );
 
-      if (canvas) canvas.style.opacity = "0";
+      webglCanvas.style.display = "none";
+
+      if (heroVisual) {
+        heroVisual.style.background =
+          "radial-gradient(ellipse at center, rgba(198,182,154,.12), transparent 65%)";
+      }
     }
   }
-
-  if (canvas) {
-    const hero = $(".hero");
-
-    if ("IntersectionObserver" in window && hero) {
-      const observer = new IntersectionObserver(entries => {
-        if (entries.some(entry => entry.isIntersecting)) {
-          observer.disconnect();
-          initialiseThree();
-        }
-      }, { rootMargin: "200px" });
-
-      observer.observe(hero);
-    } else {
-      initialiseThree();
-    }
-  }
-
-  document.addEventListener("visibilitychange", () => {
-    pageVisible = !document.hidden;
-
-    if (!renderer || !threeReady) return;
-
-    if (!pageVisible) {
-      cancelAnimationFrame(animationFrame);
-      return;
-    }
-
-    clock.start();
-    animateThreeAgain();
-  });
-
-  /* ==========================================
-     MYRLORE® — CAPRI SECRET ARCHIVE
-     CINEMATIC SCREEN CORRUPTION
-  ========================================== */
-
-  const konamiSequence = [
-    "ArrowUp",
-    "ArrowUp",
-    "ArrowDown",
-    "ArrowDown",
-    "ArrowLeft",
-    "ArrowRight",
-    "ArrowLeft",
-    "ArrowRight",
-    "b",
-    "a"
-  ];
-
-  let konamiPosition = 0;
-  let secretActive = false;
-  let secretPreviousFocus = null;
-  let capriSettled = false;
-
-  let capriImage = null;
-  let patchTimers = [];
-  let glitchTimers = [];
-  let sequenceTimers = [];
-
-  const secretStyle = document.createElement("style");
-
-  secretStyle.textContent = `
-    #myrloreSecretOverlay {
-      --capri-pink: #ff43b7;
-      --capri-green: #8cff55;
-      --capri-purple: #9c62ff;
-
-      position: fixed;
-      inset: 0;
-      z-index: 999999;
-      display: grid;
-      place-items: center;
-      overflow: hidden;
-      padding: 24px;
-      isolation: isolate;
-      background: #08090b;
-      color: #eeeDE8;
-      opacity: 0;
-      visibility: hidden;
-      pointer-events: none;
-      transition: opacity .4s ease, visibility .4s ease;
-    }
-
-    #myrloreSecretOverlay.active {
-      opacity: 1;
-      visibility: visible;
-      pointer-events: auto;
-    }
-
-    #myrloreSecretOverlay .secret-noise {
-      position: absolute;
-      inset: -50%;
-      z-index: 2;
-      pointer-events: none;
-      opacity: .07;
-      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 180 180' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.92' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.5'/%3E%3C/svg%3E");
-    }
-
-    #myrloreSecretOverlay.fracture-start .secret-noise {
-      opacity: .28;
-      animation: capriNoise .12s steps(2) infinite;
-    }
-
-    #myrloreSecretOverlay.fracture-heavy .secret-noise {
-      opacity: .48;
-      animation: capriNoise .055s steps(2) infinite;
-    }
-
-    #myrloreSecretOverlay::before {
-      content: "";
-      position: absolute;
-      inset: 0;
-      z-index: 3;
-      pointer-events: none;
-      opacity: 0;
-      background:
-        repeating-linear-gradient(
-          to bottom,
-          transparent 0,
-          transparent 2px,
-          rgba(255,255,255,.12) 3px,
-          transparent 4px
-        );
-    }
-
-    #myrloreSecretOverlay.fracture-start::before {
-      opacity: .24;
-      animation: scanlineDrift .18s steps(3) infinite;
-    }
-
-    #myrloreSecretOverlay.fracture-heavy::before {
-      opacity: .65;
-      animation: scanlineDrift .065s steps(2) infinite;
-    }
-
-    /* CALMER STATE AFTER CAPRI DISAPPEARS */
-
-    #myrloreSecretOverlay.fracture-calm .secret-noise {
-      opacity: .035;
-      animation: none;
-    }
-
-    #myrloreSecretOverlay.fracture-calm::before {
-      opacity: .055;
-      animation: none;
-    }
-
-    #myrloreSecretOverlay.fracture-calm .capri-tear {
-      opacity: .035;
-      animation: none;
-    }
-
-    .capri-glitch-patches {
-      position: absolute;
-      inset: 0;
-      z-index: 5;
-      overflow: hidden;
-      pointer-events: none;
-    }
-
-    .capri-patch {
-      position: absolute;
-      left: var(--patch-x);
-      top: var(--patch-y);
-      width: var(--patch-width);
-      height: var(--patch-height);
-      opacity: 0;
-      overflow: hidden;
-      transform: translate3d(0,0,0);
-      background:
-        repeating-linear-gradient(
-          to bottom,
-          rgba(255,255,255,.95) 0 1px,
-          rgba(15,15,18,.9) 1px 3px,
-          rgba(255,67,183,.9) 3px 4px,
-          rgba(15,15,18,.9) 4px 6px
-        );
-      mix-blend-mode: screen;
-      clip-path: polygon(
-        0 0, 100% 0, 99% 82%,
-        77% 100%, 48% 85%, 21% 100%, 0 76%
-      );
-      will-change: transform, opacity;
-    }
-
-    .capri-patch::before,
-    .capri-patch::after {
-      content: "";
-      position: absolute;
-      inset: 0;
-      pointer-events: none;
-    }
-
-    .capri-patch::before {
-      background: var(--capri-pink);
-      opacity: .75;
-      transform: translateX(-5px);
-      mix-blend-mode: screen;
-    }
-
-    .capri-patch::after {
-      background: var(--capri-green);
-      opacity: .65;
-      transform: translateX(6px);
-      mix-blend-mode: screen;
-    }
-
-    .capri-patch.visible {
-      animation: patchCorrupt .42s steps(2) forwards;
-    }
-
-    .capri-patch.fade {
-      animation: patchCutOut .2s steps(2) forwards;
-    }
-
-    .capri-patch.pixel-block {
-      background:
-        repeating-linear-gradient(
-          90deg,
-          rgba(255,255,255,.9) 0 3px,
-          rgba(255,67,183,.8) 3px 6px,
-          rgba(0,0,0,.9) 6px 9px,
-          rgba(140,255,85,.8) 9px 12px
-        );
-      clip-path: none;
-    }
-
-    .capri-patch.pixel-block::before {
-      background:
-        repeating-linear-gradient(
-          to bottom,
-          transparent 0 3px,
-          rgba(255,255,255,.9) 3px 4px
-        );
-    }
-
-    .capri-tear {
-      position: absolute;
-      left: -5%;
-      width: 110%;
-      height: var(--tear-height);
-      top: var(--tear-y);
-      z-index: 6;
-      opacity: 0;
-      pointer-events: none;
-      background:
-        linear-gradient(
-          to bottom,
-          rgba(255,67,183,.95) 0 2px,
-          rgba(255,255,255,.92) 2px 3px,
-          rgba(12,12,14,.98) 3px 8px,
-          rgba(140,255,85,.9) 8px 10px,
-          rgba(255,255,255,.65) 10px 11px,
-          rgba(12,12,14,.95) 11px 100%
-        );
-      box-shadow: 0 0 0 1px rgba(255,255,255,.15);
-      transform: translateX(0);
-      clip-path: polygon(0 0, 100% 0, 100% 80%, 0 100%);
-    }
-
-    #myrloreSecretOverlay.fracture-start .capri-tear {
-      animation: tearSnap .28s steps(2) infinite;
-    }
-
-    #myrloreSecretOverlay.fracture-heavy .capri-tear {
-      animation: tearViolent .095s steps(2) infinite;
-    }
-
-    .capri-screen-strip {
-      position: absolute;
-      left: -10%;
-      width: 120%;
-      height: var(--strip-height);
-      top: var(--strip-y);
-      z-index: 7;
-      pointer-events: none;
-      opacity: 0;
-      background:
-        linear-gradient(
-          90deg,
-          transparent 0 5%,
-          rgba(255,67,183,.7) 12%,
-          rgba(255,255,255,.8) 40%,
-          rgba(140,255,85,.65) 70%,
-          transparent 95%
-        );
-      mix-blend-mode: screen;
-    }
-
-    .capri-screen-strip.active {
-      animation: stripDisplace .23s steps(2) forwards;
-    }
-
-    /* CAPRI — FIXED SIDE APPEARANCE */
-
-    #capriPortal {
-      position: fixed;
-      z-index: 9;
-      left: 15.5%;
-      top: 52%;
-      width: clamp(180px, 27vw, 350px);
-      height: min(72vh, 520px);
-      transform: translate(-50%, -50%);
-      opacity: 0;
-      visibility: hidden;
-      pointer-events: none;
-      overflow: visible;
-      perspective: 1000px;
-    }
-
-    #capriPortal::before {
-      content: "";
-      position: absolute;
-      inset: 0;
-      opacity: 0;
-      background: #08090b;
-      clip-path: polygon(
-        7% 0, 88% 2%, 100% 15%,
-        94% 34%, 100% 49%, 91% 65%,
-        98% 100%, 12% 96%, 0 79%,
-        7% 59%, 0 37%
-      );
-      box-shadow: none;
-    }
-
-    #capriPortal::after {
-      content: "";
-      position: absolute;
-      inset: -4px;
-      opacity: 0;
-      pointer-events: none;
-      background:
-        linear-gradient(
-          to bottom,
-          var(--capri-pink) 0 2px,
-          transparent 2px 18%,
-          var(--capri-green) 18% 20%,
-          transparent 20% 47%,
-          #fff 47% 48%,
-          transparent 48% 78%,
-          var(--capri-pink) 78% 80%,
-          transparent 80%
-        );
-      clip-path: polygon(
-        7% 0, 88% 2%, 100% 15%,
-        94% 34%, 100% 49%, 91% 65%,
-        98% 100%, 12% 96%, 0 79%,
-        7% 59%, 0 37%
-      );
-    }
-
-    #capriPortal.portal-open {
-      opacity: 1;
-      visibility: visible;
-    }
-
-    #capriPortal.portal-open::before {
-      animation: tearOpening .9s cubic-bezier(.2,.8,.2,1) forwards;
-    }
-
-    #capriPortal.portal-open::after {
-      animation: tearEdge .75s steps(3) forwards;
-    }
-
-    #capriFlight {
-      position: absolute;
-      inset: 0;
-      opacity: 0;
-      transform: translate3d(-45px, 0, 0) scale(.86);
-      transform-origin: center center;
-      clip-path: inset(0 100% 0 0);
-      will-change: transform, opacity, clip-path, filter;
-    }
-
-    #capriImage {
-      width: 100%;
-      height: 100%;
-      display: block;
-      object-fit: contain;
-      object-position: center;
-      position: relative;
-      z-index: 3;
-    }
-
-    .capri-rgb {
-      position: absolute;
-      inset: 0;
-      width: 100%;
-      height: 100%;
-      object-fit: contain;
-      object-position: center;
-      opacity: 0;
-      pointer-events: none;
-      mix-blend-mode: screen;
-    }
-
-    .capri-rgb-pink {
-      z-index: 2;
-      filter: sepia(1) saturate(8) hue-rotate(275deg);
-      transform: translateX(-5px);
-    }
-
-    .capri-rgb-green {
-      z-index: 1;
-      filter: sepia(1) saturate(8) hue-rotate(65deg);
-      transform: translateX(5px);
-    }
-
-    #capriPortal.capri-emerging #capriFlight {
-      animation: capriBreakThrough 1.65s cubic-bezier(.16,1,.3,1) forwards;
-    }
-
-    #capriPortal.capri-emerging .capri-rgb {
-      opacity: .55;
-      animation: rgbSnap .16s steps(2) 5;
-    }
-
-    #capriPortal.capri-settled {
-      opacity: 1;
-      visibility: visible;
-    }
-
-    #capriPortal.capri-settled #capriFlight {
-      opacity: 1;
-      transform: translate3d(0,0,0) scale(1);
-      clip-path: inset(0);
-      animation: none;
-    }
-
-    #capriPortal.capri-settled .capri-rgb {
-      opacity: 0;
-      animation: none;
-    }
-
-    /* CAPRI GLITCHES OUT */
-
-    #capriPortal.capri-disappearing #capriFlight {
-      animation: capriGlitchOut .85s steps(2) forwards;
-    }
-
-    #capriPortal.capri-disappearing .capri-rgb {
-      opacity: .65;
-      animation: capriRgbOut .85s steps(2) forwards;
-    }
-
-    #capriPortal.capri-gone {
-      opacity: 0;
-      visibility: hidden;
-    }
-
-    #capriPortal.capri-gone #capriFlight {
-      opacity: 0;
-      visibility: hidden;
-    }
-
-    /* ARCHIVE TEXT */
-
-    #myrloreSecretOverlay .secret-inner {
-      position: relative;
-      z-index: 12;
-      opacity: 0;
-      transform: translateY(18px);
-      transition: opacity .8s ease, transform .8s ease;
-    }
-
-    #myrloreSecretOverlay.active .secret-inner {
-      opacity: 1;
-      transform: translateY(0);
-    }
-
-    #myrloreSecretOverlay .secret-symbol {
-      color: var(--capri-pink);
-      text-shadow: 2px 0 var(--capri-green);
-    }
-
-    #myrloreSecretOverlay h2 {
-      text-shadow:
-        2px 0 var(--capri-pink),
-        -2px 0 var(--capri-green);
-    }
-
-    #myrloreSecretOverlay button {
-      position: relative;
-      z-index: 15;
-    }
-
-    /* KEYFRAMES */
-
-    @keyframes capriNoise {
-      0% { transform: translate(0,0); }
-      25% { transform: translate(-2%,1%); }
-      50% { transform: translate(2%,-1%); }
-      75% { transform: translate(-1%,-2%); }
-      100% { transform: translate(1%,2%); }
-    }
-
-    @keyframes scanlineDrift {
-      0% { transform: translateY(-5px); }
-      100% { transform: translateY(5px); }
-    }
-
-    @keyframes patchCorrupt {
-      0% {
-        opacity: 0;
-        transform: translate3d(-18px,0,0) skewX(-18deg);
-      }
-      18% {
-        opacity: .95;
-        transform: translate3d(12px,0,0) skewX(8deg);
-      }
-      36% {
-        opacity: .3;
-        transform: translate3d(-9px,0,0) skewX(-5deg);
-      }
-      55% {
-        opacity: .9;
-        transform: translate3d(6px,0,0) skewX(3deg);
-      }
-      75% {
-        opacity: .45;
-        transform: translate3d(-3px,0,0);
-      }
-      100% {
-        opacity: .78;
-        transform: translate3d(0,0,0);
-      }
-    }
-
-    @keyframes patchCutOut {
-      0% { opacity: .8; transform: translateX(0); }
-      30% { opacity: 1; transform: translateX(12px); }
-      100% { opacity: 0; transform: translateX(-25px); }
-    }
-
-    @keyframes tearSnap {
-      0% {
-        opacity: 0;
-        transform: translateX(0);
-      }
-      25% {
-        opacity: .7;
-        transform: translateX(3%);
-      }
-      50% {
-        opacity: .15;
-        transform: translateX(-2%);
-      }
-      75% {
-        opacity: .85;
-        transform: translateX(1%);
-      }
-      100% {
-        opacity: .1;
-        transform: translateX(0);
-      }
-    }
-
-    @keyframes tearViolent {
-      0% {
-        opacity: .05;
-        transform: translateX(-4%);
-      }
-      50% {
-        opacity: .9;
-        transform: translateX(3%);
-      }
-      100% {
-        opacity: .15;
-        transform: translateX(-2%);
-      }
-    }
-
-    @keyframes stripDisplace {
-      0% {
-        opacity: 0;
-        transform: translateX(-5%);
-      }
-      20% {
-        opacity: 1;
-        transform: translateX(4%);
-      }
-      45% {
-        opacity: .75;
-        transform: translateX(-3%);
-      }
-      100% {
-        opacity: 0;
-        transform: translateX(6%);
-      }
-    }
-
-    @keyframes tearOpening {
-      0% {
-        opacity: 0;
-        transform: scaleX(.02) scaleY(.05);
-      }
-      30% {
-        opacity: 1;
-        transform: scaleX(.55) scaleY(.4);
-      }
-      65% {
-        opacity: 1;
-        transform: scaleX(1.08) scaleY(1.04);
-      }
-      82% {
-        opacity: 1;
-        transform: scaleX(.98) scaleY(.99);
-      }
-      100% {
-        opacity: 1;
-        transform: scale(1);
-      }
-    }
-
-    @keyframes tearEdge {
-      0% {
-        opacity: 0;
-        transform: translateX(-12px);
-      }
-      25% {
-        opacity: 1;
-        transform: translateX(5px);
-      }
-      50% {
-        opacity: .45;
-        transform: translateX(-3px);
-      }
-      100% {
-        opacity: .85;
-        transform: translateX(0);
-      }
-    }
-
-    @keyframes capriBreakThrough {
-      0% {
-        opacity: 0;
-        transform: translate3d(-55px,0,0) scale(.76);
-        clip-path: inset(0 100% 0 0);
-      }
-      22% {
-        opacity: .4;
-        transform: translate3d(-35px,0,0) scale(.82);
-        clip-path: inset(0 78% 0 0);
-      }
-      48% {
-        opacity: .85;
-        transform: translate3d(-12px,0,0) scale(.93);
-        clip-path: inset(0 42% 0 0);
-      }
-      72% {
-        opacity: 1;
-        transform: translate3d(5px,0,0) scale(1.015);
-        clip-path: inset(0 8% 0 0);
-      }
-      88% {
-        transform: translate3d(-2px,0,0) scale(1);
-        clip-path: inset(0);
-      }
-      100% {
-        opacity: 1;
-        transform: translate3d(0,0,0) scale(1);
-        clip-path: inset(0);
-      }
-    }
-
-    @keyframes capriGlitchOut {
-      0% {
-        opacity: 1;
-        transform: translateX(0) skewX(0);
-        filter: none;
-        clip-path: inset(0);
-      }
-      12% {
-        opacity: .95;
-        transform: translateX(7px) skewX(8deg);
-        filter: hue-rotate(70deg);
-        clip-path: inset(4% 0 8% 0);
-      }
-      25% {
-        opacity: .35;
-        transform: translateX(-12px) skewX(-12deg);
-        filter: contrast(2) saturate(2);
-        clip-path: inset(18% 0 58% 0);
-      }
-      38% {
-        opacity: 1;
-        transform: translateX(9px) skewX(5deg);
-        filter: hue-rotate(-80deg);
-        clip-path: inset(38% 0 32% 0);
-      }
-      52% {
-        opacity: .2;
-        transform: translateX(-8px) skewX(-10deg);
-        filter: contrast(3);
-        clip-path: inset(65% 0 12% 0);
-      }
-      68% {
-        opacity: .8;
-        transform: translateX(5px) skewX(7deg);
-        filter: hue-rotate(130deg);
-        clip-path: inset(8% 0 78% 0);
-      }
-      82% {
-        opacity: .18;
-        transform: translateX(-18px) skewX(-16deg);
-        filter: contrast(3) brightness(2);
-        clip-path: inset(0 0 0 72%);
-      }
-      100% {
-        opacity: 0;
-        transform: translateX(22px) skewX(20deg) scaleX(.72);
-        filter: blur(5px) contrast(3);
-        clip-path: inset(0 100% 0 0);
-      }
-    }
-
-    @keyframes capriRgbOut {
-      0% {
-        opacity: .65;
-        transform: translateX(-8px);
-      }
-      30% {
-        opacity: .9;
-        transform: translateX(12px);
-      }
-      60% {
-        opacity: .45;
-        transform: translateX(-16px);
-      }
-      100% {
-        opacity: 0;
-        transform: translateX(24px);
-      }
-    }
-
-    @keyframes rgbSnap {
-      0% { transform: translateX(-8px); opacity: .65; }
-      50% { transform: translateX(8px); opacity: .35; }
-      100% { transform: translateX(0); opacity: .5; }
-    }
-
-    @media (min-width: 651px) {
-      #myrloreSecretOverlay .secret-inner {
-        width: min(560px, 48vw);
-        margin-left: 35vw;
-      }
-    }
-
-    @media (max-width: 650px) {
-      #capriPortal {
-        left: 50%;
-        top: 24%;
-        width: min(55vw, 230px);
-        height: min(39vh, 280px);
-      }
-
-      #myrloreSecretOverlay .secret-inner {
-        width: 94vw;
-        padding-top: 170px;
-      }
-
-      #myrloreSecretOverlay h2 {
-        font-size: clamp(38px, 12vw, 62px);
-      }
-
-      #myrloreSecretOverlay p {
-        font-size: 9px;
-      }
-    }
-
-    @media (prefers-reduced-motion: reduce) {
-      #myrloreSecretOverlay,
-      #myrloreSecretOverlay .secret-inner {
-        transition: none;
-      }
-
-      #myrloreSecretOverlay.fracture-start::before,
-      #myrloreSecretOverlay.fracture-heavy::before,
-      #myrloreSecretOverlay.fracture-start .secret-noise,
-      #myrloreSecretOverlay.fracture-heavy .secret-noise,
-      #myrloreSecretOverlay.fracture-start .capri-tear,
-      #myrloreSecretOverlay.fracture-heavy .capri-tear,
-      #capriPortal.portal-open::before,
-      #capriPortal.portal-open::after {
-        animation: none;
-      }
-
-      #capriPortal.capri-emerging #capriFlight {
-        animation: none;
-        opacity: 1;
-        transform: none;
-        clip-path: none;
-      }
-    }
-  `;
-
-  document.head.appendChild(secretStyle);
-
-  const secretOverlay = document.createElement("div");
-
-  secretOverlay.id = "myrloreSecretOverlay";
-  secretOverlay.setAttribute("aria-hidden", "true");
-
-  secretOverlay.innerHTML = `
-    <div class="secret-noise"></div>
-
-    <div class="capri-glitch-patches" id="capriGlitchPatches"></div>
-
-    <div class="capri-tear" style="--tear-y: 18%; --tear-height: 9px;"></div>
-    <div class="capri-tear" style="--tear-y: 39%; --tear-height: 14px;"></div>
-    <div class="capri-tear" style="--tear-y: 67%; --tear-height: 7px;"></div>
-    <div class="capri-tear" style="--tear-y: 83%; --tear-height: 11px;"></div>
-
-    <div id="capriPortal" aria-hidden="true">
-      <div id="capriFlight">
-        <img id="capriImage" alt="">
-        <img class="capri-rgb capri-rgb-pink" alt="" aria-hidden="true">
-        <img class="capri-rgb capri-rgb-green" alt="" aria-hidden="true">
-      </div>
-    </div>
-
-    <div class="secret-inner">
-      <div class="secret-index">
-        MYRLORE® / RESTRICTED ARCHIVE
-      </div>
-
-      <span class="secret-symbol">✳</span>
-
-      <h2>Stay curious.</h2>
-
-      <p>
-        YOU FOUND SOMETHING THAT WASN'T MEANT TO BE FOUND.<br>
-        INDEPENDENT BY NATURE. CREATIVE BY DESIGN.
-      </p>
-
-      <button type="button" id="secretClose">
-        RETURN TO THE STUDIO
-      </button>
-    </div>
-  `;
-
-  document.body.appendChild(secretOverlay);
-
-  const capriPortal = $("#capriPortal", secretOverlay);
-  const capriFlight = $("#capriFlight", secretOverlay);
-  const capriImageElement = $("#capriImage", secretOverlay);
-  const capriRgbPink = $(".capri-rgb-pink", secretOverlay);
-  const capriRgbGreen = $(".capri-rgb-green", secretOverlay);
-  const secretCloseButton = $("#secretClose", secretOverlay);
-  const patchContainer = $("#capriGlitchPatches", secretOverlay);
-
-  /* ==========================================
-     CAPRI IMAGE
-     DIRECT STILL IMAGE — capri.png
-     NO SPRITESHEET OR FRAME CROPPING
-  ========================================== */
-
-  function loadCapri() {
-    if (!capriImageElement) return;
-
-    capriImage = new Image();
-
-    capriImage.onload = () => {
-      capriImageElement.src = "capri.png";
-
-      if (capriRgbPink) {
-        capriRgbPink.src = "capri.png";
-      }
-
-      if (capriRgbGreen) {
-        capriRgbGreen.src = "capri.png";
-      }
-    };
-
-    capriImage.onerror = () => {
-      console.error(
-        "Capri image failed to load. Check capri.png in your website root."
-      );
-    };
-
-    capriImage.src = "capri.png";
-  }
-
-  loadCapri();
-
-  /* ==========================================
-     PATCH CREATION
-     RECTANGULAR DIGITAL CORRUPTION
-  ========================================== */
-
-  function createGlitchPatch(options = {}) {
-    if (!patchContainer || !secretActive) return;
-
-    const patch = document.createElement("div");
-
-    patch.className = "capri-patch";
-
-    if (options.block) {
-      patch.classList.add("pixel-block");
-    }
-
-    const x = options.x ?? Math.random() * 100;
-    const y = options.y ?? Math.random() * 100;
-    const width = options.width ?? 55 + Math.random() * 230;
-    const height = options.height ?? 3 + Math.random() * 22;
-
-    patch.style.setProperty("--patch-x", `${x}%`);
-    patch.style.setProperty("--patch-y", `${y}%`);
-    patch.style.setProperty("--patch-width", `${width}px`);
-    patch.style.setProperty("--patch-height", `${height}px`);
-
-    patchContainer.appendChild(patch);
-
-    requestAnimationFrame(() => {
-      if (secretActive && patch.isConnected) {
-        patch.classList.add("visible");
-      }
-    });
-
-    const lifetime = options.lifetime ?? 180 + Math.random() * 550;
-
-    const timer = setTimeout(() => {
-      patch.classList.remove("visible");
-      patch.classList.add("fade");
-
-      setTimeout(() => patch.remove(), 250);
-    }, lifetime);
-
-    patchTimers.push(timer);
-  }
-
-  /* ==========================================
-     SCREEN STRIP DISPLACEMENT
-  ========================================== */
-
-  function createScreenStrip() {
-    if (!patchContainer || !secretActive) return;
-
-    const strip = document.createElement("div");
-
-    strip.className = "capri-screen-strip";
-
-    strip.style.setProperty(
-      "--strip-y",
-      `${Math.random() * 100}%`
-    );
-
-    strip.style.setProperty(
-      "--strip-height",
-      `${3 + Math.random() * 18}px`
-    );
-
-    patchContainer.appendChild(strip);
-
-    requestAnimationFrame(() => {
-      if (secretActive && strip.isConnected) {
-        strip.classList.add("active");
-      }
-    });
-
-    const timer = setTimeout(() => {
-      strip.remove();
-    }, 300);
-
-    patchTimers.push(timer);
-  }
-
-  function clearPatchTimers() {
-    patchTimers.forEach(timer => clearTimeout(timer));
-    patchTimers = [];
-
-    if (patchContainer) {
-      patchContainer.replaceChildren();
-    }
-  }
-
-  function clearSequenceTimers() {
-    sequenceTimers.forEach(timer => clearTimeout(timer));
-    sequenceTimers = [];
-  }
-
-  function scheduleSequence(callback, delay) {
-    const timer = setTimeout(() => {
-      if (secretActive) callback();
-    }, delay);
-
-    sequenceTimers.push(timer);
-    return timer;
-  }
-
-  /* ==========================================
-     CONTINUOUS SCREEN CORRUPTION
-     INTENSE FIRST, SUBTLE AFTER CAPRI DISAPPEARS
-  ========================================== */
-
-  function startScreenFracture() {
-    secretOverlay.classList.add("fracture-start");
-
-    if (reducedMotion) return;
-
-    // Initial corruption burst.
-    for (let i = 0; i < 7; i++) {
-      scheduleSequence(() => {
-        createGlitchPatch({
-          block: i % 2 === 0,
-          width: 45 + Math.random() * 180,
-          height: 3 + Math.random() * 15,
-          lifetime: 180 + Math.random() * 400
-        });
-      }, 250 + i * 190);
-    }
-
-    scheduleSequence(() => {
-      createScreenStrip();
-
-      createGlitchPatch({
-        x: 20,
-        y: 28,
-        width: 260,
-        height: 12,
-        block: true
-      });
-    }, 850);
-
-    // Main continuous glitch loop.
-    // Intense before Capri settles, subtle afterwards.
-    const buildUp = setInterval(() => {
-      if (!secretActive) {
-        clearInterval(buildUp);
-        return;
-      }
-
-      if (capriSettled) {
-        createGlitchPatch({
-          lifetime: 150 + Math.random() * 180,
-          width: 30 + Math.random() * 85,
-          height: 2 + Math.random() * 5,
-          block: false
-        });
-
-        if (Math.random() > .92) {
-          createScreenStrip();
-        }
-
-        return;
-      }
-
-      createGlitchPatch({
-        lifetime: 220 + Math.random() * 450,
-        width: 55 + Math.random() * 250,
-        height: 3 + Math.random() * 20,
-        block: Math.random() > .5
-      });
-
-      if (Math.random() > .35) {
-        createScreenStrip();
-      }
-
-      if (Math.random() > .5) {
-        createGlitchPatch({
-          lifetime: 150 + Math.random() * 350,
-          width: 35 + Math.random() * 120,
-          height: 3 + Math.random() * 10,
-          block: true
-        });
-      }
-    }, 900);
-
-    glitchTimers.push(buildUp);
-
-    // Periodic heavy corruption bursts.
-    // Once Capri settles, these become tiny occasional glitches.
-    const heavyGlitchLoop = setInterval(() => {
-      if (!secretActive) {
-        clearInterval(heavyGlitchLoop);
-        return;
-      }
-
-      if (capriSettled) {
-        secretOverlay.classList.remove("fracture-heavy");
-
-        if (Math.random() > .55) {
-          createGlitchPatch({
-            lifetime: 120 + Math.random() * 130,
-            width: 25 + Math.random() * 70,
-            height: 2 + Math.random() * 4,
-            block: false
-          });
-        }
-
-        return;
-      }
-
-      secretOverlay.classList.add("fracture-heavy");
-
-      for (let i = 0; i < 8 + Math.floor(Math.random() * 9); i++) {
-        createGlitchPatch({
-          lifetime: 180 + Math.random() * 420,
-          width: 45 + Math.random() * 280,
-          height: 4 + Math.random() * 24,
-          block: Math.random() > .35
-        });
-      }
-
-      for (let i = 0; i < 3 + Math.floor(Math.random() * 4); i++) {
-        createScreenStrip();
-      }
-
-      const heavyDuration = 280 + Math.random() * 320;
-
-      const releaseTimer = setTimeout(() => {
-        if (secretActive && !capriSettled) {
-          secretOverlay.classList.remove("fracture-heavy");
-        }
-      }, heavyDuration);
-
-      glitchTimers.push(releaseTimer);
-
-    }, 2200);
-
-    glitchTimers.push(heavyGlitchLoop);
-
-    // Random short interference spikes.
-    const interferenceLoop = setInterval(() => {
-      if (!secretActive) {
-        clearInterval(interferenceLoop);
-        return;
-      }
-
-      if (capriSettled) {
-        // Only occasional small interference after the entrance.
-        if (Math.random() > .82) {
-          createGlitchPatch({
-            x: Math.random() * 90,
-            y: Math.random() * 100,
-            width: 25 + Math.random() * 75,
-            height: 2 + Math.random() * 5,
-            lifetime: 120 + Math.random() * 180,
-            block: false
-          });
-        }
-
-        return;
-      }
-
-      if (Math.random() > .42) {
-        createGlitchPatch({
-          x: Math.random() * 90,
-          y: Math.random() * 100,
-          width: 60 + Math.random() * 260,
-          height: 3 + Math.random() * 18,
-          lifetime: 160 + Math.random() * 300,
-          block: true
-        });
-      }
-
-      if (Math.random() > .65) {
-        createScreenStrip();
-      }
-
-    }, 1200);
-
-    glitchTimers.push(interferenceLoop);
-  }
-
-  /* ==========================================
-     CAPRI DISAPPEARANCE
-     SHE GLITCHES OUT — ARCHIVE STAYS OPEN
-  ========================================== */
-
-  function disappearCapri() {
-    if (!capriPortal || !capriFlight) return;
-
-    if (reducedMotion) {
-      capriPortal.classList.remove(
-        "portal-open",
-        "capri-emerging",
-        "capri-settled"
-      );
-
-      capriPortal.classList.add("capri-gone");
-      capriSettled = true;
-
-      secretOverlay.classList.remove(
-        "fracture-start",
-        "fracture-heavy"
-      );
-
-      secretOverlay.classList.add("fracture-calm");
-      return;
-    }
-
-    // A short burst of corruption as Capri vanishes.
-    for (let i = 0; i < 7; i++) {
-      createGlitchPatch({
-        x: 7 + Math.random() * 25,
-        y: 15 + Math.random() * 70,
-        width: 45 + Math.random() * 170,
-        height: 3 + Math.random() * 14,
-        lifetime: 180 + Math.random() * 350,
-        block: true
-      });
-    }
-
-    createScreenStrip();
-
-    capriPortal.classList.remove("capri-settled");
-    capriPortal.classList.add("capri-disappearing");
-
-    // Let the glitch-out animation finish, then hide Capri entirely.
-    scheduleSequence(() => {
-      capriPortal.classList.remove(
-        "portal-open",
-        "capri-emerging",
-        "capri-settled",
-        "capri-disappearing"
-      );
-
-      capriPortal.classList.add("capri-gone");
-
-      capriFlight.style.opacity = "0";
-      capriFlight.style.transform = "";
-      capriFlight.style.clipPath = "";
-
-      capriSettled = true;
-
-      // The archive remains active; only its background settles.
-      secretOverlay.classList.remove(
-        "fracture-start",
-        "fracture-heavy"
-      );
-
-      secretOverlay.classList.add("fracture-calm");
-
-    }, 900);
-  }
-
-  /* ==========================================
-     CAPRI EMERGENCE
-     FIXED SIDE POSITION — NO TRAVEL
-  ========================================== */
-
-  function emergeCapri() {
-    if (!capriPortal || !capriFlight) return;
-
-    capriSettled = false;
-
-    createGlitchPatch({
-      x: window.innerWidth <= 650 ? 50 : 15,
-      y: window.innerWidth <= 650 ? 24 : 52,
-      width: window.innerWidth <= 650 ? 190 : 280,
-      height: 10,
-      lifetime: 900,
-      block: true
-    });
-
-    createScreenStrip();
-
-    capriPortal.classList.remove("capri-gone");
-    capriPortal.classList.add("portal-open");
-
-    if (reducedMotion) {
-      capriPortal.classList.add("capri-settled");
-
-      capriFlight.style.opacity = "1";
-      capriFlight.style.clipPath = "inset(0)";
-      capriFlight.style.transform = "none";
-
-      // Even with reduced motion, Capri should not stay permanently.
-      scheduleSequence(() => {
-        disappearCapri();
-      }, 1700);
-
-      return;
-    }
-
-    // Stage 1: Capri appears at her fixed side position.
-    scheduleSequence(() => {
-      capriPortal.classList.add("capri-emerging");
-
-      for (let i = 0; i < 9; i++) {
-        createGlitchPatch({
-          x: 15 + (Math.random() - .5) * 14,
-          y: 52 + (Math.random() - .5) * 28,
-          width: 35 + Math.random() * 180,
-          height: 3 + Math.random() * 16,
-          lifetime: 180 + Math.random() * 300,
-          block: true
-        });
-      }
-
-      for (let i = 0; i < 4; i++) {
-        createScreenStrip();
-      }
-    }, 650);
-
-    // Stage 2: Capri finishes appearing and remains in place briefly.
-    scheduleSequence(() => {
-      capriPortal.classList.remove("capri-emerging");
-      capriPortal.classList.add("capri-settled");
-
-      capriFlight.style.opacity = "1";
-      capriFlight.style.transform = "translate3d(0,0,0) scale(1)";
-      capriFlight.style.clipPath = "inset(0)";
-
-      capriPortal.classList.remove("portal-open");
-
-      // Capri is now visible, but the background can calm down.
-      capriSettled = true;
-
-      secretOverlay.classList.remove(
-        "fracture-start",
-        "fracture-heavy"
-      );
-
-      secretOverlay.classList.add("fracture-calm");
-
-      createGlitchPatch({
-        x: 12,
-        y: 52,
-        width: 110,
-        height: 4,
-        lifetime: 250,
-        block: false
-      });
-
-      // Keep her visible briefly, then glitch her out.
-      scheduleSequence(() => {
-        disappearCapri();
-      }, 1700);
-
-    }, 2450);
-  }
-
-  /* ==========================================
-     OPEN SECRET ARCHIVE
-  ========================================== */
-
-  function activateSecretArchive() {
-    if (secretActive) return;
-
-    secretActive = true;
-    capriSettled = false;
-    secretPreviousFocus = document.activeElement;
-
-    secretOverlay.classList.add("active");
-    secretOverlay.setAttribute("aria-hidden", "false");
-    secretOverlay.removeAttribute("inert");
-
-    body.style.overflow = "hidden";
-
-    clearPatchTimers();
-    clearSequenceTimers();
-
-    secretOverlay.classList.remove("fracture-calm");
-
-    capriPortal.classList.remove(
-      "portal-open",
-      "capri-emerging",
-      "capri-settled",
-      "capri-disappearing",
-      "capri-gone"
-    );
-
-    capriFlight.style.opacity = "0";
-    capriFlight.style.transform = "translate3d(-45px,0,0) scale(.86)";
-    capriFlight.style.clipPath = "inset(0 100% 0 0)";
-
-    // Start the continuous glitch system.
-    startScreenFracture();
-
-    scheduleSequence(() => {
-      emergeCapri();
-      secretCloseButton?.focus();
-    }, reducedMotion ? 0 : 2900);
-
-    console.log("MYRLORE® — SECRET ARCHIVE UNLOCKED");
-  }
-
-  /* ==========================================
-     CLOSE SECRET ARCHIVE
-     STOP ALL GLITCH EFFECTS IMMEDIATELY
-  ========================================== */
-
-  function closeSecretArchive() {
-    if (!secretActive) return;
-
-    secretActive = false;
-    capriSettled = false;
-
-    // Stop every repeating glitch interval.
-    glitchTimers.forEach(timer => {
-      clearInterval(timer);
-      clearTimeout(timer);
-    });
-
-    glitchTimers = [];
-
-    // Cancel all scheduled Capri animation stages.
-    clearSequenceTimers();
-
-    // Remove every active glitch patch and screen strip.
-    clearPatchTimers();
-
-    if (gsapInstance) {
-      gsapInstance.killTweensOf(capriFlight);
-    }
-
-    secretOverlay.classList.remove(
-      "active",
-      "fracture-start",
-      "fracture-heavy",
-      "fracture-calm"
-    );
-
-    capriPortal.classList.remove(
-      "portal-open",
-      "capri-emerging",
-      "capri-settled",
-      "capri-disappearing",
-      "capri-gone"
-    );
-
-    secretOverlay.setAttribute("aria-hidden", "true");
-    secretOverlay.setAttribute("inert", "");
-
-    body.style.overflow = "";
-
-    capriFlight.style.opacity = "0";
-    capriFlight.style.transform = "";
-    capriFlight.style.clipPath = "";
-
-    secretPreviousFocus?.focus?.();
-  }
-
-  secretCloseButton?.addEventListener(
-    "click",
-    closeSecretArchive
-  );
-
-  /* ==========================================
-     KONAMI CODE DETECTION
-  ========================================== */
-
-  document.addEventListener("keydown", event => {
-    if (secretActive) return;
-
-    const key = event.key.length === 1
-      ? event.key.toLowerCase()
-      : event.key;
-
-    if (key === konamiSequence[konamiPosition]) {
-      konamiPosition++;
-
-      if (konamiPosition === konamiSequence.length) {
-        konamiPosition = 0;
-        activateSecretArchive();
-      }
-    } else {
-      konamiPosition =
-        key === konamiSequence[0] ? 1 : 0;
-    }
-  });
-
-  /* ==========================================
-     GLOBAL ESCAPE HANDLING
-  ========================================== */
-
-  document.addEventListener("keydown", event => {
-    if (event.key !== "Escape") return;
-
-    if (secretActive) {
-      closeSecretArchive();
-      return;
-    }
-
-    if (caseModal?.classList.contains("is-open")) {
-      closeCaseStudy();
-      return;
-    }
-
-    if (menuPanel?.classList.contains("open")) {
-      closeMenu();
-    }
-  });
-
-  /* ==========================================
-     INITIAL ACCESSIBILITY STATES
-  ========================================== */
-
-  if (menuPanel) {
-    menuPanel.setAttribute("aria-hidden", "true");
-    menuPanel.setAttribute("inert", "");
-  }
-
-  if (caseModal) {
-    caseModal.setAttribute("aria-hidden", "true");
-    caseModal.setAttribute("inert", "");
-  }
-
-  secretOverlay.setAttribute("aria-hidden", "true");
-  secretOverlay.setAttribute("inert", "");
-
-  menuToggle?.setAttribute("aria-expanded", "false");
-
-  /* ==========================================
-     MYRLORE® — SYSTEM READY
-  ========================================== */
-
-  console.log(
-    "%cMYRLORE®",
-    "font-size:22px;font-weight:800;letter-spacing:5px;color:#c6b69a;"
-  );
-
-  console.log(
-    "%cIndependent by nature. Creative by design.",
-    "font-size:11px;color:#85868a;letter-spacing:2px;"
-  );
-
-  console.log(
-    "%cSecret archive: ↑ ↑ ↓ ↓ ← → ← → B A",
-    "font-size:10px;color:#c6b69a;"
-  );
-
-})();
-
-/* ==========================================
-   MYRLORE — PROJECT VAULT FILTER SYSTEM
-========================================== */
-
-(() => {
-  "use strict";
-
-  const grid = document.querySelector("#vaultGrid");
-  const filters = document.querySelectorAll(".vault-filter");
-  const cards = grid
-    ? [...grid.querySelectorAll(".work-card[data-project-category]")]
-    : [];
-
-  if (!grid || !filters.length || !cards.length) return;
-
-  const counts = {
-    all: cards.length,
-    digital: 0,
-    data: 0,
-    engineering: 0,
-    experiments: 0
-  };
-
-  cards.forEach(card => {
-    const category = card.dataset.projectCategory;
-
-    if (Object.hasOwn(counts, category)) {
-      counts[category]++;
-    }
-  });
-
-  filters.forEach(button => {
-    const category = button.dataset.filter;
-    const count = button.querySelector("span");
-
-    if (count && Object.hasOwn(counts, category)) {
-      count.textContent = counts[category];
-    }
-  });
-
-  function filterProjects(category) {
-    filters.forEach(button => {
-      const active = button.dataset.filter === category;
-
-      button.classList.toggle("active", active);
-      button.setAttribute("aria-pressed", String(active));
-    });
-
-    cards.forEach((card, index) => {
-      const matches =
-        category === "all" ||
-        card.dataset.projectCategory === category;
-
-      card.classList.toggle("vault-hidden", !matches);
-
-      if (matches) {
-        card.style.animation = "none";
-        void card.offsetWidth;
-        card.style.animation = `vaultCardIn .45s ease ${Math.min(index * 35, 250)}ms both`;
-      }
-    });
-  }
-
-  filters.forEach(button => {
-    button.addEventListener("click", () => {
-      filterProjects(button.dataset.filter);
-    });
-  });
-
-  filterProjects("all");
-})();
-
-/* VAULT CARD ENTRANCE */
-
-if (!document.querySelector("#vaultAnimationStyle")) {
-  const style = document.createElement("style");
-  style.id = "vaultAnimationStyle";
-  style.textContent = `
-    @keyframes vaultCardIn {
-      from {
-        opacity: 0;
-        transform: translateY(14px);
-      }
-      to {
-        opacity: 1;
-        transform: translateY(0);
-      }
-    }
-  `;
-  document.head.appendChild(style);
-}
-
-/* ==========================================
-   MYRLORE® — PROJECT VAULT SYSTEM
-   12 PROJECTS · FILTERS · CASE STUDIES
-========================================== */
-
-(() => {
-  "use strict";
-
-  const $ = (selector, parent = document) =>
-    parent.querySelector(selector);
-
-  const $$ = (selector, parent = document) =>
-    [...parent.querySelectorAll(selector)];
-
-  const grid = $("#vaultGrid");
-  const filters = $$(".vault-filter");
-
-  if (!grid) return;
-
-  const cards = $$(".work-card[data-case-study]", grid);
-
-  /* ==========================================
-     PROJECT DATABASE
+     /* ==========================================
+     PROJECT VAULT — DATA
   ========================================== */
 
   const projects = {
     corroguard: {
-      number: "01 / 12",
-      category: "ENGINEERING",
-      title: "CorroGuard",
-      summary: "An interactive engineering chemistry platform exploring corrosion behaviour, material compatibility and prevention.",
-      status: "PROJECT EXPLORATION",
-      overview: "CorroGuard transforms complex corrosion concepts into an accessible digital experience. It brings together material analysis, environmental factors and educational risk assessment in one interface.",
+      number: "01",
+      name: "CorroGuard",
+      category: "ENGINEERING / WEB PLATFORM",
+      type: "Engineering Chemistry",
+      year: "2026",
+      symbol: "CG",
+      description:
+        "An interactive corrosion analysis platform exploring material behaviour, environmental risk and protective strategies.",
+      challenge:
+        "Understanding corrosion requires connecting material properties with environmental conditions and prevention methods.",
+      solution:
+        "CorroGuard brings educational corrosion analysis into one interface through interactive tools and structured technical information.",
       features: [
         "Interactive corrosion risk calculator",
         "Metal compatibility checker",
-        "Material analysis and corrosion types",
-        "Corrosion prevention information"
+        "Material information library",
+        "Corrosion types and case studies",
+        "Prevention and coating information"
       ],
-      tech: ["HTML", "CSS", "JavaScript", "Chart.js"],
-      symbol: "CG",
-      art: "CORROSION INTELLIGENCE"
+      technologies: ["HTML", "CSS", "JavaScript", "Chart.js"],
+      status: "ACADEMIC PROJECT",
+      visual: "corroguard"
     },
 
     floodwatch: {
-      number: "02 / 12",
-      category: "DATA & MAPPING",
-      title: "FloodWatch Chennai",
-      summary: "A web-based flood awareness and rainfall analysis platform focused on Chennai.",
-      status: "PROJECT EXPLORATION",
-      overview: "FloodWatch Chennai brings rainfall information, drainage infrastructure and geographical insights together to help communicate urban flood risk.",
-      features: [
-        "Interactive drainage network map",
-        "Rainfall visualisation and statistics",
-        "Zone and ward search",
-        "Flood risk insights and information"
-      ],
-      tech: ["HTML", "CSS", "JavaScript", "Leaflet", "Chart.js"],
+      number: "02",
+      name: "FloodWatch Chennai",
+      category: "CLIMATE / WEB PLATFORM",
+      type: "Urban Flood Awareness",
+      year: "2026",
       symbol: "FW",
-      art: "URBAN FLOOD INTELLIGENCE"
+      description:
+        "A web-based flood awareness and analysis platform focused on rainfall patterns, drainage infrastructure and urban flood risk in Chennai.",
+      challenge:
+        "Rainfall and drainage information can be difficult to understand when it is distributed across separate datasets and maps.",
+      solution:
+        "FloodWatch combines rainfall visualizations, annual comparisons, drainage mapping and flood-risk information in one platform.",
+      features: [
+        "Rainfall statistics and visualizations",
+        "Annual rainfall comparison",
+        "Interactive drainage network map",
+        "Zone and ward search",
+        "Drainage condition visualization",
+        "Elevation and flood-risk information"
+      ],
+      technologies: [
+        "HTML",
+        "CSS",
+        "JavaScript",
+        "Python",
+        "Leaflet",
+        "Chart.js"
+      ],
+      status: "ACADEMIC PROJECT",
+      visual: "floodwatch"
     },
 
     aether: {
-      number: "03 / 12",
-      category: "DIGITAL",
-      title: "AETHER",
-      summary: "An immersive digital experience built around atmosphere, motion and dimensional visual storytelling.",
-      status: "CONCEPT EXPLORATION",
-      overview: "AETHER explores the intersection of digital art and interface design. Its visual direction uses abstract forms, cinematic transitions and immersive compositions.",
-      features: [
-        "Immersive landing experience",
-        "Abstract visual compositions",
-        "Motion-led transitions",
-        "Experimental interface direction"
-      ],
-      tech: ["HTML", "CSS", "JavaScript", "Three.js"],
+      number: "03",
+      name: "Aether",
+      category: "BRAND / DIGITAL EXPERIENCE",
+      type: "Brand Concept",
+      year: "CONCEPT",
       symbol: "A",
-      art: "IMMERSIVE DIGITAL SPACE"
+      description:
+        "A conceptual identity exploration focused on clarity, atmosphere and contemporary digital presentation.",
+      challenge:
+        "Explore how a minimal visual language can create a recognizable digital identity.",
+      solution:
+        "A restrained visual direction combining typography, spacing and a consistent interface language.",
+      features: [
+        "Visual identity exploration",
+        "Typography direction",
+        "Digital interface concept"
+      ],
+      technologies: ["Brand Strategy", "UI Design", "Web Design"],
+      status: "CONCEPT EXPLORATION",
+      visual: "aether"
     },
 
     nexus: {
-      number: "04 / 12",
-      category: "DIGITAL",
-      title: "NEXUS AI",
-      summary: "A conceptual AI command interface designed around clarity, intelligent workflows and connected information.",
-      status: "CONCEPT EXPLORATION",
-      overview: "NEXUS AI imagines a central workspace where complex information and digital tools can be organised through a refined interface.",
+      number: "04",
+      name: "Nexus",
+      category: "DIGITAL / WEB EXPERIENCE",
+      type: "Digital Concept",
+      year: "CONCEPT",
+      symbol: "N",
+      description:
+        "A conceptual digital experience exploring structured information and connected interfaces.",
+      challenge:
+        "Create a coherent interface direction for a complex digital environment.",
+      solution:
+        "A modular design approach focused on hierarchy, navigation and consistency.",
       features: [
-        "AI command dashboard concept",
-        "Modular information panels",
-        "Conversation interface direction",
-        "Data visualisation concepts"
+        "Modular interface concept",
+        "Navigation exploration",
+        "Visual system development"
       ],
-      tech: ["HTML", "CSS", "JavaScript", "API Concepts"],
-      symbol: "NX",
-      art: "INTELLIGENCE INTERFACE"
+      technologies: ["UI Design", "UX Research", "Web Design"],
+      status: "CONCEPT EXPLORATION",
+      visual: "nexus"
     },
 
     monolith: {
-      number: "05 / 12",
-      category: "DIGITAL",
-      title: "MONOLITH",
-      summary: "A premium financial dashboard concept focused on information hierarchy and visual precision.",
-      status: "CONCEPT EXPLORATION",
-      overview: "MONOLITH explores a modern financial interface with a restrained visual language, analytical components and carefully structured data.",
-      features: [
-        "Financial overview concept",
-        "Analytical dashboard layouts",
-        "Data chart explorations",
-        "Minimal interface system"
-      ],
-      tech: ["HTML", "CSS", "JavaScript", "Chart.js"],
+      number: "05",
+      name: "Monolith",
+      category: "IDENTITY / ART DIRECTION",
+      type: "Visual Concept",
+      year: "CONCEPT",
       symbol: "M",
-      art: "FINANCIAL SYSTEMS"
+      description:
+        "A visual study of form, structure and contrast through a restrained digital identity.",
+      challenge:
+        "Explore a strong visual presence without relying on unnecessary decoration.",
+      solution:
+        "A monochromatic art direction built around proportion, contrast and typography.",
+      features: [
+        "Art direction",
+        "Visual composition",
+        "Identity exploration"
+      ],
+      technologies: ["Art Direction", "Typography", "Visual Design"],
+      status: "CONCEPT EXPLORATION",
+      visual: "monolith"
     },
 
     sentinel: {
-      number: "06 / 12",
-      category: "EXPERIMENTS",
-      title: "SENTINEL",
-      summary: "A cybersecurity monitoring interface concept built around system visibility and digital awareness.",
-      status: "CONCEPT EXPLORATION",
-      overview: "SENTINEL explores how a monitoring dashboard could communicate system status, security events and network activity through a focused visual interface.",
-      features: [
-        "System monitoring dashboard concept",
-        "Network activity visualisation",
-        "Status indicator components",
-        "Security event interface"
-      ],
-      tech: ["HTML", "CSS", "JavaScript", "Data Visualisation"],
+      number: "06",
+      name: "Sentinel",
+      category: "TECHNOLOGY / INTERFACE",
+      type: "Interface Concept",
+      year: "CONCEPT",
       symbol: "S",
-      art: "SYSTEM MONITORING"
+      description:
+        "A conceptual interface exploring information hierarchy and monitoring-oriented visual systems.",
+      challenge:
+        "Present complex information in a clear and structured interface.",
+      solution:
+        "A dashboard concept using modular layouts and restrained visual emphasis.",
+      features: [
+        "Dashboard concept",
+        "Information hierarchy",
+        "Monitoring interface exploration"
+      ],
+      technologies: ["UI Design", "Dashboard Design", "UX"],
+      status: "CONCEPT EXPLORATION",
+      visual: "sentinel"
     },
 
     form01: {
-      number: "07 / 12",
-      category: "DIGITAL",
-      title: "FORM / 01",
-      summary: "An architectural portfolio concept inspired by geometric structure and editorial presentation.",
-      status: "CONCEPT EXPLORATION",
-      overview: "FORM / 01 explores a digital presentation system for architecture and spatial design, using strong typography and geometric compositions.",
+      number: "07",
+      name: "Form 01",
+      category: "EXPERIMENTAL / DESIGN",
+      type: "Design Experiment",
+      year: "CONCEPT",
+      symbol: "F",
+      description:
+        "An experimental design study focused on geometry, typography and spatial composition.",
+      challenge:
+        "Explore how basic forms can create a distinctive visual language.",
+      solution:
+        "A series of visual experiments combining geometry and controlled contrast.",
       features: [
-        "Architectural project showcase",
-        "Editorial layout direction",
-        "Geometric visual language",
-        "Responsive presentation concept"
+        "Geometric exploration",
+        "Experimental typography",
+        "Composition studies"
       ],
-      tech: ["HTML", "CSS", "JavaScript"],
-      symbol: "F/01",
-      art: "SPATIAL DESIGN"
+      technologies: ["Graphic Design", "Typography", "Art Direction"],
+      status: "DESIGN EXPERIMENT",
+      visual: "form01"
     },
 
     orbital: {
-      number: "08 / 12",
-      category: "DATA & MAPPING",
-      title: "ORBITAL",
-      summary: "A planetary exploration concept combining orbital information and interactive data visualisation.",
-      status: "CONCEPT EXPLORATION",
-      overview: "ORBITAL imagines a digital environment for presenting planetary systems, orbital paths and space-related information.",
-      features: [
-        "Planetary interface concept",
-        "Orbital path visualisations",
-        "Exploration-focused navigation",
-        "Space data presentation"
-      ],
-      tech: ["HTML", "CSS", "JavaScript", "Three.js"],
+      number: "08",
+      name: "Orbital",
+      category: "DIGITAL / VISUAL SYSTEM",
+      type: "Visual Concept",
+      year: "CONCEPT",
       symbol: "O",
-      art: "ORBITAL EXPLORATION"
+      description:
+        "A conceptual visual system inspired by movement, orbital structures and spatial relationships.",
+      challenge:
+        "Translate motion and spatial relationships into a consistent visual direction.",
+      solution:
+        "A visual exploration built around circular geometry, rhythm and layered composition.",
+      features: [
+        "Spatial composition",
+        "Motion-inspired graphics",
+        "Visual system exploration"
+      ],
+      technologies: ["Visual Design", "Motion Concepts", "UI Design"],
+      status: "CONCEPT EXPLORATION",
+      visual: "orbital"
     },
 
     sonora: {
-      number: "09 / 12",
-      category: "DIGITAL",
-      title: "SONORA",
-      summary: "A music discovery interface concept exploring sound, visual identity and audio-inspired interactions.",
-      status: "CONCEPT EXPLORATION",
-      overview: "SONORA explores a visual language for music discovery, bringing together editorial presentation, sound-inspired motion and a minimal interface.",
+      number: "09",
+      name: "Sonora",
+      category: "BRAND / EXPERIENCE",
+      type: "Brand Concept",
+      year: "CONCEPT",
+      symbol: "SO",
+      description:
+        "A conceptual brand direction exploring atmosphere, identity and sensory storytelling.",
+      challenge:
+        "Build a coherent visual identity around an atmospheric concept.",
+      solution:
+        "A restrained identity exploration using typography, tone and visual consistency.",
       features: [
-        "Music discovery interface",
-        "Audio-inspired visualisation",
-        "Artist and album presentation",
-        "Interactive listening concepts"
+        "Brand direction",
+        "Visual storytelling",
+        "Identity exploration"
       ],
-      tech: ["HTML", "CSS", "JavaScript"],
-      symbol: "S",
-      art: "SOUND & VISUAL CULTURE"
+      technologies: ["Branding", "Art Direction", "Visual Design"],
+      status: "CONCEPT EXPLORATION",
+      visual: "sonora"
     },
 
     atlas: {
-      number: "10 / 12",
-      category: "DATA & MAPPING",
-      title: "ATLAS GRID",
-      summary: "A smart-city digital twin concept exploring connected infrastructure and geographical information.",
-      status: "CONCEPT EXPLORATION",
-      overview: "ATLAS GRID imagines an interactive urban information system where locations, infrastructure and city data can be explored through a unified visual interface.",
+      number: "10",
+      name: "Atlas",
+      category: "DATA / DIGITAL EXPERIENCE",
+      type: "Digital Concept",
+      year: "CONCEPT",
+      symbol: "AT",
+      description:
+        "A conceptual data-oriented experience exploring structure, navigation and information presentation.",
+      challenge:
+        "Make structured information easier to navigate and interpret.",
+      solution:
+        "A modular concept built around clear content grouping and visual hierarchy.",
       features: [
-        "Interactive city map concept",
-        "Infrastructure information layers",
-        "Location-based data presentation",
-        "Urban dashboard direction"
+        "Information architecture",
+        "Data presentation concept",
+        "Navigation exploration"
       ],
-      tech: ["HTML", "CSS", "JavaScript", "Leaflet"],
-      symbol: "AG",
-      art: "CONNECTED CITY SYSTEMS"
+      technologies: ["UX", "UI Design", "Data Visualization"],
+      status: "CONCEPT EXPLORATION",
+      visual: "atlas"
     },
 
     apex: {
-      number: "11 / 12",
-      category: "EXPERIMENTS",
-      title: "APEX",
-      summary: "An automotive digital configurator concept inspired by precision engineering and premium vehicle presentation.",
-      status: "CONCEPT EXPLORATION",
-      overview: "APEX explores an immersive automotive presentation where vehicle details, design options and visual storytelling come together.",
+      number: "11",
+      name: "Apex",
+      category: "IDENTITY / DIGITAL",
+      type: "Brand Concept",
+      year: "CONCEPT",
+      symbol: "AP",
+      description:
+        "A conceptual identity exploring precision, performance and a strong digital presence.",
+      challenge:
+        "Explore a visual language that communicates precision and clarity.",
+      solution:
+        "A structured identity direction using strong typography and deliberate spacing.",
       features: [
-        "Automotive showcase concept",
-        "Vehicle configuration interface",
-        "Premium product presentation",
-        "Interactive specification layouts"
+        "Identity exploration",
+        "Digital art direction",
+        "Typography system"
       ],
-      tech: ["HTML", "CSS", "JavaScript", "Three.js"],
-      symbol: "A",
-      art: "AUTOMOTIVE EXPERIENCE"
+      technologies: ["Branding", "Typography", "UI Design"],
+      status: "CONCEPT EXPLORATION",
+      visual: "apex"
     },
 
     echo: {
-      number: "12 / 12",
-      category: "EXPERIMENTS",
-      title: "ECHO",
-      summary: "A digital identity concept exploring personal data, connected experiences and minimal interface design.",
-      status: "CONCEPT EXPLORATION",
-      overview: "ECHO explores how a personal digital space could bring identity, preferences and connected information together through a distinctive interface.",
-      features: [
-        "Digital identity concept",
-        "Personal dashboard direction",
-        "Connected information architecture",
-        "Minimal interface explorations"
-      ],
-      tech: ["HTML", "CSS", "JavaScript"],
+      number: "12",
+      name: "Echo",
+      category: "EXPERIMENTAL / DIGITAL",
+      type: "Creative Experiment",
+      year: "CONCEPT",
       symbol: "E",
-      art: "DIGITAL IDENTITY"
+      description:
+        "A conceptual creative experiment exploring repetition, rhythm and visual response.",
+      challenge:
+        "Explore how repetition and contrast can produce a recognizable digital experience.",
+      solution:
+        "A visual study built around repeated elements and controlled variation.",
+      features: [
+        "Visual experimentation",
+        "Rhythm and repetition",
+        "Digital composition"
+      ],
+      technologies: ["Creative Coding", "Visual Design", "Motion"],
+      status: "DESIGN EXPERIMENT",
+      visual: "echo"
     }
   };
 
   /* ==========================================
-     CATEGORY FILTERS
+     PROJECT FILTERS
   ========================================== */
 
-  const counts = {
-    all: cards.length,
-    digital: 0,
-    data: 0,
-    engineering: 0,
-    experiments: 0
-  };
+  const projectCards = $$("[data-project]");
+  const projectFilters = $$("[data-filter]");
 
-  cards.forEach(card => {
-    const category = card.dataset.projectCategory;
+  let activeProjectFilter = "all";
 
-    if (category === "data") counts.data++;
-    if (category === "digital") counts.digital++;
-    if (category === "engineering") counts.engineering++;
-    if (category === "experiments") counts.experiments++;
-  });
+  function normalizeCategory(value) {
+    return String(value || "")
+      .toLowerCase()
+      .trim()
+      .replace(/[\s_]+/g, "-");
+  }
 
-  filters.forEach(button => {
-    const category = button.dataset.filter;
-    const count = $("span", button);
+  function getProjectCategory(project) {
+    return normalizeCategory(project.category);
+  }
 
-    if (count && counts[category] !== undefined) {
-      count.textContent = counts[category];
-    }
-  });
+  function matchesProjectFilter(project, filter) {
+    if (filter === "all") return true;
 
-  function filterProjects(category) {
-    filters.forEach(button => {
-      const active = button.dataset.filter === category;
+    const category = getProjectCategory(project);
+    const searchable = [
+      project.category,
+      project.type,
+      project.name,
+      project.status
+    ].map(normalizeCategory);
 
-      button.classList.toggle("active", active);
-      button.setAttribute("aria-pressed", String(active));
+    return (
+      category.includes(filter) ||
+      searchable.some(value => value.includes(filter))
+    );
+  }
+
+  function applyProjectFilter(filter) {
+    activeProjectFilter = normalizeCategory(filter) || "all";
+
+    projectCards.forEach(card => {
+      const projectId =
+        card.dataset.project ||
+        card.dataset.caseStudy;
+
+      const project = projects[projectId];
+
+      if (!project) {
+        card.hidden = true;
+        return;
+      }
+
+      const visible = matchesProjectFilter(
+        project,
+        activeProjectFilter
+      );
+
+      card.hidden = !visible;
+      card.setAttribute(
+        "aria-hidden",
+        String(!visible)
+      );
     });
 
-    cards.forEach((card, index) => {
-      const matches =
-        category === "all" ||
-        card.dataset.projectCategory === category;
+    projectFilters.forEach(button => {
+      const active =
+        normalizeCategory(button.dataset.filter) ===
+        activeProjectFilter;
 
-      card.classList.toggle("vault-hidden", !matches);
+      button.classList.toggle("is-active", active);
 
-      if (matches) {
-        card.style.animation =
-          `vaultCardIn .45s ease ${Math.min(index * 35, 250)}ms both`;
-      } else {
-        card.style.animation = "none";
-      }
+      button.setAttribute(
+        "aria-pressed",
+        String(active)
+      );
     });
   }
 
-  filters.forEach(button => {
+  projectFilters.forEach(button => {
     button.addEventListener("click", () => {
-      filterProjects(button.dataset.filter);
+      applyProjectFilter(button.dataset.filter);
     });
   });
 
   /* ==========================================
-     CASE STUDY MODAL
+     CASE STUDY MODAL — ELEMENTS
   ========================================== */
 
-  const modal = $("#caseStudyModal");
+  const caseModal = $("#caseModal");
+  const caseBackdrop = $(".case-backdrop", caseModal || document);
+  const casePanel = $(".case-panel", caseModal || document);
 
-  if (!modal) return;
-
-  const panel = $(".case-panel", modal);
+  const caseClose = $("#caseClose");
+  const caseBottomClose = $("#caseBottomClose");
 
   const caseHeroArt = $("#caseHeroArt");
-  const caseIndex = $("#caseIndex");
-  const caseSymbol = $("#caseSymbol");
+  const caseArtIndex = $("#caseArtIndex");
   const caseArtCaption = $("#caseArtCaption");
-  const caseCategory = $("#caseCategory");
+  const caseArtSymbol = $("#caseArtSymbol");
+
+  const caseEyebrow = $("#caseEyebrow");
   const caseTitle = $("#caseTitle");
-  const caseSummary = $("#caseSummary");
+  const caseDescription = $("#caseDescription");
+
+  const caseDetails = $("#caseDetails");
   const caseStatus = $("#caseStatus");
-  const caseStatusText = $("#caseStatusText");
-  const caseOverview = $("#caseOverview");
-  const caseFeatures = $("#caseFeatures");
-  const caseTech = $("#caseTech");
+  const caseProjectNumber = $("#caseProjectNumber");
 
-  const closeButton = $("#caseClose");
-
+  let activeProjectId = null;
   let previousFocus = null;
 
-  function populateList(container, items) {
-    if (!container) return;
+  /* ==========================================
+     CASE STUDY MODAL — CONTENT
+  ========================================== */
 
-    container.replaceChildren();
+  function createDetailBlock(label, content) {
+    const block = document.createElement("div");
+    block.className = "case-detail-block";
 
-    items.forEach(item => {
-      const element = document.createElement("li");
-      element.textContent = item;
-      container.appendChild(element);
-    });
+    const heading = document.createElement("span");
+    heading.className = "case-label";
+    heading.textContent = label;
+
+    block.appendChild(heading);
+
+    if (Array.isArray(content)) {
+      const list = document.createElement("ul");
+
+      content.forEach(item => {
+        const li = document.createElement("li");
+        li.textContent = item;
+        list.appendChild(li);
+      });
+
+      block.appendChild(list);
+    } else {
+      const paragraph = document.createElement("p");
+      paragraph.textContent = content;
+      block.appendChild(paragraph);
+    }
+
+    return block;
   }
 
-  function openCaseStudy(projectId) {
+  function renderCaseStudy(projectId) {
     const project = projects[projectId];
 
-    if (!project) return;
+    if (!project || !caseModal) return false;
 
-    previousFocus = document.activeElement;
+    activeProjectId = projectId;
 
-    if (caseIndex) caseIndex.textContent = project.number;
-    if (caseSymbol) caseSymbol.textContent = project.symbol;
-    if (caseArtCaption) caseArtCaption.textContent = project.art;
-    if (caseCategory) caseCategory.textContent = project.category;
-    if (caseTitle) caseTitle.textContent = project.title;
-    if (caseSummary) caseSummary.textContent = project.summary;
-    if (caseStatusText) caseStatusText.textContent = project.status;
-    if (caseOverview) caseOverview.textContent = project.overview;
+    if (caseEyebrow) {
+      caseEyebrow.textContent = project.category;
+    }
+
+    if (caseTitle) {
+      caseTitle.textContent = project.name;
+    }
+
+    if (caseDescription) {
+      caseDescription.textContent = project.description;
+    }
+
+    if (caseArtIndex) {
+      caseArtIndex.textContent =
+        `PROJECT ${project.number} / MYRLORE`;
+    }
+
+    if (caseArtCaption) {
+      caseArtCaption.textContent =
+        `${project.type} — ${project.year}`;
+    }
+
+    if (caseArtSymbol) {
+      caseArtSymbol.textContent = project.symbol;
+    }
 
     if (caseStatus) {
       caseStatus.textContent = project.status;
     }
 
-    populateList(caseFeatures, project.features);
-    populateList(caseTech, project.tech);
+    if (caseProjectNumber) {
+      caseProjectNumber.textContent = project.number;
+    }
 
-   
-    // Keep the existing project-specific artwork and CSS.
     if (caseHeroArt) {
       caseHeroArt.dataset.project = projectId;
-      caseHeroArt.style.removeProperty("background");
+      caseHeroArt.className =
+        `case-hero-art case-art-${project.visual || projectId}`;
     }
 
-    modal.classList.add("active", "is-open", "open");
-    modal.setAttribute("aria-hidden", "false");
-    modal.removeAttribute("inert");
-
-    modal.style.display = "flex";
-    modal.style.visibility = "visible";
-    modal.style.opacity = "1";
-    modal.style.pointerEvents = "auto";
-
-    document.body.style.overflow = "hidden";
-
-    if (panel) {
-      panel.scrollTop = 0;
+    if (caseDetails) {
+      caseDetails.replaceChildren(
+        createDetailBlock("THE CHALLENGE", project.challenge),
+        createDetailBlock("THE APPROACH", project.solution),
+        createDetailBlock("PROJECT FEATURES", project.features),
+        createDetailBlock("TECHNOLOGIES", project.technologies)
+      );
     }
 
-    if (closeButton) {
-      closeButton.focus();
+    return true;
+  }
+
+  /* ==========================================
+     CASE STUDY MODAL — OPEN / CLOSE
+  ========================================== */
+
+  function openCaseStudy(projectId, triggerElement) {
+    if (!caseModal) return;
+
+    if (!renderCaseStudy(projectId)) return;
+
+    previousFocus = triggerElement || document.activeElement;
+
+    caseModal.classList.add("is-open");
+    caseModal.setAttribute("aria-hidden", "false");
+    caseModal.removeAttribute("inert");
+
+    body.classList.add("case-open");
+
+    if (casePanel) {
+      casePanel.scrollTop = 0;
+    }
+
+    caseClose?.focus({ preventScroll: true });
+
+    if (gsapInstance && !reducedMotion) {
+      gsapInstance.fromTo(
+        ".case-content > *",
+        { opacity: 0, y: 22 },
+        {
+          opacity: 1,
+          y: 0,
+          duration: 0.65,
+          stagger: 0.06,
+          delay: 0.2,
+          ease: "power2.out"
+        }
+      );
     }
   }
 
   function closeCaseStudy() {
-    if (modal.getAttribute("aria-hidden") === "true") return;
+    if (!caseModal || !caseModal.classList.contains("is-open")) {
+      return;
+    }
 
-    modal.classList.remove("active", "is-open", "open");
-    modal.setAttribute("aria-hidden", "true");
-    modal.setAttribute("inert", "");
+    caseModal.classList.remove("is-open");
+    caseModal.setAttribute("aria-hidden", "true");
+    caseModal.setAttribute("inert", "");
 
-    modal.style.opacity = "0";
-    modal.style.pointerEvents = "none";
+    body.classList.remove("case-open");
 
-    document.body.style.overflow = "";
-
-    window.setTimeout(() => {
-      if (modal.getAttribute("aria-hidden") === "true") {
-        modal.style.display = "none";
-        modal.style.visibility = "hidden";
-      }
-    }, 350);
+    if (gsapInstance) {
+      gsapInstance.killTweensOf(".case-content > *");
+    }
 
     if (previousFocus && typeof previousFocus.focus === "function") {
-      previousFocus.focus();
+      previousFocus.focus({ preventScroll: true });
     }
+
+    activeProjectId = null;
   }
 
   /* ==========================================
-     OPEN PROJECTS
+     PROJECT CARD EVENTS
   ========================================== */
 
-  cards.forEach(card => {
-    card.addEventListener("click", event => {
-      event.preventDefault();
+  projectCards.forEach(card => {
+    const projectId =
+      card.dataset.project ||
+      card.dataset.caseStudy;
 
-      const projectId = card.dataset.caseStudy;
-      openCaseStudy(projectId);
+    if (!projects[projectId]) return;
+
+    card.setAttribute("role", "button");
+    card.setAttribute("tabindex", "0");
+    card.setAttribute(
+      "aria-label",
+      `View ${projects[projectId].name} case study`
+    );
+
+    card.addEventListener("click", () => {
+      openCaseStudy(projectId, card);
+    });
+
+    card.addEventListener("keydown", event => {
+      if (
+        event.key === "Enter" ||
+        event.key === " "
+      ) {
+        event.preventDefault();
+        openCaseStudy(projectId, card);
+      }
+    });
+  });
+
+  caseClose?.addEventListener("click", closeCaseStudy);
+  caseBottomClose?.addEventListener("click", closeCaseStudy);
+  caseBackdrop?.addEventListener("click", closeCaseStudy);
+
+  /* ==========================================
+     MODAL KEYBOARD ACCESSIBILITY
+  ========================================== */
+
+  document.addEventListener("keydown", event => {
+    if (
+      event.key === "Escape" &&
+      caseModal?.classList.contains("is-open")
+    ) {
+      closeCaseStudy();
+      return;
+    }
+
+    if (
+      event.key !== "Tab" ||
+      !caseModal?.classList.contains("is-open")
+    ) {
+      return;
+    }
+
+    const focusable = $$(
+      'button:not([disabled]), a[href], [tabindex]:not([tabindex="-1"])',
+      caseModal
+    ).filter(element => {
+      return element.offsetParent !== null;
+    });
+
+    if (!focusable.length) return;
+
+    const first = focusable[0];
+    const last = focusable[focusable.length - 1];
+
+    if (event.shiftKey && document.activeElement === first) {
+      event.preventDefault();
+      last.focus();
+    } else if (
+      !event.shiftKey &&
+      document.activeElement === last
+    ) {
+      event.preventDefault();
+      first.focus();
+    }
+  });
+
+  /* Initial filter state */
+
+  if (projectFilters.length) {
+    applyProjectFilter("all");
+  }
+     /* ==========================================
+     MAGNETIC INTERACTIONS
+  ========================================== */
+
+  const magneticElements = $$(
+    "[data-magnetic], .magnetic, .nav-cta, .hero-cta"
+  );
+
+  magneticElements.forEach(element => {
+    if (touchDevice || reducedMotion) return;
+
+    let bounds = null;
+
+    element.addEventListener("mouseenter", () => {
+      bounds = element.getBoundingClientRect();
+    });
+
+    element.addEventListener("mousemove", event => {
+      bounds = element.getBoundingClientRect();
+
+      const centerX = bounds.left + bounds.width / 2;
+      const centerY = bounds.top + bounds.height / 2;
+
+      const moveX = (event.clientX - centerX) * 0.16;
+      const moveY = (event.clientY - centerY) * 0.16;
+
+      if (gsapInstance) {
+        gsapInstance.to(element, {
+          x: moveX,
+          y: moveY,
+          duration: 0.35,
+          ease: "power2.out"
+        });
+      } else {
+        element.style.transform =
+          `translate(${moveX}px, ${moveY}px)`;
+      }
+    });
+
+    element.addEventListener("mouseleave", () => {
+      if (gsapInstance) {
+        gsapInstance.to(element, {
+          x: 0,
+          y: 0,
+          duration: 0.55,
+          ease: "elastic.out(1, 0.4)"
+        });
+      } else {
+        element.style.transform = "";
+      }
     });
   });
 
   /* ==========================================
-     CLOSE CONTROLS
+     PROJECT HOVER INTERACTIONS
   ========================================== */
 
-  if (closeButton) {
-    closeButton.addEventListener("click", closeCaseStudy);
-  }
+  const projectHoverTargets = $$(
+    "[data-project], [data-case-study], .project-card"
+  );
 
-  $$("[data-case-close]", modal).forEach(element => {
-    element.addEventListener("click", closeCaseStudy);
+  projectHoverTargets.forEach(card => {
+    card.addEventListener("mouseenter", () => {
+      body.classList.add("project-hovering");
+
+      const label = card.dataset.cursorLabel || "EXPLORE";
+
+      if (cursorText) {
+        cursorText.textContent = label;
+      }
+    });
+
+    card.addEventListener("mouseleave", () => {
+      body.classList.remove("project-hovering");
+
+      if (cursorText) {
+        cursorText.textContent = "";
+      }
+    });
   });
 
-  document.addEventListener("keydown", event => {
-    if (modal.getAttribute("aria-hidden") === "true") return;
+  /* ==========================================
+     IMAGE / VISUAL HOVER EFFECTS
+  ========================================== */
 
-    if (event.key === "Escape") {
-      closeCaseStudy();
+  const visualCards = $$(
+    ".project-card, .work-card, .visual-card"
+  );
+
+  visualCards.forEach(card => {
+    const visual = $(
+      "img, .project-image, .project-visual",
+      card
+    );
+
+    if (!visual || touchDevice || reducedMotion) return;
+
+    card.addEventListener("mousemove", event => {
+      const rect = card.getBoundingClientRect();
+
+      const x = (event.clientX - rect.left) / rect.width;
+      const y = (event.clientY - rect.top) / rect.height;
+
+      const rotateY = (x - 0.5) * 3;
+      const rotateX = (0.5 - y) * 3;
+
+      if (gsapInstance) {
+        gsapInstance.to(visual, {
+          rotateX,
+          rotateY,
+          duration: 0.35,
+          ease: "power2.out",
+          transformPerspective: 900
+        });
+      }
+    });
+
+    card.addEventListener("mouseleave", () => {
+      if (gsapInstance) {
+        gsapInstance.to(visual, {
+          rotateX: 0,
+          rotateY: 0,
+          duration: 0.5,
+          ease: "power2.out"
+        });
+      }
+    });
+  });
+
+  /* ==========================================
+     PAGE TRANSITIONS
+  ========================================== */
+
+  const transitionOverlay = $(
+    ".page-transition, .transition-curtain"
+  );
+
+  const transitionLinks = $$(
+    'a[href]:not([target="_blank"]):not([href^="#"]):not([href^="mailto:"]):not([href^="tel:"]):not([download])'
+  );
+
+  function isInternalPageLink(link) {
+    const href = link.getAttribute("href");
+
+    if (!href) return false;
+
+    if (
+      href.startsWith("javascript:") ||
+      href.startsWith("mailto:") ||
+      href.startsWith("tel:")
+    ) {
+      return false;
     }
 
-    if (event.key === "Tab") {
-      const focusable = $$(
-        'button:not([disabled]), a[href], input:not([disabled]), [tabindex]:not([tabindex="-1"])',
-        modal
-      ).filter(element => element.offsetParent !== null);
+    try {
+      const destination = new URL(href, window.location.href);
 
-      if (!focusable.length) return;
+      return (
+        destination.origin === window.location.origin &&
+        destination.pathname !== window.location.pathname
+      );
+    } catch {
+      return false;
+    }
+  }
 
-      const first = focusable[0];
-      const last = focusable[focusable.length - 1];
+  function runPageTransition(destination) {
+    if (!transitionOverlay) {
+      window.location.href = destination;
+      return;
+    }
 
-      if (event.shiftKey && document.activeElement === first) {
-        event.preventDefault();
-        last.focus();
-      } else if (
-        !event.shiftKey &&
-        document.activeElement === last
+    transitionOverlay.classList.add("is-active");
+    transitionOverlay.setAttribute("aria-hidden", "false");
+
+    if (gsapInstance && !reducedMotion) {
+      gsapInstance.to(transitionOverlay, {
+        scaleY: 1,
+        transformOrigin: "bottom",
+        duration: 0.65,
+        ease: "power3.inOut",
+        onComplete: () => {
+          window.location.href = destination;
+        }
+      });
+    } else {
+      window.location.href = destination;
+    }
+  }
+
+  transitionLinks.forEach(link => {
+    if (!isInternalPageLink(link)) return;
+
+    link.addEventListener("click", event => {
+      if (
+        event.defaultPrevented ||
+        event.button !== 0 ||
+        event.metaKey ||
+        event.ctrlKey ||
+        event.shiftKey ||
+        event.altKey
       ) {
-        event.preventDefault();
-        first.focus();
+        return;
       }
+
+      const destination = link.href;
+
+      if (!destination) return;
+
+      event.preventDefault();
+      runPageTransition(destination);
+    });
+  });
+
+  /* ==========================================
+     PAGE TRANSITION — ENTRANCE
+  ========================================== */
+
+  if (transitionOverlay) {
+    if (gsapInstance && !reducedMotion) {
+      gsapInstance.set(transitionOverlay, {
+        scaleY: 1,
+        transformOrigin: "top"
+      });
+
+      gsapInstance.to(transitionOverlay, {
+        scaleY: 0,
+        transformOrigin: "top",
+        duration: 0.85,
+        delay: 0.12,
+        ease: "power3.inOut",
+        onComplete: () => {
+          transitionOverlay.classList.remove("is-active");
+          transitionOverlay.setAttribute("aria-hidden", "true");
+        }
+      });
+    } else {
+      transitionOverlay.classList.remove("is-active");
+      transitionOverlay.setAttribute("aria-hidden", "true");
+    }
+  }
+
+  /* ==========================================
+     INFINITE MARQUEE
+  ========================================== */
+
+  const marquees = $$(".marquee-track");
+
+  marquees.forEach(track => {
+    if (reducedMotion) return;
+
+    const parent = track.parentElement;
+
+    if (!parent) return;
+
+    parent.addEventListener("mouseenter", () => {
+      if (gsapInstance) {
+        gsapInstance.to(track, {
+          timeScale: 0.35,
+          duration: 0.5,
+          ease: "power2.out"
+        });
+      }
+    });
+
+    parent.addEventListener("mouseleave", () => {
+      if (gsapInstance) {
+        gsapInstance.to(track, {
+          timeScale: 1,
+          duration: 0.5,
+          ease: "power2.out"
+        });
+      }
+    });
+  });
+
+  /* ==========================================
+     SCROLL PROGRESS
+  ========================================== */
+
+  const scrollProgress = $(
+    ".scroll-progress, #scrollProgress"
+  );
+
+  function updateScrollProgress() {
+    if (!scrollProgress) return;
+
+    const scrollableHeight =
+      document.documentElement.scrollHeight -
+      window.innerHeight;
+
+    const progress =
+      scrollableHeight > 0
+        ? window.scrollY / scrollableHeight
+        : 0;
+
+    scrollProgress.style.transform =
+      `scaleX(${Math.min(1, Math.max(0, progress))})`;
+  }
+
+  window.addEventListener(
+    "scroll",
+    updateScrollProgress,
+    { passive: true }
+  );
+
+  updateScrollProgress();
+
+  /* ==========================================
+     BACK TO TOP
+  ========================================== */
+
+  const backToTop = $(
+    "#backToTop, .back-to-top"
+  );
+
+  if (backToTop) {
+    backToTop.addEventListener("click", () => {
+      window.scrollTo({
+        top: 0,
+        behavior: reducedMotion ? "auto" : "smooth"
+      });
+    });
+
+    window.addEventListener(
+      "scroll",
+      () => {
+        backToTop.classList.toggle(
+          "is-visible",
+          window.scrollY > 500
+        );
+      },
+      { passive: true }
+    );
+  }
+
+  /* ==========================================
+     EXTERNAL LINK SAFETY
+  ========================================== */
+
+  $$('a[target="_blank"]').forEach(link => {
+    const rel = new Set(
+      (link.getAttribute("rel") || "").split(/\s+/).filter(Boolean)
+    );
+
+    rel.add("noopener");
+    rel.add("noreferrer");
+
+    link.setAttribute("rel", [...rel].join(" "));
+  });
+     /* ==========================================
+     SECRET ARCHIVE
+  ========================================== */
+
+  const archiveTrigger = $(
+    "[data-secret-trigger], #secretTrigger, .secret-trigger"
+  );
+
+  const secretArchive = $(
+    "[data-secret-archive], #secretArchive, .secret-archive"
+  );
+
+  const archiveClose = $(
+    "[data-archive-close], #archiveClose, .archive-close"
+  );
+
+  function openSecretArchive() {
+    if (!secretArchive) return;
+
+    secretArchive.classList.add("is-open");
+    secretArchive.setAttribute("aria-hidden", "false");
+
+    if (archiveTrigger) {
+      archiveTrigger.setAttribute("aria-expanded", "true");
+    }
+
+    body.classList.add("archive-open");
+
+    const firstFocusable = $(
+      'a, button, input, textarea, select, [tabindex]:not([tabindex="-1"])',
+      secretArchive
+    );
+
+    firstFocusable?.focus();
+  }
+
+  function closeSecretArchive() {
+    if (!secretArchive) return;
+
+    secretArchive.classList.remove("is-open");
+    secretArchive.setAttribute("aria-hidden", "true");
+
+    if (archiveTrigger) {
+      archiveTrigger.setAttribute("aria-expanded", "false");
+      archiveTrigger.focus();
+    }
+
+    body.classList.remove("archive-open");
+  }
+
+  archiveTrigger?.addEventListener(
+    "click",
+    openSecretArchive
+  );
+
+  archiveClose?.addEventListener(
+    "click",
+    closeSecretArchive
+  );
+
+  secretArchive?.addEventListener("click", event => {
+    if (event.target === secretArchive) {
+      closeSecretArchive();
     }
   });
 
   /* ==========================================
-     INITIAL STATE
+     KEYBOARD ACCESSIBILITY
   ========================================== */
 
-  modal.setAttribute("aria-hidden", "true");
-  modal.setAttribute("inert", "");
-  modal.style.display = "none";
-  modal.style.visibility = "hidden";
+  document.addEventListener("keydown", event => {
+    if (event.key !== "Escape") return;
 
-  filterProjects("all");
+    if (secretArchive?.classList.contains("is-open")) {
+      closeSecretArchive();
+    }
+  });
 
-  console.log("MYRLORE Project Vault initialized.");
+  /* ==========================================
+     CONTACT FORM VALIDATION
+  ========================================== */
+
+  const contactForm = $(
+    "#contactForm, [data-contact-form]"
+  );
+
+  if (contactForm) {
+    const emailInput = $(
+      'input[type="email"]',
+      contactForm
+    );
+
+    const submitButton = $(
+      'button[type="submit"], input[type="submit"]',
+      contactForm
+    );
+
+    const formStatus = $(
+      "[data-form-status], .form-status",
+      contactForm
+    );
+
+    contactForm.addEventListener("submit", event => {
+      if (!contactForm.checkValidity()) {
+        event.preventDefault();
+        contactForm.reportValidity();
+
+        return;
+      }
+
+      if (emailInput && emailInput.value.trim()) {
+        const emailPattern =
+          /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+        if (!emailPattern.test(emailInput.value.trim())) {
+          event.preventDefault();
+
+          emailInput.setCustomValidity(
+            "Please enter a valid email address."
+          );
+
+          emailInput.reportValidity();
+          emailInput.setCustomValidity("");
+
+          return;
+        }
+      }
+
+      if (submitButton) {
+        submitButton.disabled = true;
+        submitButton.setAttribute(
+          "aria-busy",
+          "true"
+        );
+      }
+
+      if (formStatus) {
+        formStatus.textContent = "Sending...";
+        formStatus.setAttribute("aria-live", "polite");
+      }
+    });
+
+    contactForm.addEventListener("input", () => {
+      if (submitButton && !contactForm.checkValidity()) {
+        submitButton.disabled = false;
+        submitButton.removeAttribute("aria-busy");
+      }
+    });
+  }
+
+  /* ==========================================
+     IMAGE LOADING
+  ========================================== */
+
+  const lazyImages = $$("img[loading='lazy']");
+
+  lazyImages.forEach(img => {
+    img.addEventListener("load", () => {
+      img.classList.add("is-loaded");
+    });
+
+    img.addEventListener("error", () => {
+      img.classList.add("image-error");
+    });
+  });
+
+  /* ==========================================
+     VIDEO PLAYBACK CONTROL
+  ========================================== */
+
+  const videos = $$("video");
+
+  videos.forEach(video => {
+    video.addEventListener("error", () => {
+      video.classList.add("video-error");
+    });
+
+    if (reducedMotion) {
+      video.pause();
+      video.removeAttribute("autoplay");
+    }
+  });
+
+  /* ==========================================
+     FINAL INITIALIZATION
+  ========================================== */
+
+  document.documentElement.classList.add("js-ready");
+  body.classList.add("js-ready");
+
+  window.addEventListener("pageshow", () => {
+    body.classList.remove("is-transitioning");
+  });
+
+  console.info("MYRLORE interaction system initialized.");
 
 })();
