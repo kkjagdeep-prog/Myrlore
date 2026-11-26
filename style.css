@@ -1326,3 +1326,234 @@ body {
     transition: none !important;
   }
 }
+/* ==========================================
+   MYRLORE — CONSISTENCY & FUNCTIONALITY FIXES
+========================================== */
+
+/* NAVIGATION — match script.js .is-open state */
+.menu-panel.is-open {
+  transform: translateY(0);
+}
+
+/* REVEAL — make JS fallback visible */
+.reveal.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* CURSOR — support both existing and JS active states */
+.cursor-glow.is-active {
+  width: 430px;
+  height: 430px;
+  background: radial-gradient(
+    circle,
+    rgba(198,182,154,.09),
+    transparent 68%
+  );
+}
+
+.cursor-glow.is-active::before {
+  width: 54px;
+  height: 54px;
+  opacity: 1;
+}
+
+.cursor-glow.is-active.cursor-project::before {
+  opacity: 0;
+}
+
+/* SERVICES — support the JS accordion state */
+.service-item.is-open {
+  background: linear-gradient(
+    90deg,
+    rgba(198,182,154,.045),
+    transparent 75%
+  );
+}
+
+.service-item.is-open .service-title {
+  color: var(--champagne);
+}
+
+.service-item.is-open .service-arrow {
+  color: #08090b;
+  background: var(--champagne);
+  border-color: var(--champagne);
+  transform: rotate(45deg);
+}
+
+.service-item.is-open .service-summary {
+  color: #b9b7b0;
+}
+
+/* PROJECT ARTWORK — missing project styles */
+.art-aether {
+  color: #e8e5dc;
+  background:
+    radial-gradient(circle at 50% 45%, rgba(198,182,154,.3), transparent 28%),
+    linear-gradient(135deg, #25292b, #101216 70%);
+}
+
+.art-nexus {
+  color: #dfe4e8;
+  background:
+    radial-gradient(circle at 50% 50%, #39434a, #15191e 68%);
+}
+
+.art-monolith {
+  color: #e3e0d8;
+  background:
+    linear-gradient(145deg, #373b3e, #101216 72%);
+}
+
+.art-sentinel {
+  color: #dce4e4;
+  background:
+    radial-gradient(ellipse at 50% 40%, #405052, #111719 75%);
+}
+
+.art-form {
+  color: #e8e5dc;
+  background:
+    radial-gradient(circle at 50% 50%, #514a40, #151411 72%);
+}
+
+.art-orbital {
+  color: #e6e2d9;
+  background:
+    radial-gradient(circle at 50% 50%, #41464b, #111317 72%);
+}
+
+.art-sonora {
+  color: #e6dfd3;
+  background:
+    radial-gradient(ellipse at 50% 50%, #55483f, #151214 75%);
+}
+
+.art-atlas {
+  color: #e1e5e8;
+  background:
+    radial-gradient(circle at 50% 45%, #3b4850, #111519 72%);
+}
+
+.art-apex {
+  color: #e9e4dc;
+  background:
+    linear-gradient(145deg, #49443d, #171513 72%);
+}
+
+.art-echo {
+  color: #e5e2dc;
+  background:
+    radial-gradient(circle at 50% 50%, #45434b, #121216 72%);
+}
+
+/* CASE STUDY ARTWORK — unique visual treatments */
+.case-hero-art.case-art-corro {
+  background:
+    radial-gradient(circle at 50% 45%, #555a5d, #24282c 48%, #121417 100%);
+}
+
+.case-hero-art.case-art-flood {
+  background:
+    radial-gradient(ellipse at 50% 50%, #46565a, #1c272c 75%);
+}
+
+.case-hero-art.case-art-aether {
+  background:
+    radial-gradient(circle at 50% 45%, rgba(198,182,154,.25), transparent 32%),
+    linear-gradient(135deg, #25292b, #101216 70%);
+}
+
+.case-hero-art.case-art-nexus {
+  background:
+    radial-gradient(circle at 50% 50%, #39434a, #15191e 68%);
+}
+
+.case-hero-art.case-art-monolith {
+  background:
+    linear-gradient(145deg, #373b3e, #101216 72%);
+}
+
+.case-hero-art.case-art-sentinel {
+  background:
+    radial-gradient(ellipse at 50% 40%, #405052, #111719 75%);
+}
+
+.case-hero-art.case-art-form {
+  background:
+    radial-gradient(circle at 50% 50%, #514a40, #151411 72%);
+}
+
+.case-hero-art.case-art-orbital {
+  background:
+    radial-gradient(circle at 50% 50%, #41464b, #111317 72%);
+}
+
+.case-hero-art.case-art-sonora {
+  background:
+    radial-gradient(ellipse at 50% 50%, #55483f, #151214 75%);
+}
+
+.case-hero-art.case-art-atlas {
+  background:
+    radial-gradient(circle at 50% 45%, #3b4850, #111519 72%);
+}
+
+.case-hero-art.case-art-apex {
+  background:
+    linear-gradient(145deg, #49443d, #171513 72%);
+}
+
+.case-hero-art.case-art-echo {
+  background:
+    radial-gradient(circle at 50% 50%, #45434b, #121216 72%);
+}
+
+/* PAGE TRANSITION — avoid blocking the page when inactive */
+.page-transition:not(.active):not(.is-active) {
+  pointer-events: none;
+}
+
+/* MODAL — keep the sliding panel controlled by CSS */
+.case-panel {
+  will-change: transform;
+}
+
+/* ACCESSIBILITY — keyboard focus */
+.menu-toggle:focus-visible,
+.menu-close:focus-visible,
+.service-trigger:focus-visible,
+.case-close:focus-visible,
+.case-bottom-close:focus-visible,
+.work-card:focus-visible {
+  outline: 1px solid var(--champagne);
+  outline-offset: 5px;
+}
+
+/* SMALL SCREEN SAFETY */
+@media (max-width: 600px) {
+  .cursor-glow.is-active {
+    display: none;
+  }
+
+  .case-hero-art {
+    overflow: hidden;
+  }
+}
+
+/* REDUCED MOTION */
+@media (prefers-reduced-motion: reduce) {
+  .reveal {
+    opacity: 1;
+    transform: none;
+  }
+
+  .menu-panel,
+  .case-panel,
+  .case-backdrop,
+  .work-art,
+  .work-view-label {
+    transition: none !important;
+  }
+}
