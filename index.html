@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -62,32 +63,7 @@
     <div class="loader-line"><span></span></div>
     <p>CREATING SOMETHING DIFFERENT</p>
   </div>
-<!-- INDEPENDENT LOADER FAILSAFE -->
-<script>
-(() => {
-  let revealed = false;
 
-  function revealPage() {
-    if (revealed) return;
-    revealed = true;
-
-    document.body.classList.add("loaded");
-
-    const loader = document.getElementById("pageLoader");
-
-    if (loader) {
-      loader.classList.add("loaded");
-      loader.style.pointerEvents = "none";
-    }
-  }
-
-  window.addEventListener("load", revealPage, { once: true });
-
-  // Never leave the visitor stuck on the loading screen.
-  window.setTimeout(revealPage, 3500);
-})();
-</script>
-  
   <!-- BACKGROUND EFFECTS -->
   <div class="noise" aria-hidden="true"></div>
   <div class="cursor-glow" id="cursorGlow" aria-hidden="true"></div>
@@ -538,7 +514,8 @@
       </div>
 
     </section>
-        <!-- PROJECT VAULT -->
+
+    <!-- PROJECT VAULT -->
     <section class="work section-pad" id="work">
 
       <div class="section-top">
@@ -599,20 +576,16 @@
       <div class="work-grid vault-grid" id="vaultGrid">
 
         <!-- 001 CORROGUARD -->
-        <a
-          class="work-card work-large"
-          href="#case-study"
+        <a class="work-card work-large" href="#case-study"
           data-case-study="corroguard"
           data-project-category="engineering"
-          aria-label="Explore CorroGuard project"
-        >
+          aria-label="Explore CorroGuard project">
           <div class="work-art art-corro">
             <div class="art-orbit"></div>
             <div class="art-core">CG<span>®</span></div>
             <span class="art-label">MATERIAL INTELLIGENCE</span>
             <span class="work-view-label">EXPLORE PROJECT ↗</span>
           </div>
-
           <div class="work-info">
             <div>
               <span class="work-number">001 / ENGINEERING</span>
@@ -624,20 +597,16 @@
         </a>
 
         <!-- 002 FLOODWATCH -->
-        <a
-          class="work-card work-small"
-          href="#case-study"
+        <a class="work-card work-small" href="#case-study"
           data-case-study="floodwatch"
           data-project-category="data"
-          aria-label="Explore FloodWatch Chennai project"
-        >
+          aria-label="Explore FloodWatch Chennai project">
           <div class="work-art art-flood">
             <div class="flood-lines"></div>
             <div class="flood-title">FLOOD<br>WATCH<span>.</span></div>
             <span class="art-label">CHENNAI / INDIA</span>
             <span class="work-view-label">EXPLORE PROJECT ↗</span>
           </div>
-
           <div class="work-info">
             <div>
               <span class="work-number">002 / DATA & MAPPING</span>
@@ -649,13 +618,10 @@
         </a>
 
         <!-- 003 AETHER -->
-        <a
-          class="work-card"
-          href="#case-study"
+        <a class="work-card" href="#case-study"
           data-case-study="aether"
           data-project-category="digital"
-          aria-label="Explore AETHER concept"
-        >
+          aria-label="Explore AETHER concept">
           <div class="work-art art-aether">
             <div class="aether-orb"></div>
             <div class="aether-ring aether-ring-one"></div>
@@ -664,7 +630,6 @@
             <span class="art-label">IMMERSIVE DIGITAL WORLDS</span>
             <span class="work-view-label">EXPLORE CONCEPT ↗</span>
           </div>
-
           <div class="work-info">
             <div>
               <span class="work-number">003 / DIGITAL EXPERIENCE</span>
@@ -676,13 +641,10 @@
         </a>
 
         <!-- 004 NEXUS AI -->
-        <a
-          class="work-card"
-          href="#case-study"
+        <a class="work-card" href="#case-study"
           data-case-study="nexus"
           data-project-category="digital"
-          aria-label="Explore NEXUS AI concept"
-        >
+          aria-label="Explore NEXUS AI concept">
           <div class="work-art art-nexus">
             <div class="nexus-grid"></div>
             <div class="nexus-core">N<span>.</span></div>
@@ -690,7 +652,6 @@
             <span class="art-label">INTELLIGENCE INTERFACE</span>
             <span class="work-view-label">EXPLORE CONCEPT ↗</span>
           </div>
-
           <div class="work-info">
             <div>
               <span class="work-number">004 / DIGITAL PRODUCT</span>
@@ -702,20 +663,16 @@
         </a>
 
         <!-- 005 MONOLITH -->
-        <a
-          class="work-card"
-          href="#case-study"
+        <a class="work-card" href="#case-study"
           data-case-study="monolith"
           data-project-category="digital"
-          aria-label="Explore MONOLITH concept"
-        >
+          aria-label="Explore MONOLITH concept">
           <div class="work-art art-monolith">
             <div class="monolith-shape"></div>
             <div class="monolith-title">MONOLITH</div>
             <span class="art-label">DIGITAL ARCHITECTURE</span>
             <span class="work-view-label">EXPLORE CONCEPT ↗</span>
           </div>
-
           <div class="work-info">
             <div>
               <span class="work-number">005 / DIGITAL EXPERIENCE</span>
@@ -727,20 +684,16 @@
         </a>
 
         <!-- 006 SENTINEL -->
-        <a
-          class="work-card"
-          href="#case-study"
+        <a class="work-card" href="#case-study"
           data-case-study="sentinel"
           data-project-category="data"
-          aria-label="Explore SENTINEL concept"
-        >
+          aria-label="Explore SENTINEL concept">
           <div class="work-art art-sentinel">
             <div class="sentinel-grid"></div>
             <div class="sentinel-symbol">S<span>.</span></div>
             <span class="art-label">SYSTEM MONITORING</span>
             <span class="work-view-label">EXPLORE CONCEPT ↗</span>
           </div>
-
           <div class="work-info">
             <div>
               <span class="work-number">006 / DATA SYSTEM</span>
@@ -752,13 +705,10 @@
         </a>
 
         <!-- 007 FORM 01 -->
-        <a
-          class="work-card"
-          href="#case-study"
+        <a class="work-card" href="#case-study"
           data-case-study="form01"
           data-project-category="experiments"
-          aria-label="Explore FORM 01 experiment"
-        >
+          aria-label="Explore FORM 01 experiment">
           <div class="work-art art-form">
             <div class="form-shape form-shape-one"></div>
             <div class="form-shape form-shape-two"></div>
@@ -766,7 +716,6 @@
             <span class="art-label">GEOMETRY / STUDY</span>
             <span class="work-view-label">EXPLORE EXPERIMENT ↗</span>
           </div>
-
           <div class="work-info">
             <div>
               <span class="work-number">007 / CREATIVE EXPERIMENT</span>
@@ -778,13 +727,10 @@
         </a>
 
         <!-- 008 ORBITAL -->
-        <a
-          class="work-card"
-          href="#case-study"
+        <a class="work-card" href="#case-study"
           data-case-study="orbital"
           data-project-category="experiments"
-          aria-label="Explore ORBITAL experiment"
-        >
+          aria-label="Explore ORBITAL experiment">
           <div class="work-art art-orbital">
             <div class="orbital-ring orbital-ring-one"></div>
             <div class="orbital-ring orbital-ring-two"></div>
@@ -792,7 +738,6 @@
             <span class="art-label">MOTION / ORBIT</span>
             <span class="work-view-label">EXPLORE EXPERIMENT ↗</span>
           </div>
-
           <div class="work-info">
             <div>
               <span class="work-number">008 / CREATIVE EXPERIMENT</span>
@@ -804,20 +749,16 @@
         </a>
 
         <!-- 009 SONORA -->
-        <a
-          class="work-card"
-          href="#case-study"
+        <a class="work-card" href="#case-study"
           data-case-study="sonora"
           data-project-category="digital"
-          aria-label="Explore SONORA concept"
-        >
+          aria-label="Explore SONORA concept">
           <div class="work-art art-sonora">
             <div class="sonora-wave"></div>
             <div class="sonora-title">SONORA</div>
             <span class="art-label">SOUND / EXPERIENCE</span>
             <span class="work-view-label">EXPLORE CONCEPT ↗</span>
           </div>
-
           <div class="work-info">
             <div>
               <span class="work-number">009 / DIGITAL EXPERIENCE</span>
@@ -829,20 +770,16 @@
         </a>
 
         <!-- 010 ATLAS -->
-        <a
-          class="work-card"
-          href="#case-study"
+        <a class="work-card" href="#case-study"
           data-case-study="atlas"
           data-project-category="data"
-          aria-label="Explore ATLAS concept"
-        >
+          aria-label="Explore ATLAS concept">
           <div class="work-art art-atlas">
             <div class="atlas-grid"></div>
             <div class="atlas-title">ATLAS</div>
             <span class="art-label">GEOGRAPHIC EXPLORATION</span>
             <span class="work-view-label">EXPLORE CONCEPT ↗</span>
           </div>
-
           <div class="work-info">
             <div>
               <span class="work-number">010 / DATA & MAPPING</span>
@@ -854,20 +791,16 @@
         </a>
 
         <!-- 011 APEX -->
-        <a
-          class="work-card"
-          href="#case-study"
+        <a class="work-card" href="#case-study"
           data-case-study="apex"
           data-project-category="digital"
-          aria-label="Explore APEX concept"
-        >
+          aria-label="Explore APEX concept">
           <div class="work-art art-apex">
             <div class="apex-shape"></div>
             <div class="apex-title">APEX</div>
             <span class="art-label">BEYOND THE EXPECTED</span>
             <span class="work-view-label">EXPLORE CONCEPT ↗</span>
           </div>
-
           <div class="work-info">
             <div>
               <span class="work-number">011 / DIGITAL EXPERIENCE</span>
@@ -879,13 +812,10 @@
         </a>
 
         <!-- 012 ECHO -->
-        <a
-          class="work-card"
-          href="#case-study"
+        <a class="work-card" href="#case-study"
           data-case-study="echo"
           data-project-category="experiments"
-          aria-label="Explore ECHO concept"
-        >
+          aria-label="Explore ECHO experiment">
           <div class="work-art art-echo">
             <div class="echo-rings">
               <i></i><i></i><i></i><i></i><i></i>
@@ -894,7 +824,6 @@
             <span class="art-label">DIGITAL IDENTITY STUDY</span>
             <span class="work-view-label">EXPLORE CONCEPT ↗</span>
           </div>
-
           <div class="work-info">
             <div>
               <span class="work-number">012 / CREATIVE EXPERIMENT</span>
@@ -913,7 +842,8 @@
       </div>
 
     </section>
-        <!-- MANIFESTO -->
+
+    <!-- MANIFESTO -->
     <section class="manifesto section-pad">
 
       <span class="section-number">04 / THE BELIEF</span>
@@ -958,12 +888,7 @@
   </main>
 
   <!-- CASE STUDY MODAL -->
-  <div
-    class="case-modal"
-    id="caseStudyModal"
-    aria-hidden="true"
-    inert
-  >
+  <div class="case-modal" id="caseStudyModal" aria-hidden="true" inert>
 
     <div class="case-backdrop" data-case-close></div>
 
@@ -1094,7 +1019,7 @@
   </footer>
 
   <!-- MAIN JAVASCRIPT -->
-  <script type="module" src="script.js"></script>
+  <script type="module" src="./script.js"></script>
 
 </body>
 </html>
