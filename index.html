@@ -62,7 +62,32 @@
     <div class="loader-line"><span></span></div>
     <p>CREATING SOMETHING DIFFERENT</p>
   </div>
+<!-- INDEPENDENT LOADER FAILSAFE -->
+<script>
+(() => {
+  let revealed = false;
 
+  function revealPage() {
+    if (revealed) return;
+    revealed = true;
+
+    document.body.classList.add("loaded");
+
+    const loader = document.getElementById("pageLoader");
+
+    if (loader) {
+      loader.classList.add("loaded");
+      loader.style.pointerEvents = "none";
+    }
+  }
+
+  window.addEventListener("load", revealPage, { once: true });
+
+  // Never leave the visitor stuck on the loading screen.
+  window.setTimeout(revealPage, 3500);
+})();
+</script>
+  
   <!-- BACKGROUND EFFECTS -->
   <div class="noise" aria-hidden="true"></div>
   <div class="cursor-glow" id="cursorGlow" aria-hidden="true"></div>
